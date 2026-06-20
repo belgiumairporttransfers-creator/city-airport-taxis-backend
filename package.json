@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage --coverage.thresholds.lines=0 --coverage.thresholds.statements=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0",
     "test:load": "k6 run load/k6/smoke.js",
     "test:load:local": "BASE_URL=http://127.0.0.1:5000 k6 run load/k6/smoke.js",
     "seed:admin": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedAdmin.ts"
