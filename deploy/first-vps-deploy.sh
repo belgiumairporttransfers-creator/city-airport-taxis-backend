@@ -5,7 +5,7 @@ set -euo pipefail
 VPS_IP="${VPS_IP:-82.29.177.100}"
 VPS_USER="${VPS_USER:-root}"
 APP_DIR="${APP_DIR:-/opt/city-airport-taxis-backend}"
-REPO_URL="${REPO_URL:-git@github.com:belgiumairporttransfers-creator/city-airport-taxis-backend.git}"
+REPO_URL="${REPO_URL:-https://github.com/belgiumairporttransfers-creator/city-airport-taxis-backend.git}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 

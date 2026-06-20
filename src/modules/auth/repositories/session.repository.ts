@@ -34,10 +34,7 @@ class SessionRepository {
   }
 
   invalidateAllForUser(userId: string, userType: AccountUserType) {
-    return Session.updateMany(
-      { user: new Types.ObjectId(userId), userType },
-      { isValid: false }
-    );
+    return Session.updateMany({ user: new Types.ObjectId(userId), userType }, { isValid: false });
   }
 
   findValidForUser(userId: string, userType: AccountUserType) {

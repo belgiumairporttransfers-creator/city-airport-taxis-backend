@@ -9,7 +9,11 @@ import authLockoutService from "./auth-lockout.service";
 import { normalizeEmail } from "@/modules/auth/utils/email";
 import { env } from "@/config/env";
 import userRepository from "@/modules/auth/repositories/user.repository";
-import { AuthAuditContext, USER_ACCOUNT_TYPE, toUserTokenPayload } from "@/modules/auth/types/auth.types";
+import {
+  AuthAuditContext,
+  USER_ACCOUNT_TYPE,
+  toUserTokenPayload,
+} from "@/modules/auth/types/auth.types";
 import type { ActivityStatus, ActivityType } from "@/modules/auth/types/account-auth";
 
 class UserAuthService {
@@ -217,7 +221,12 @@ class UserAuthService {
     await userRepository.save(user);
 
     await emailService.sendForgotPasswordEmail(user, resetToken);
-    await authActivityService.log(user._id.toString(), USER_ACCOUNT_TYPE, audit, "password_reset_request");
+    await authActivityService.log(
+      user._id.toString(),
+      USER_ACCOUNT_TYPE,
+      audit,
+      "password_reset_request"
+    );
   }
 
   async resetPassword(data: { token: string; password: string }, audit: AuthAuditContext) {
@@ -245,7 +254,14 @@ class UserAuthService {
     const user = await userRepository.findById(userId);
     if (!user) throw new AppError("User not found", 404);
 
-    const allowed = ["firstName", "lastName", "phoneNumber", "avatar", "companyName", "businessProfile"];
+    const allowed = [
+      "firstName",
+      "lastName",
+      "phoneNumber",
+      "avatar",
+      "companyName",
+      "businessProfile",
+    ];
 
     for (const key of allowed) {
       if (data[key] !== undefined) {

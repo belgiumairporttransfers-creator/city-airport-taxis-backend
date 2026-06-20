@@ -54,10 +54,7 @@ export const setupSentryErrorHandler = (app: Application): void => {
   sentry.setupExpressErrorHandler(app);
 };
 
-export const captureException = (
-  error: Error,
-  context?: Record<string, unknown>
-): void => {
+export const captureException = (error: Error, context?: Record<string, unknown>): void => {
   if (!env.SENTRY_ENABLED || !sentry) {
     return;
   }

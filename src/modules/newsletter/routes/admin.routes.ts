@@ -12,10 +12,6 @@ adminNewsletterRoutes.delete(
   validateRequest(bulkDeleteSchema),
   newsletterController.bulkDelete
 );
-adminNewsletterRoutes.delete(
-  "/:id",
-  validateParams(idParamSchema),
-  newsletterController.deleteOne
-);
+adminNewsletterRoutes.delete("/:id", validateParams(idParamSchema), newsletterController.deleteOne);
 
 export default adminNewsletterRoutes;

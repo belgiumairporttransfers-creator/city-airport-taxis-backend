@@ -87,11 +87,7 @@ class AuthSessionService {
     return sessionRepository.findValidForUser(userId, userType);
   }
 
-  async revokeById(
-    sessionId: string,
-    userId: string,
-    userType: AccountUserType
-  ): Promise<boolean> {
+  async revokeById(sessionId: string, userId: string, userType: AccountUserType): Promise<boolean> {
     const result = await sessionRepository.revokeById(sessionId, userId, userType);
     return Boolean(result);
   }

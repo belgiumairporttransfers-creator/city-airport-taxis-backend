@@ -61,11 +61,7 @@ class APIFeature<T extends Document> {
   private maxLimit: number;
   private options?: APIFeatureOptions;
 
-  constructor(
-    model: Model<T>,
-    queryString: Record<string, any>,
-    options?: APIFeatureOptions
-  ) {
+  constructor(model: Model<T>, queryString: Record<string, any>, options?: APIFeatureOptions) {
     this.queryString = queryString;
     this.query = model.find();
     this.defaultLimit = options?.pagination?.defaultLimit || PAGINATION.DEFAULT_LIMIT;
@@ -221,16 +217,19 @@ class APIFeature<T extends Document> {
   sort(defaultSort: string = "-createdAt"): this {
     const sortBy = this.queryString.sort || defaultSort;
     const allowedFields = this.options?.sort?.allowedFields;
-    const sortFields = sortBy.split(",").map((field: string) => {
-      const descending = field.startsWith("-");
-      const fieldName = descending ? field.substring(1) : field;
+    const sortFields = sortBy
+      .split(",")
+      .map((field: string) => {
+        const descending = field.startsWith("-");
+        const fieldName = descending ? field.substring(1) : field;
 
-      if (allowedFields && !allowedFields.includes(fieldName)) {
-        return null;
-      }
+        if (allowedFields && !allowedFields.includes(fieldName)) {
+          return null;
+        }
 
-      return [fieldName, descending ? -1 : 1] as [string, 1 | -1];
-    }).filter(Boolean) as [string, 1 | -1][];
+        return [fieldName, descending ? -1 : 1] as [string, 1 | -1];
+      })
+      .filter(Boolean) as [string, 1 | -1][];
 
     if (sortFields.length > 0) {
       this.query = this.query.sort(sortFields);
@@ -290,10 +289,7 @@ class APIFeature<T extends Document> {
    */
   paginate(): this {
     const page = parseInt(this.queryString.page) || 1;
-    const limit = Math.min(
-      parseInt(this.queryString.limit) || this.defaultLimit,
-      this.maxLimit
-    );
+    const limit = Math.min(parseInt(this.queryString.limit) || this.defaultLimit, this.maxLimit);
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);
@@ -305,17 +301,11 @@ class APIFeature<T extends Document> {
    */
   async execute(): Promise<PaginatedResult<T>> {
     const page = parseInt(this.queryString.page) || 1;
-    const limit = Math.min(
-      parseInt(this.queryString.limit) || this.defaultLimit,
-      this.maxLimit
-    );
+    const limit = Math.min(parseInt(this.queryString.limit) || this.defaultLimit, this.maxLimit);
 
     // Clone the query for counting
     const countQuery = this.query.model.find(this.filterQuery);
-    const [data, total] = await Promise.all([
-      this.query.exec(),
-      countQuery.countDocuments(),
-    ]);
+    const [data, total] = await Promise.all([this.query.exec(), countQuery.countDocuments()]);
 
     const pages = Math.ceil(total / limit);
 
@@ -369,4 +359,3 @@ class APIFeature<T extends Document> {
 }
 
 export default APIFeature;
-

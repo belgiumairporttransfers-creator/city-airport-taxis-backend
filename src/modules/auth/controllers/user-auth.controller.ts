@@ -68,7 +68,11 @@ class UserAuthController {
 
     if (token && req.user) {
       await userAuthService.logout(token, req.user._id.toString());
-      await userAuthService.logActivity(req.user._id.toString(), getAuthAuditContext(req), "logout");
+      await userAuthService.logActivity(
+        req.user._id.toString(),
+        getAuthAuditContext(req),
+        "logout"
+      );
     }
 
     clearUserAuthCookies(res);
@@ -93,7 +97,11 @@ class UserAuthController {
     if (!req.user) throw new AppError("Unauthorized", 401);
 
     await userAuthService.logoutAllDevices(req.user._id.toString());
-    await userAuthService.logActivity(req.user._id.toString(), getAuthAuditContext(req), "logout_all");
+    await userAuthService.logActivity(
+      req.user._id.toString(),
+      getAuthAuditContext(req),
+      "logout_all"
+    );
 
     clearUserAuthCookies(res);
     return sendSuccess(res, undefined, { message: "Logged out successfully" });

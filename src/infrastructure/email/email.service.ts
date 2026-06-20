@@ -72,7 +72,11 @@ class EmailService {
     });
   }
 
-  async pingHealth(): Promise<{ status: "healthy" | "unhealthy"; latencyMs?: number; error?: string }> {
+  async pingHealth(): Promise<{
+    status: "healthy" | "unhealthy";
+    latencyMs?: number;
+    error?: string;
+  }> {
     const start = Date.now();
     try {
       await this.transporter.verify();

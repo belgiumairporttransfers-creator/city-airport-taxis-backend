@@ -1,6 +1,10 @@
 import { UAParser } from "ua-parser-js";
 import type { AuthAuditContext } from "@/modules/auth/types/auth.types";
-import type { AccountUserType, ActivityStatus, ActivityType } from "@/modules/auth/types/account-auth";
+import type {
+  AccountUserType,
+  ActivityStatus,
+  ActivityType,
+} from "@/modules/auth/types/account-auth";
 import logger from "@/shared/utils/logger";
 import auditService from "@/shared/audit/audit.service";
 import { AuditEvents } from "@/shared/audit/audit.events";

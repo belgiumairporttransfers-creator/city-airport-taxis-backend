@@ -10,11 +10,7 @@ import {
   resetPasswordSchema,
   updateProfileSchema,
 } from "../validators/auth.validator";
-import {
-  loginLimiter,
-  refreshLimiter,
-  passwordResetLimiter,
-} from "@/middleware/rateLimiters";
+import { loginLimiter, refreshLimiter, passwordResetLimiter } from "@/middleware/rateLimiters";
 import { sessionIdParamSchema } from "@/shared/validators/object-id.schema";
 
 const router: IRouter = Router();

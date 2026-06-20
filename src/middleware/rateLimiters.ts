@@ -6,10 +6,7 @@ const isTestEnv = process.env.NODE_ENV === "test" || process.env.VITEST === "tru
 
 const noopLimiter: RequestHandler = (_req, _res, next) => next();
 
-const createLimiter = (
-  name: string,
-  options: Parameters<typeof rateLimit>[0]
-): RequestHandler => {
+const createLimiter = (name: string, options: Parameters<typeof rateLimit>[0]): RequestHandler => {
   if (isTestEnv) return noopLimiter;
 
   const store = createRateLimitStore(name);

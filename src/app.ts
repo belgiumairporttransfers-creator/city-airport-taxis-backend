@@ -12,11 +12,7 @@ import { errorHandler } from "@/middleware/errorHandler";
 import { setupSentryErrorHandler } from "@/shared/observability/apm";
 import { requestLoggerMiddleware } from "@/shared/observability/request-logger.middleware";
 import logger from "@/shared/utils/logger";
-import {
-  getHealthReport,
-  getPublicHealthReport,
-  getHealthStatusCode,
-} from "@/modules/health";
+import { getHealthReport, getPublicHealthReport, getHealthStatusCode } from "@/modules/health";
 import { isHealthAuthorized, requireHealthAuth } from "@/middleware/health-auth";
 
 const app: Application = express();
@@ -27,10 +23,7 @@ app.use(requestLoggerMiddleware);
 app.use(helmet());
 
 const corsOptions: CorsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) {
       return callback(null, true);
     }

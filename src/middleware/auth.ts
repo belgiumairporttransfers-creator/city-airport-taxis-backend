@@ -61,8 +61,7 @@ const loadSession = async (req: Request, type: AccountUserType) => {
 };
 
 const guard =
-  (type: AccountUserType) =>
-  async (req: Request, _res: Response, next: NextFunction) => {
+  (type: AccountUserType) => async (req: Request, _res: Response, next: NextFunction) => {
     try {
       await loadSession(req, type);
       next();
@@ -83,11 +82,7 @@ const readAnyAccessToken = (req: Request): string | undefined => {
   return req.cookies.userAccessToken || req.cookies.accessToken;
 };
 
-export const protectAuthenticated = async (
-  req: Request,
-  _res: Response,
-  next: NextFunction
-) => {
+export const protectAuthenticated = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const token = readAnyAccessToken(req);
     if (!token) {

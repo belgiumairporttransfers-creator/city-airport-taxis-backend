@@ -17,13 +17,10 @@ export const changePasswordSchema = Joi.object({
   oldPassword: Joi.string().required().messages({
     "any.required": "Current password is required",
   }),
-  newPassword: strongPasswordSchema
-    .invalid(Joi.ref("oldPassword"))
-    .required()
-    .messages({
-      "any.invalid": "New password must be different from the current password",
-      "any.required": "New password is required",
-    }),
+  newPassword: strongPasswordSchema.invalid(Joi.ref("oldPassword")).required().messages({
+    "any.invalid": "New password must be different from the current password",
+    "any.required": "New password is required",
+  }),
 });
 
 export const forgotPasswordSchema = Joi.object({

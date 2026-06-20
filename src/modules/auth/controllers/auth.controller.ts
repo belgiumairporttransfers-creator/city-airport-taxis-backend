@@ -43,11 +43,7 @@ class AuthController {
   changePassword = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    await authService.changePassword(
-      req.admin._id.toString(),
-      req.body,
-      getAuthAuditContext(req)
-    );
+    await authService.changePassword(req.admin._id.toString(), req.body, getAuthAuditContext(req));
 
     return sendSuccess(res, undefined, {
       message: "Password updated successfully. All other sessions revoked.",

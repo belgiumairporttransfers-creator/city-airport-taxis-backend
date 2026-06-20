@@ -1,4 +1,6 @@
-import settingsRepository, { GLOBAL_SETTINGS_KEY } from "@/modules/settings/repositories/settings.repository";
+import settingsRepository, {
+  GLOBAL_SETTINGS_KEY,
+} from "@/modules/settings/repositories/settings.repository";
 import { AppError } from "@/shared/errors/AppError";
 import { cacheDel, cacheGet, cacheSet } from "@/infrastructure/redis/cache";
 import type { ISettings } from "@/modules/settings/types/settings.types";

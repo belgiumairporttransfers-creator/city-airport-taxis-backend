@@ -129,7 +129,12 @@ class AuthService {
     await adminRepository.save(admin);
 
     await emailService.sendAdminForgotPasswordEmail(admin, resetToken);
-    await authActivityService.log(admin._id.toString(), ADMIN_ACCOUNT_TYPE, audit, "password_reset_request");
+    await authActivityService.log(
+      admin._id.toString(),
+      ADMIN_ACCOUNT_TYPE,
+      audit,
+      "password_reset_request"
+    );
   }
 
   async resetPassword(data: { token: string; password: string }, audit: AuthAuditContext) {
@@ -148,7 +153,12 @@ class AuthService {
     await adminRepository.save(admin);
 
     await authSessionService.invalidateAll(admin._id.toString(), ADMIN_ACCOUNT_TYPE);
-    await authActivityService.log(admin._id.toString(), ADMIN_ACCOUNT_TYPE, audit, "password_reset");
+    await authActivityService.log(
+      admin._id.toString(),
+      ADMIN_ACCOUNT_TYPE,
+      audit,
+      "password_reset"
+    );
   }
 
   async getSessions(adminId: string) {

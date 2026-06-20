@@ -19,13 +19,12 @@ export const matchesFileSignature = (buffer: Buffer, mimeType: string): boolean 
 
   if (mimeType === "image/webp") {
     const hasRiff = signatures[0].every((byte, index) => buffer[index] === byte);
-    const hasWebp = buffer.length >= 12 && signatures[1].every((byte, index) => buffer[index + 8] === byte);
+    const hasWebp =
+      buffer.length >= 12 && signatures[1].every((byte, index) => buffer[index + 8] === byte);
     return hasRiff && hasWebp;
   }
 
-  return signatures.some((signature) =>
-    signature.every((byte, index) => buffer[index] === byte)
-  );
+  return signatures.some((signature) => signature.every((byte, index) => buffer[index] === byte));
 };
 
 export const sanitizeUploadFolder = (folder: unknown): string => {

@@ -20,10 +20,7 @@ class SettingsController {
 
   updateSettings = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
-    const settings = await settingsService.updateSettings(
-      req.body,
-      req.admin._id.toString()
-    );
+    const settings = await settingsService.updateSettings(req.body, req.admin._id.toString());
     return sendSuccess(res, settings.toObject(), {
       message: "Settings updated successfully",
     });

@@ -1,5 +1,9 @@
 import { Types } from "mongoose";
-import type { AccountUserType, ActivityStatus, ActivityType } from "@/modules/auth/types/account-auth";
+import type {
+  AccountUserType,
+  ActivityStatus,
+  ActivityType,
+} from "@/modules/auth/types/account-auth";
 import { Activity } from "@/infrastructure/database/models/Activity";
 
 class ActivityRepository {

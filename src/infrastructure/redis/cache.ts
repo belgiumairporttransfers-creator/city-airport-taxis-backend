@@ -1,8 +1,5 @@
 import { RedisClient } from "@/infrastructure/redis/client";
-import {
-  incrementCacheHit,
-  incrementCacheMiss,
-} from "@/shared/observability/metrics";
+import { incrementCacheHit, incrementCacheMiss } from "@/shared/observability/metrics";
 
 const DEFAULT_TTL_SECONDS = 300;
 

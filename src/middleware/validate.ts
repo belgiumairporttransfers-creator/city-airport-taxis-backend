@@ -5,8 +5,7 @@ import { AppError } from "@/shared/errors/AppError";
 const validate =
   (schema: ObjectSchema, source: "body" | "params" | "query") =>
   (req: Request, _res: Response, next: NextFunction) => {
-    const target =
-      source === "body" ? req.body : source === "params" ? req.params : req.query;
+    const target = source === "body" ? req.body : source === "params" ? req.params : req.query;
 
     const { error, value } = schema.validate(target, {
       abortEarly: false,

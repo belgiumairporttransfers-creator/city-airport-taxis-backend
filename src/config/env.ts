@@ -54,8 +54,9 @@ interface EnvConfig {
   SENTRY_TRACES_SAMPLE_RATE: number;
 }
 
-const buildCorsOrigins = (frontendUrl: string, adminFrontendUrl: string): string[] =>
-  [...new Set([frontendUrl, adminFrontendUrl].filter(Boolean))];
+const buildCorsOrigins = (frontendUrl: string, adminFrontendUrl: string): string[] => [
+  ...new Set([frontendUrl, adminFrontendUrl].filter(Boolean)),
+];
 
 const getEnvConfig = (): EnvConfig => {
   const isProduction = nodeEnv === "production";
@@ -67,8 +68,7 @@ const getEnvConfig = (): EnvConfig => {
   const socketEnabled = process.env.SOCKET_ENABLED !== "false";
   const sentryDsn = process.env.SENTRY_DSN || "";
 
-  let redisEnabled =
-    redisExplicitlyEnabled || (Boolean(redisUrl) && !redisExplicitlyDisabled);
+  let redisEnabled = redisExplicitlyEnabled || (Boolean(redisUrl) && !redisExplicitlyDisabled);
 
   if (isProduction) {
     redisEnabled = true;
@@ -87,12 +87,7 @@ const getEnvConfig = (): EnvConfig => {
   ];
 
   if (isProduction) {
-    requiredEnvVars.push(
-      "FRONTEND_URL",
-      "ADMIN_FRONTEND_URL",
-      "HEALTH_CHECK_TOKEN",
-      "REDIS_URL"
-    );
+    requiredEnvVars.push("FRONTEND_URL", "ADMIN_FRONTEND_URL", "HEALTH_CHECK_TOKEN", "REDIS_URL");
   }
 
   const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);

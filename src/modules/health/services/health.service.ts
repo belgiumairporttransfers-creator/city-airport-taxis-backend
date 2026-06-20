@@ -77,11 +77,7 @@ export const isServiceHealthy = (
   return true;
 };
 
-const withTimeout = async <T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  fallback: T
-): Promise<T> => {
+const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
   let timer: NodeJS.Timeout | undefined;
 
   try {
@@ -100,16 +96,14 @@ export const getHealthReport = async (includeMetrics = false): Promise<HealthRep
   const database = getMongoHealthStatus();
   const redis = await RedisClient.ping();
   const socket = getSocketHealthStatus();
-  const email = await withTimeout(
-    emailService.pingHealth(),
-    2000,
-    { status: "unhealthy" as const, error: "Health check timed out" }
-  );
-  const storage = await withTimeout(
-    pingStorageHealth(),
-    2000,
-    { status: "unhealthy" as const, error: "Health check timed out" }
-  );
+  const email = await withTimeout(emailService.pingHealth(), 2000, {
+    status: "unhealthy" as const,
+    error: "Health check timed out",
+  });
+  const storage = await withTimeout(pingStorageHealth(), 2000, {
+    status: "unhealthy" as const,
+    error: "Health check timed out",
+  });
 
   const services: ServiceHealthSummary = {
     mongodb: toServiceStatus(database.connected),
