@@ -1,0 +1,48 @@
+services:
+  api:
+    image: ${IMAGE:-city-airport-taxis-backend:latest}
+    pull_policy: ${PULL_POLICY:-missing}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PORT:-5000}:5000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5000/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  redis_data:

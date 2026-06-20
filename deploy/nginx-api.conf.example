@@ -1,0 +1,34 @@
+# Example Nginx reverse proxy for City Airport Taxis API
+# Place in /etc/nginx/sites-available/city-airport-taxis-api
+
+upstream city_airport_taxis_api {
+    server 127.0.0.1:5000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name api.example.com;
+
+    client_max_body_size 10m;
+
+    location / {
+        proxy_pass http://city_airport_taxis_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Restrict detailed health checks to internal probes
+    location /health {
+        proxy_pass http://city_airport_taxis_api;
+        proxy_set_header X-Health-Token $http_x_health_token;
+        allow 10.0.0.0/8;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
