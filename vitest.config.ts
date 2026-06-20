@@ -12,6 +12,8 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     testTimeout: 30000,
+    fileParallelism: false,
+    maxWorkers: 1,
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],
