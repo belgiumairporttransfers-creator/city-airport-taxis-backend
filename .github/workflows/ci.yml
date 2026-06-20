@@ -8,6 +8,7 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -16,8 +17,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "pnpm"
+
+      - name: Cache MongoDB memory server binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/mongodb-binaries
+          key: mongoms-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -28,12 +35,24 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Preinstall MongoDB test binary
+        run: node scripts/warm-mongo.mjs
+        env:
+          MONGOMS_DOWNLOAD_DIR: ${{ runner.temp }}/mongodb-binaries
+
       - name: Test
         run: pnpm test:coverage
         env:
+          NODE_ENV: test
           REDIS_ENABLED: "false"
           SOCKET_ENABLED: "false"
           MONGOMS_DOWNLOAD_DIR: ${{ runner.temp }}/mongodb-binaries
+          JWT_SECRET: test-jwt-secret-minimum-32-characters-long
+          JWT_REFRESH_SECRET: test-jwt-refresh-secret-min-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 7d
+          BCRYPT_ROUNDS: "10"
+          REQUIRE_EMAIL_VERIFICATION: "false"
 
       - name: Build
         run: pnpm build
