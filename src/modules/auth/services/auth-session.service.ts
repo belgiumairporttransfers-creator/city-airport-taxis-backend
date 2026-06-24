@@ -6,7 +6,7 @@ import type { TokenPayload } from "@/modules/auth/types/auth.types";
 import { AppError } from "@/shared/errors/AppError";
 import { env } from "@/config/env";
 import { getRefreshExpiryDate } from "@/modules/auth/utils/duration";
-import type { AuthAuditContext } from "@/modules/auth/types/auth.types";
+import type { AuthAuditContext, AuthListQuery } from "@/modules/auth/types/auth.types";
 import type { AccountUserType } from "@/modules/auth/types/account-auth";
 import sessionRepository from "@/modules/auth/repositories/session.repository";
 
@@ -85,6 +85,20 @@ class AuthSessionService {
 
   async listForUser(userId: string, userType: AccountUserType) {
     return sessionRepository.findValidForUser(userId, userType);
+  }
+
+  async listPaginatedForUser(userId: string, userType: AccountUserType, query: AuthListQuery) {
+    const result = await sessionRepository.findWithPagination(userId, userType, query);
+
+    return {
+      items: result.data,
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.pages,
+      hasNextPage: result.hasNextPage,
+      hasPrevPage: result.hasPrevPage,
+    };
   }
 
   async revokeById(sessionId: string, userId: string, userType: AccountUserType): Promise<boolean> {

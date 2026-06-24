@@ -120,8 +120,8 @@ describe("Auth integration", () => {
       const activitiesResponse = await agent.get("/api/admin/auth/activities");
 
       expect(activitiesResponse.status).toBe(200);
-      expect(activitiesResponse.body.data.length).toBeGreaterThan(0);
-      expect(activitiesResponse.body.data[0].type).toBe("login");
+      expect(activitiesResponse.body.data.items.length).toBeGreaterThan(0);
+      expect(activitiesResponse.body.data.items[0].type).toBe("login");
     });
   });
 

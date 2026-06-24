@@ -27,6 +27,11 @@ class NewsletterRepository {
   deleteManyByIds(ids: string[]): Promise<{ deletedCount?: number }> {
     return Newsletter.deleteMany({ _id: { $in: ids } });
   }
+
+  findEmailsByAudience(audience: "all" | "coming-soon" | "website") {
+    const filter = audience === "all" ? {} : { source: audience };
+    return Newsletter.find(filter).select("email").lean();
+  }
 }
 
 export default new NewsletterRepository();

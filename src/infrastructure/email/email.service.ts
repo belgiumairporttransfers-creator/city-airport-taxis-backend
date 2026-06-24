@@ -28,10 +28,10 @@ class EmailService {
   }
 
   async sendEmail(options: SendEmailOptions) {
-    const { to, subject, html, replyTo, attachments } = options;
+    const { to, subject, html, from, replyTo, attachments } = options;
     try {
       await this.transporter.sendMail({
-        from: env.EMAIL_FROM,
+        from: from ?? env.EMAIL_FROM,
         to,
         subject,
         html,

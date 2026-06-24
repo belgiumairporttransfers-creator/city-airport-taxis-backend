@@ -53,3 +53,8 @@ export const verifyEmailSchema = Joi.object({
     "any.required": "Verification token is required",
   }),
 });
+
+export const authListQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(5),
+});

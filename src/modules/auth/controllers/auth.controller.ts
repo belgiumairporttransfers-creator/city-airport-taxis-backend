@@ -6,6 +6,7 @@ import { setAdminAuthCookies, clearAdminAuthCookies } from "../utils/cookie";
 import { AppError } from "@/shared/errors/AppError";
 import { getAuthAuditContext } from "../utils/auth-audit";
 import { getRefreshTokenFromRequest } from "../utils/refresh-token";
+import type { AuthListQuery } from "../types/auth.types";
 
 class AuthController {
   login = asyncHandler(async (req: Request, res: Response) => {
@@ -96,15 +97,35 @@ class AuthController {
   getActivities = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const activities = await authService.getActivities(req.admin._id.toString());
-    return sendSuccess(res, activities);
+    const query = req.query as unknown as AuthListQuery;
+    const result = await authService.getActivities(req.admin._id.toString(), query);
+
+    return sendSuccess(res, {
+      items: result.items,
+      meta: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
   });
 
   getSessions = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const sessions = await authService.getSessions(req.admin._id.toString());
-    return sendSuccess(res, sessions);
+    const query = req.query as unknown as AuthListQuery;
+    const result = await authService.getSessions(req.admin._id.toString(), query);
+
+    return sendSuccess(res, {
+      items: result.items,
+      meta: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
   });
 
   revokeSession = asyncHandler(async (req: Request, res: Response) => {

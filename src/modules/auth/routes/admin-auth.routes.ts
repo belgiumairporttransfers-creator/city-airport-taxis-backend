@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import authController from "../controllers/auth.controller";
 import { protectAdmin } from "@/middleware/auth";
-import { validateRequest, validateParams } from "@/middleware/validate";
+import { validateRequest, validateParams, validateQuery } from "@/middleware/validate";
 import { csrfProtection } from "@/middleware/csrf";
 import {
   loginSchema,
@@ -9,6 +9,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   updateProfileSchema,
+  authListQuerySchema,
 } from "../validators/auth.validator";
 import { loginLimiter, refreshLimiter, passwordResetLimiter } from "@/middleware/rateLimiters";
 import { sessionIdParamSchema } from "@/shared/validators/object-id.schema";
@@ -42,8 +43,12 @@ router.post(
   authController.changePassword
 );
 router.post("/logout-all", authController.logoutAllDevices);
-router.get("/activities", authController.getActivities);
-router.get("/sessions", authController.getSessions);
+router.get(
+  "/activities",
+  validateQuery(authListQuerySchema),
+  authController.getActivities
+);
+router.get("/sessions", validateQuery(authListQuerySchema), authController.getSessions);
 router.delete(
   "/sessions/:sessionId",
   validateParams(sessionIdParamSchema),

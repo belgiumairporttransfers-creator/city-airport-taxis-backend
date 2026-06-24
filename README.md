@@ -9,7 +9,7 @@ Node.js / Express / TypeScript API for **City Airport Taxis**. This service hand
 - **CSRF protection** — required on protected mutating routes after login
 - **Session management** — list sessions, revoke one, or log out everywhere; refresh token rotation with reuse detection
 - **Account security** — bcrypt hashing, login lockout, password strength via Joi validators, activity audit log
-- **Email** — verification, forgot/reset password (user + admin templates)
+- **Email** — verification, forgot/reset password (user + admin templates); newsletter campaigns via SMTP + BullMQ queue
 - **Single user type** — all accounts use role `user` (multi-role support can be added later)
 - **Upload** — authenticated image upload to Cloudinary (`POST /api/upload/upload`)
 
@@ -122,9 +122,15 @@ REQUIRE_EMAIL_VERIFICATION=true
 MAX_SESSIONS_PER_USER=10
 BCRYPT_ROUNDS=12
 
-# Redis / Upstash (optional — REDIS_ENABLED=false by default)
-REDIS_URL=
-REDIS_ENABLED=false
+# Newsletter queue (Redis + BullMQ — required for background newsletter sends)
+NEWSLETTER_QUEUE_ENABLED=true
+NEWSLETTER_BATCH_SIZE=50
+NEWSLETTER_BATCH_DELAY_MS=50
+NEWSLETTER_PROGRESS_UPDATE_EVERY=25
+
+# Redis (required locally for newsletter queue, sockets, and caching)
+REDIS_URL=redis://127.0.0.1:6379
+REDIS_ENABLED=true
 REDIS_CONNECT_TIMEOUT_MS=10000
 REDIS_MAX_RETRIES=10
 
@@ -137,15 +143,53 @@ SOCKET_PATH=/socket.io
 | -------- | ----------- |
 | `FRONTEND_URL` | Public website URL (CORS + user reset/verify email links) |
 | `ADMIN_FRONTEND_URL` | Admin dashboard URL (CORS + admin reset email links) |
-| `REDIS_ENABLED` | `false` by default — set `true` with Upstash `REDIS_URL` when scaling |
-| `REDIS_URL` | Upstash Redis URL (`rediss://default:...@....upstash.io:6379`) |
+| `REDIS_ENABLED` | Set `true` with `REDIS_URL` for newsletter queue, Socket.IO adapter, and caching |
+| `REDIS_URL` | Local: `redis://127.0.0.1:6379` · Production (Docker): `redis://redis:6379` |
+| `NEWSLETTER_QUEUE_ENABLED` | `true` to send newsletters via BullMQ (requires Redis) |
 | `REQUIRE_EMAIL_VERIFICATION` | When `true`, users must verify email before login |
 | `MAX_SESSIONS_PER_USER` | Oldest sessions dropped when limit exceeded |
 | `TRUST_PROXY_HOPS` | Set to `1` behind Nginx reverse proxy (VPS) |
 
 In **production**, `JWT_SECRET` and `JWT_REFRESH_SECRET` must each be at least 32 characters and must differ.
 
-### 3. Run
+### 3. Local Redis (Docker)
+
+Newsletter sends and resends use **Redis + BullMQ**. For local development, run Redis in Docker.
+
+**First time** (add your user to the `docker` group if needed, then log out and back in):
+
+```bash
+docker run -d --name city-airport-redis --restart unless-stopped -p 6379:6379 redis:7-alpine
+```
+
+**After closing or restarting your PC:**
+
+```bash
+# Start Docker if it is not running
+sudo systemctl start docker
+
+# Start the existing Redis container
+docker start city-airport-redis
+
+# Verify
+docker ps
+redis-cli ping   # should print PONG
+```
+
+If the container does not exist (e.g. it was removed), create it again with the `docker run` command above.
+
+**Auto-start on boot** (one-time):
+
+```bash
+docker update --restart unless-stopped city-airport-redis
+sudo systemctl enable docker
+```
+
+With `--restart unless-stopped`, Redis starts when Docker starts — you usually only need `pnpm dev` after opening your PC.
+
+**Docker permission denied?** Run `sudo usermod -aG docker $USER`, then log out and back in (or run `newgrp docker` in the current terminal).
+
+### 4. Run
 
 ```bash
 # Development (hot reload)
@@ -199,6 +243,7 @@ nano .env.production   # use your production env (copy from local machine — ne
 | `EMAIL_*` | Hostinger SMTP |
 | `CLOUDINARY_*` | Uploads |
 | `REDIS_ENABLED` | `true` (compose sets `REDIS_URL=redis://redis:6379`) |
+| `NEWSLETTER_QUEUE_ENABLED` | `true` |
 | `SOCKET_ENABLED` | `true` for WebSockets |
 
 ### 3. Start the API

@@ -13,6 +13,11 @@ export interface AuthAuditContext {
   userAgent: string;
 }
 
+export interface AuthListQuery {
+  page?: number;
+  limit?: number;
+}
+
 export const ADMIN_ACCOUNT_TYPE = "admin" as const satisfies AccountUserType;
 export const USER_ACCOUNT_TYPE = "user" as const satisfies AccountUserType;
 export const USER_ROLE = "user" as const;

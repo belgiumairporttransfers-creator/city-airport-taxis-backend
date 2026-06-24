@@ -4,7 +4,9 @@ import type {
   ActivityStatus,
   ActivityType,
 } from "@/modules/auth/types/account-auth";
+import type { AuthListQuery } from "@/modules/auth/types/auth.types";
 import { Activity } from "@/infrastructure/database/models/Activity";
+import APIFeature from "@/shared/utils/APIFeature";
 
 class ActivityRepository {
   create(data: Record<string, unknown>) {
@@ -16,6 +18,15 @@ class ActivityRepository {
       .sort({ timestamp: -1 })
       .limit(limit)
       .lean();
+  }
+
+  findWithPagination(accountId: string, userType: AccountUserType, query: AuthListQuery) {
+    return new APIFeature(Activity, query, {
+      pagination: { defaultLimit: 5 },
+      sort: { defaultSort: "-timestamp", allowedFields: ["timestamp", "type"] },
+    })
+      .addFilter({ user: new Types.ObjectId(accountId), userType })
+      .execute();
   }
 
   log(

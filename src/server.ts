@@ -10,6 +10,7 @@ import {
   flushObservability,
 } from "@/shared/observability/apm";
 import logger from "@/shared/utils/logger";
+import { startNewsletterScheduler, stopNewsletterScheduler, startNewsletterDeliveryWorker, stopNewsletterDeliveryWorker } from "@/modules/newsletter";
 
 const PORT = env.PORT || 5000;
 
@@ -28,9 +29,13 @@ const bootstrap = async (): Promise<void> => {
   await initSocketServer(httpServer);
 
   httpServer.listen(PORT, () => {
+    startNewsletterScheduler();
+    void startNewsletterDeliveryWorker();
     logger.info(`Server running on port ${PORT} in ${env.NODE_ENV} mode`, {
       redisEnabled: env.REDIS_ENABLED,
       redisConnected: RedisClient.isConnected(),
+      newsletterQueueEnabled: env.NEWSLETTER_QUEUE_ENABLED,
+      emailProvider: env.EMAIL_PROVIDER,
       socketEnabled: env.SOCKET_ENABLED,
       socketPath: env.SOCKET_PATH,
       sentryEnabled: env.SENTRY_ENABLED,
@@ -47,6 +52,8 @@ const shutdown = async (signal: string): Promise<void> => {
   logger.info(`${signal} received — shutting down gracefully`);
 
   try {
+    stopNewsletterScheduler();
+    await stopNewsletterDeliveryWorker();
     await shutdownSocketServer();
     await RedisClient.disconnect();
 

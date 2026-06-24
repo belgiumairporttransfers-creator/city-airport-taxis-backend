@@ -1,5 +1,5 @@
 import { UAParser } from "ua-parser-js";
-import type { AuthAuditContext } from "@/modules/auth/types/auth.types";
+import type { AuthAuditContext, AuthListQuery } from "@/modules/auth/types/auth.types";
 import type {
   AccountUserType,
   ActivityStatus,
@@ -50,6 +50,20 @@ class AuthActivityService {
 
   async getRecent(accountId: string, userType: AccountUserType, limit = 10) {
     return activityRepository.findRecent(accountId, userType, limit);
+  }
+
+  async getPaginated(accountId: string, userType: AccountUserType, query: AuthListQuery) {
+    const result = await activityRepository.findWithPagination(accountId, userType, query);
+
+    return {
+      items: result.data,
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.pages,
+      hasNextPage: result.hasNextPage,
+      hasPrevPage: result.hasPrevPage,
+    };
   }
 }
 

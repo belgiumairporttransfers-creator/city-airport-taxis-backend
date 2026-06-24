@@ -52,6 +52,18 @@ interface EnvConfig {
   SENTRY_DSN: string;
   SENTRY_ENABLED: boolean;
   SENTRY_TRACES_SAMPLE_RATE: number;
+  NEWSLETTER_CRON_ENABLED: boolean;
+  NEWSLETTER_CRON_EXPRESSION: string;
+  NEWSLETTER_CRON_TIMEZONE: string;
+  EMAIL_PROVIDER: "smtp" | "ses";
+  AWS_REGION: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  AWS_SES_CONFIGURATION_SET: string;
+  NEWSLETTER_QUEUE_ENABLED: boolean;
+  NEWSLETTER_BATCH_SIZE: number;
+  NEWSLETTER_BATCH_DELAY_MS: number;
+  NEWSLETTER_PROGRESS_UPDATE_EVERY: number;
 }
 
 const buildCorsOrigins = (frontendUrl: string, adminFrontendUrl: string): string[] => [
@@ -155,6 +167,23 @@ const getEnvConfig = (): EnvConfig => {
 
   const tracesSampleRate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.2");
 
+  const emailProviderEnv = process.env.EMAIL_PROVIDER?.toLowerCase();
+  const emailProvider: "smtp" | "ses" =
+    emailProviderEnv === "ses" ? "ses" : "smtp";
+
+  if (emailProvider === "ses") {
+    const message =
+      "EMAIL_PROVIDER=ses is no longer supported. Remove it or set EMAIL_PROVIDER=smtp.";
+    if (isProduction) {
+      throw new Error(message);
+    }
+    console.warn(`[ENV WARNING] ${message} Falling back to SMTP.`);
+  }
+
+  const newsletterQueueEnabled =
+    process.env.NEWSLETTER_QUEUE_ENABLED === "true" ||
+    (process.env.NEWSLETTER_QUEUE_ENABLED !== "false" && redisEnabled);
+
   return {
     NODE_ENV: nodeEnv,
     PORT: parseInt(process.env.PORT || "5000", 10),
@@ -195,6 +224,21 @@ const getEnvConfig = (): EnvConfig => {
       Number.isFinite(tracesSampleRate) && tracesSampleRate >= 0 && tracesSampleRate <= 1
         ? tracesSampleRate
         : 0.2,
+    NEWSLETTER_CRON_ENABLED: process.env.NEWSLETTER_CRON_ENABLED !== "false",
+    NEWSLETTER_CRON_EXPRESSION: process.env.NEWSLETTER_CRON_EXPRESSION || "* * * * *",
+    NEWSLETTER_CRON_TIMEZONE: process.env.NEWSLETTER_CRON_TIMEZONE || "Europe/London",
+    EMAIL_PROVIDER: "smtp" as const,
+    AWS_REGION: process.env.AWS_REGION || "",
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || "",
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || "",
+    AWS_SES_CONFIGURATION_SET: process.env.AWS_SES_CONFIGURATION_SET || "",
+    NEWSLETTER_QUEUE_ENABLED: newsletterQueueEnabled,
+    NEWSLETTER_BATCH_SIZE: parseInt(process.env.NEWSLETTER_BATCH_SIZE || "50", 10),
+    NEWSLETTER_BATCH_DELAY_MS: parseInt(process.env.NEWSLETTER_BATCH_DELAY_MS || "50", 10),
+    NEWSLETTER_PROGRESS_UPDATE_EVERY: parseInt(
+      process.env.NEWSLETTER_PROGRESS_UPDATE_EVERY || "25",
+      10
+    ),
   };
 };
 

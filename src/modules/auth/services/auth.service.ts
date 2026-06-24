@@ -10,6 +10,7 @@ import adminRepository from "@/modules/auth/repositories/admin.repository";
 import {
   ADMIN_ACCOUNT_TYPE,
   AuthAuditContext,
+  AuthListQuery,
   toTokenPayload,
 } from "@/modules/auth/types/auth.types";
 import type { ActivityStatus, ActivityType } from "@/modules/auth/types/account-auth";
@@ -161,8 +162,8 @@ class AuthService {
     );
   }
 
-  async getSessions(adminId: string) {
-    return authSessionService.listForUser(adminId, ADMIN_ACCOUNT_TYPE);
+  async getSessions(adminId: string, query: AuthListQuery) {
+    return authSessionService.listPaginatedForUser(adminId, ADMIN_ACCOUNT_TYPE, query);
   }
 
   async revokeSession(adminId: string, sessionId: string, audit: AuthAuditContext) {
@@ -181,8 +182,8 @@ class AuthService {
     return authActivityService.log(adminId, ADMIN_ACCOUNT_TYPE, audit, type, status);
   }
 
-  async getActivities(adminId: string) {
-    return authActivityService.getRecent(adminId, ADMIN_ACCOUNT_TYPE);
+  async getActivities(adminId: string, query: AuthListQuery) {
+    return authActivityService.getPaginated(adminId, ADMIN_ACCOUNT_TYPE, query);
   }
 }
 

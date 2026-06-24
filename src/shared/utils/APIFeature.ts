@@ -41,6 +41,7 @@ export interface APIFeatureOptions {
   excludeFields?: string[];
   filterFields?: string[];
   disablePagination?: boolean;
+  lean?: boolean;
 }
 
 export interface PaginatedResult<T> {
@@ -120,6 +121,9 @@ class APIFeature<T extends Document> {
 
     if (this.options.excludeFields && this.options.excludeFields.length > 0) {
       this.excludeFields(this.options.excludeFields);
+    }
+    if (this.options.lean) {
+      this.query = this.query.lean() as Query<T[], T>;
     }
     if (!this.options.disablePagination) {
       this.paginate();
