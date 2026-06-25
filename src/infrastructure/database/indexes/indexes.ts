@@ -11,6 +11,10 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
   );
   const { Settings } = await import("@/infrastructure/database/models/Settings");
   const { AuditLog } = await import("@/infrastructure/database/models/AuditLog");
+  const { Customer } = await import("@/infrastructure/database/models/Customer");
+  const { VehicleCategory } = await import("@/infrastructure/database/models/VehicleCategory");
+  const { Vehicle } = await import("@/infrastructure/database/models/Vehicle");
+  const { VehiclePricing } = await import("@/infrastructure/database/models/VehiclePricing");
 
   await Promise.all([
     User.syncIndexes(),
@@ -23,5 +27,9 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
     NewsletterCampaignRecipient.syncIndexes(),
     Settings.syncIndexes(),
     AuditLog.syncIndexes(),
+    Customer.syncIndexes(),
+    VehicleCategory.syncIndexes(),
+    Vehicle.syncIndexes(),
+    VehiclePricing.syncIndexes(),
   ]);
 };

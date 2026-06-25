@@ -74,3 +74,14 @@ export const newsletterLimiter: RequestHandler = createLimiter("newsletter", {
     error: "Too many newsletter subscription attempts, please try again later",
   },
 });
+
+export const quoteRateLimiter: RequestHandler = createLimiter("vehicle-quote", {
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many quote requests, please try again later",
+  },
+});
