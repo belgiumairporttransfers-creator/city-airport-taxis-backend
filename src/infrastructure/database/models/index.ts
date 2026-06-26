@@ -12,3 +12,4 @@ export { Customer } from "./Customer";
 export { VehicleCategory } from "./VehicleCategory";
 export { Vehicle } from "./Vehicle";
 export { VehiclePricing } from "./VehiclePricing";
+export { DriverApplication } from "./DriverApplication";

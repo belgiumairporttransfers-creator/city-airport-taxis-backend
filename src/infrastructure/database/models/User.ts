@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcryptjs";
 import { env } from "@/config/env";
-import { USER_ROLE } from "@/modules/auth/types/auth.types";
+import { USER_ROLE, DRIVER_ROLE } from "@/modules/auth/types/auth.types";
 import type { IUser } from "@/modules/auth/types/user.types";
 import { stripSensitiveFields } from "@/shared/utils/sanitize-document";
 
@@ -58,7 +58,7 @@ const userSchema = new Schema<IUser>(
 
     role: {
       type: String,
-      enum: [USER_ROLE],
+      enum: [USER_ROLE, DRIVER_ROLE],
       default: USER_ROLE,
     },
 

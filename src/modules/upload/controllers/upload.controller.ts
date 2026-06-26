@@ -11,9 +11,9 @@ class UploadController {
       return sendError(res, "No file provided", 400);
     }
     const folder = sanitizeUploadFolder(req.body.folder);
-    const result = await uploadService.uploadImage(file, folder);
+    const result = await uploadService.uploadDocument(file, folder);
     return sendSuccess(res, result, {
-      message: "Image uploaded successfully",
+      message: "File uploaded successfully",
     });
   });
 }

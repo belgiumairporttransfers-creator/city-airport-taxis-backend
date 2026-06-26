@@ -43,6 +43,12 @@ router.post(
   userAuthController.resetPassword
 );
 router.post(
+  "/set-password",
+  passwordResetLimiter,
+  validateRequest(resetPasswordSchema),
+  userAuthController.setPassword
+);
+router.post(
   "/verify-email",
   emailVerificationLimiter,
   validateRequest(verifyEmailSchema),

@@ -40,6 +40,7 @@ export interface APIFeatureOptions {
   select?: string;
   excludeFields?: string[];
   filterFields?: string[];
+  initialFilter?: FilterQuery<Document>;
   disablePagination?: boolean;
   lean?: boolean;
 }
@@ -78,6 +79,10 @@ class APIFeature<T extends Document> {
    */
   private applyOptions(): void {
     if (!this.options) return;
+
+    if (this.options.initialFilter) {
+      Object.assign(this.filterQuery, this.options.initialFilter);
+    }
 
     // Apply filter fields
     if (this.options.filterFields && this.options.filterFields.length > 0) {

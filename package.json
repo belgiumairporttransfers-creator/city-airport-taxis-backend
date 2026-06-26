@@ -21,7 +21,8 @@
     "test:load:local": "BASE_URL=http://127.0.0.1:5000 k6 run load/k6/smoke.js",
     "seed:admin": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedAdmin.ts",
     "seed:vehicles": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedVehicleFleet.ts",
-    "seed:pricing": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedVehiclePricing.ts"
+    "seed:pricing": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedVehiclePricing.ts",
+    "seed:drivers": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedDriverApplications.ts"
   },
   "keywords": [
     "nodejs",

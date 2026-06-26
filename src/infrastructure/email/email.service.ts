@@ -6,6 +6,15 @@ import {
   getAdminForgotPasswordEmailTemplate,
   getEmailVerificationTemplate,
 } from "@/infrastructure/email/templates/user-auth.template";
+import {
+  getDriverApplicationApprovedTemplate,
+  getDriverApplicationReceivedTemplate,
+  getDriverApplicationRejectedTemplate,
+  getDriverApplicationResubmittedTemplate,
+  getDriverApplicationUnderReviewTemplate,
+  getDriverChangesRequestedTemplate,
+  getDriverSuspendedTemplate,
+} from "@/infrastructure/email/templates/driver-onboarding.template";
 import { SendEmailOptions } from "@/modules/auth/types/email.types";
 import type { IUser } from "@/modules/auth/types/user.types";
 import type { IAdmin } from "@/modules/auth/types/admin.types";
@@ -69,6 +78,85 @@ class EmailService {
       to: user.email,
       subject: "Verify Your Email - City Airport Taxis",
       html: getEmailVerificationTemplate(user, verificationToken),
+    });
+  }
+
+  async sendDriverApplicationReceivedEmail(
+    driver: { firstName: string; email: string },
+    applicationNumber: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Application Received - City Airport Taxis",
+      html: getDriverApplicationReceivedTemplate(driver, applicationNumber),
+    });
+  }
+
+  async sendDriverApplicationUnderReviewEmail(
+    driver: { firstName: string; email: string },
+    applicationNumber: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Application Under Review - City Airport Taxis",
+      html: getDriverApplicationUnderReviewTemplate(driver, applicationNumber),
+    });
+  }
+
+  async sendDriverChangesRequestedEmail(
+    driver: { firstName: string; email: string },
+    applicationNumber: string,
+    reviewNotes: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Action Required on Your Driver Application - City Airport Taxis",
+      html: getDriverChangesRequestedTemplate(driver, applicationNumber, reviewNotes),
+    });
+  }
+
+  async sendDriverApplicationApprovedEmail(
+    driver: { firstName: string; email: string },
+    setupToken: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Application Approved - City Airport Taxis",
+      html: getDriverApplicationApprovedTemplate(driver, setupToken),
+    });
+  }
+
+  async sendDriverApplicationRejectedEmail(
+    driver: { firstName: string; email: string },
+    applicationNumber: string,
+    reviewNotes?: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Application Update - City Airport Taxis",
+      html: getDriverApplicationRejectedTemplate(driver, applicationNumber, reviewNotes),
+    });
+  }
+
+  async sendDriverApplicationResubmittedEmail(
+    driver: { firstName: string; email: string },
+    applicationNumber: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Application Resubmitted - City Airport Taxis",
+      html: getDriverApplicationResubmittedTemplate(driver, applicationNumber),
+    });
+  }
+
+  async sendDriverSuspendedEmail(
+    driver: { firstName: string; email: string; applicationNumber: string },
+    reviewNotes?: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Driver Account Suspended - City Airport Taxis",
+      html: getDriverSuspendedTemplate(driver, driver.applicationNumber, reviewNotes),
     });
   }
 

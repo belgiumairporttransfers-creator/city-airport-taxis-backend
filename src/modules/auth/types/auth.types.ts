@@ -21,9 +21,10 @@ export interface AuthListQuery {
 export const ADMIN_ACCOUNT_TYPE = "admin" as const satisfies AccountUserType;
 export const USER_ACCOUNT_TYPE = "user" as const satisfies AccountUserType;
 export const USER_ROLE = "user" as const;
+export const DRIVER_ROLE = "driver" as const;
 
-export const toUserTokenPayload = (accountId: string): TokenPayload =>
-  toTokenPayload(accountId, USER_ROLE, USER_ACCOUNT_TYPE);
+export const toUserTokenPayload = (accountId: string, role: string = USER_ROLE): TokenPayload =>
+  toTokenPayload(accountId, role, USER_ACCOUNT_TYPE);
 
 export const toTokenPayload = (
   accountId: string,

@@ -156,6 +156,70 @@ In **production**, `JWT_SECRET` and `JWT_REFRESH_SECRET` must each be at least 3
 
 Newsletter sends and resends use **Redis + BullMQ**. For local development, run Redis in Docker.
 
+
+
+# ===========================
+# FIRST TIME ONLY
+# ===========================
+
+# Install and create Redis container
+docker run -d \
+  --name city-airport-redis \
+  --restart unless-stopped \
+  -p 6379:6379 \
+  redis:7-alpine
+
+
+# ===========================
+# EVERY TIME AFTER RESTARTING YOUR PC
+# ===========================
+
+# Start Docker service (if needed)
+sudo systemctl start docker
+
+# Start Redis container
+docker start city-airport-redis
+
+# Verify Redis is running
+docker ps
+
+# Test Redis (optional)
+docker exec -it city-airport-redis redis-cli
+PING
+exit
+
+
+# ===========================
+# USEFUL COMMANDS
+# ===========================
+
+# Stop Redis
+docker stop city-airport-redis
+
+# Restart Redis
+docker restart city-airport-redis
+
+# View running containers
+docker ps
+
+# View all containers
+docker ps -a
+
+# View Redis logs
+docker logs city-airport-redis
+
+# Remove Redis container (only if you want to recreate it)
+docker stop city-airport-redis
+docker rm city-airport-redis
+
+
+# ===========================
+# START YOUR BACKEND
+# ===========================
+
+cd ~/codes/city-airport-taxis/backend
+pnpm dev
+
 **First time** (add your user to the `docker` group if needed, then log out and back in):
 
 ```bash
@@ -390,6 +454,74 @@ All JSON routes expect `Content-Type: application/json`. Protected routes requir
 | Method | Path | Auth | Description |
 | ------ | ---- | ---- | ----------- |
 | POST | `/upload` | User + CSRF | Multipart field `file` → Cloudinary URL |
+
+### Driver onboarding — `/api/drivers` (public)
+
+| Method | Path | Auth | Description |
+| ------ | ---- | ---- | ----------- |
+| POST | `/apply` | Public | Submit driver application with all required fields and document URLs |
+| GET | `/application-status/:applicationNumber` | Public | Get current application status (`reviewNotes` only when `changes_requested`) |
+| POST | `/application/:applicationNumber/resubmit` | Public | Resubmit after changes requested (`email` must match; status must be `changes_requested`) |
+| POST | `/upload-document` | Public | Multipart: `file`, `applicationNumber`, `email` → `{ url, publicId }` |
+
+**Upload rules**
+
+- Allowed file types: PDF, JPEG, PNG, WebP
+- Max file size: 10 MB
+- Application must exist, email must match, and status must be `pending`, `under_review`, or `changes_requested`
+- PDFs upload as Cloudinary `raw`; images upload as `image`
+
+**Application time fields**
+
+- `availableFrom` and `availableTo` must use 24-hour `HH:mm` format (e.g. `08:00`, `17:30`)
+
+### Driver onboarding — `/api/admin/drivers` (admin auth + CSRF)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/stats` | Application counts by status |
+| GET | `/` | Paginated list (`page`, `limit`, `search`, `status`, `sort`) |
+| GET | `/:id` | Get one application |
+| PATCH | `/:id` | Update editable fields (`pending`, `under_review`, `changes_requested` only) |
+| POST | `/:id/start-review` | Move to `under_review` |
+| POST | `/:id/request-changes` | Move to `changes_requested` with `reviewNotes` |
+| POST | `/:id/approve` | Approve, create/link user, send set-password email |
+| POST | `/:id/reject` | Reject with `reviewNotes` |
+| POST | `/:id/suspend` | Suspend approved driver |
+
+**Stats response** (`GET /stats`):
+
+```json
+{
+  "pending": 0,
+  "underReview": 0,
+  "changesRequested": 0,
+  "approved": 0,
+  "rejected": 0,
+  "suspended": 0,
+  "total": 0
+}
+```
+
+**Status lifecycle**
+
+1. `pending` — application submitted
+2. `under_review` — admin started review
+3. `changes_requested` — admin requested fixes (driver may resubmit)
+4. `approved` — admin approved; user account created with `role: driver`
+5. `rejected` — admin rejected (same email may apply again)
+6. `suspended` — admin suspended an approved driver
+
+**Approval flow**
+
+1. Admin approves application
+2. Backend creates or links a `User` with `role: driver`
+3. A 24-hour password setup token is generated
+4. Driver receives email with link to `DRIVER_PORTAL_URL/set-password?token=...`
+5. Driver sets password via `POST /api/auth/set-password`
+6. Driver logs in via `POST /api/auth/login`
+
+Set `DRIVER_PORTAL_URL` in environment for the correct set-password link (defaults to `FRONTEND_URL`).
 
 ## Password rules
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createMockRequest, createMockResponse } from "../helpers/express";
 
 const uploadServiceMock = {
-  uploadImage: vi.fn(),
+  uploadDocument: vi.fn(),
 };
 
 vi.mock("@/modules/upload/services/upload.service", () => ({
@@ -24,8 +24,8 @@ describe("upload controller", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("uploads image and returns success payload", async () => {
-    uploadServiceMock.uploadImage.mockResolvedValue({
+  it("uploads file and returns success payload", async () => {
+    uploadServiceMock.uploadDocument.mockResolvedValue({
       url: "https://cdn.example.com/a.png",
       public_id: "a",
     });
@@ -43,7 +43,7 @@ describe("upload controller", () => {
 
     await uploadController.uploadImage(req, res, next);
 
-    expect(uploadServiceMock.uploadImage).toHaveBeenCalled();
+    expect(uploadServiceMock.uploadDocument).toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
   });
 });

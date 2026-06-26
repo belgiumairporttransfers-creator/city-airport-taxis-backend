@@ -37,6 +37,7 @@ interface EnvConfig {
   JWT_REFRESH_EXPIRES_IN: string;
   FRONTEND_URL: string;
   ADMIN_FRONTEND_URL: string;
+  DRIVER_PORTAL_URL: string;
   corsOrigins: string[];
   REQUIRE_EMAIL_VERIFICATION: boolean;
   MAX_SESSIONS_PER_USER: number;
@@ -66,9 +67,11 @@ interface EnvConfig {
   NEWSLETTER_PROGRESS_UPDATE_EVERY: number;
 }
 
-const buildCorsOrigins = (frontendUrl: string, adminFrontendUrl: string): string[] => [
-  ...new Set([frontendUrl, adminFrontendUrl].filter(Boolean)),
-];
+const buildCorsOrigins = (
+  frontendUrl: string,
+  adminFrontendUrl: string,
+  driverPortalUrl: string
+): string[] => [...new Set([frontendUrl, adminFrontendUrl, driverPortalUrl].filter(Boolean))];
 
 const getEnvConfig = (): EnvConfig => {
   const isProduction = nodeEnv === "production";
@@ -163,6 +166,7 @@ const getEnvConfig = (): EnvConfig => {
 
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
   const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || "http://localhost:3001";
+  const driverPortalUrl = process.env.DRIVER_PORTAL_URL || frontendUrl;
   const sentryEnabled = sentryExplicitlyEnabled && Boolean(sentryDsn);
 
   const tracesSampleRate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.2");
@@ -206,7 +210,8 @@ const getEnvConfig = (): EnvConfig => {
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
     FRONTEND_URL: frontendUrl,
     ADMIN_FRONTEND_URL: adminFrontendUrl,
-    corsOrigins: buildCorsOrigins(frontendUrl, adminFrontendUrl),
+    DRIVER_PORTAL_URL: driverPortalUrl,
+    corsOrigins: buildCorsOrigins(frontendUrl, adminFrontendUrl, driverPortalUrl),
     REQUIRE_EMAIL_VERIFICATION: process.env.REQUIRE_EMAIL_VERIFICATION !== "false",
     MAX_SESSIONS_PER_USER: parseInt(process.env.MAX_SESSIONS_PER_USER || "10", 10),
     BCRYPT_ROUNDS: bcryptRounds,

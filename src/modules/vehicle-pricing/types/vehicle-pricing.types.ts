@@ -54,6 +54,7 @@ export interface GetVehiclePricingQuery {
   categoryId?: string;
   status?: VehiclePricingStatus;
   sort?: string;
+  search?: string;
 }
 
 export interface VehiclePricingResponse {

@@ -1,4 +1,5 @@
 import { VehiclePricing } from "@/infrastructure/database/models/VehiclePricing";
+import { VehicleCategory } from "@/infrastructure/database/models/VehicleCategory";
 import type {
   CreateVehiclePricingData,
   GetVehiclePricingQuery,
@@ -6,9 +7,42 @@ import type {
 } from "@/modules/vehicle-pricing/types/vehicle-pricing.types";
 import { distanceMatchesSlab } from "@/modules/vehicle-pricing/utils/pricing.utils";
 import APIFeature from "@/shared/utils/APIFeature";
-import type { Document, Model } from "mongoose";
+import { escapeRegex } from "@/shared/utils/escape-regex";
+import type { Document, FilterQuery, Model } from "mongoose";
 
 class VehiclePricingRepository {
+  private async buildSearchFilter(search: string): Promise<FilterQuery<Document>> {
+    const term = search.trim();
+    if (!term) {
+      return {};
+    }
+
+    const searchRegex = { $regex: escapeRegex(term), $options: "i" };
+    const orConditions: FilterQuery<Document>[] = [{ pricingType: searchRegex }];
+
+    const matchingCategories = await VehicleCategory.find({ name: searchRegex })
+      .select("_id")
+      .lean();
+
+    if (matchingCategories.length > 0) {
+      orConditions.push({
+        categoryId: { $in: matchingCategories.map((category) => category._id) },
+      });
+    }
+
+    const numericValue = Number(term);
+    if (Number.isFinite(numericValue)) {
+      orConditions.push(
+        { minDistance: numericValue },
+        { maxDistance: numericValue },
+        { priceAmount: numericValue },
+        { sortOrder: numericValue }
+      );
+    }
+
+    return { $or: orConditions };
+  }
+
   create(
     data: CreateVehiclePricingData & { createdBy?: string; updatedBy?: string }
   ) {
@@ -19,8 +53,11 @@ class VehiclePricingRepository {
     return VehiclePricing.findById(id);
   }
 
-  findWithPagination(query: GetVehiclePricingQuery) {
-    return new APIFeature(VehiclePricing as unknown as Model<Document>, query, {
+  async findWithPagination(query: GetVehiclePricingQuery) {
+    const { search, ...queryRest } = query;
+    const initialFilter = search?.trim() ? await this.buildSearchFilter(search) : undefined;
+
+    return new APIFeature(VehiclePricing as unknown as Model<Document>, queryRest, {
       pagination: { defaultLimit: 20 },
       sort: {
         defaultSort: "sortOrder,minDistance",
@@ -35,6 +72,7 @@ class VehiclePricingRepository {
         ],
       },
       filterFields: ["status", "categoryId"],
+      initialFilter,
       excludeFields: ["__v"],
       lean: true,
     }).execute();

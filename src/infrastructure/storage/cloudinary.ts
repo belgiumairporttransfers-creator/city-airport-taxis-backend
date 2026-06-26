@@ -18,28 +18,28 @@ export const uploadToCloudinary = async (
     const {
       folder = "uploads",
       resource_type = "image",
-      transformation = [
-        {
-          quality: "auto",
-          fetch_format: "auto",
-        },
-      ],
+      transformation,
       public_id,
       overwrite = true,
       invalidate = true,
     } = options;
     const base64 = file.buffer.toString("base64");
     const dataURI = `data:${file.mimetype};base64,${base64}`;
-    const result = await cloudinary.uploader.upload(dataURI, {
+    const uploadOptions: Record<string, unknown> = {
       folder,
       resource_type,
-      transformation,
       public_id,
       overwrite,
       invalidate,
-    });
+    };
 
-    logger.info(`Image uploaded successfully: ${result.public_id}`);
+    if (transformation) {
+      uploadOptions.transformation = transformation;
+    }
+
+    const result = await cloudinary.uploader.upload(dataURI, uploadOptions);
+
+    logger.info(`File uploaded successfully: ${result.public_id}`);
 
     return {
       success: true,

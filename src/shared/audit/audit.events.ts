@@ -40,6 +40,20 @@ export const AuditEvents = {
   VEHICLE_PRICING_DELETED: "vehicle-pricing.deleted",
   VEHICLE_PRICING_VALIDATED: "vehicle-pricing.validated",
 
+  // Driver applications
+  DRIVER_APPLICATION_CREATED: "driver.application.created",
+  DRIVER_APPLICATION_UPDATED: "driver.application.updated",
+  DRIVER_APPLICATION_REVIEW_STARTED: "driver.application.review.started",
+  DRIVER_APPLICATION_CHANGES_REQUESTED: "driver.application.changes.requested",
+  DRIVER_APPLICATION_APPROVED: "driver.application.approved",
+  DRIVER_APPLICATION_REJECTED: "driver.application.rejected",
+  DRIVER_APPLICATION_SUSPENDED: "driver.application.suspended",
+
+  // Notifications
+  NOTIFICATION_CREATED: "notification.created",
+  NOTIFICATION_READ: "notification.read",
+  NOTIFICATION_READ_ALL: "notification.read_all",
+
   // Security
   SECURITY_SUSPICIOUS_LOGIN: "security.suspicious_login",
   SECURITY_ACCOUNT_LOCKED: "security.account_locked",

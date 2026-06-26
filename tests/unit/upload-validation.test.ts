@@ -12,4 +12,9 @@ describe("upload validation", () => {
     expect(matchesFileSignature(pngHeader, "image/png")).toBe(true);
     expect(matchesFileSignature(pngHeader, "image/jpeg")).toBe(false);
   });
+
+  it("validates pdf signature", () => {
+    const pdfHeader = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]);
+    expect(matchesFileSignature(pdfHeader, "application/pdf")).toBe(true);
+  });
 });

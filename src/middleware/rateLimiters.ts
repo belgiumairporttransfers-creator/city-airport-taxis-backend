@@ -85,3 +85,25 @@ export const quoteRateLimiter: RequestHandler = createLimiter("vehicle-quote", {
     error: "Too many quote requests, please try again later",
   },
 });
+
+export const driverApplyLimiter: RequestHandler = createLimiter("driver-apply", {
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many driver application attempts, please try again later",
+  },
+});
+
+export const driverDocumentUploadLimiter: RequestHandler = createLimiter("driver-document-upload", {
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many document upload attempts, please try again later",
+  },
+});

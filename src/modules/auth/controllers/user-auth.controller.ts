@@ -152,6 +152,13 @@ class UserAuthController {
     });
   });
 
+  setPassword = asyncHandler(async (req: Request, res: Response) => {
+    await userAuthService.resetPassword(req.body, getAuthAuditContext(req));
+    return sendSuccess(res, undefined, {
+      message: "Password set successfully. You can now log in to the driver portal.",
+    });
+  });
+
   updateProfile = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw new AppError("Unauthorized", 401);
 

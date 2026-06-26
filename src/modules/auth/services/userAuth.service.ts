@@ -13,6 +13,7 @@ import {
   AuthAuditContext,
   USER_ACCOUNT_TYPE,
   toUserTokenPayload,
+  toTokenPayload,
 } from "@/modules/auth/types/auth.types";
 import type { ActivityStatus, ActivityType } from "@/modules/auth/types/account-auth";
 
@@ -22,7 +23,7 @@ class UserAuthService {
   }
 
   private async issueTokens(user: IUser, audit: AuthAuditContext) {
-    const tokenPayload = toUserTokenPayload(user._id.toString());
+    const tokenPayload = toTokenPayload(user._id.toString(), user.role, USER_ACCOUNT_TYPE);
     const accessToken = JwtUtil.generateAccessToken(tokenPayload);
     const refreshToken = JwtUtil.generateRefreshToken(tokenPayload);
     await authSessionService.create(user._id.toString(), USER_ACCOUNT_TYPE, refreshToken, audit);
@@ -172,7 +173,7 @@ class UserAuthService {
       const user = await userRepository.findById(userId);
       if (!user || user.status !== "active") return null;
       if (env.REQUIRE_EMAIL_VERIFICATION && !user.isVerified) return null;
-      return toUserTokenPayload(user._id.toString());
+      return toUserTokenPayload(user._id.toString(), user.role);
     });
   }
 

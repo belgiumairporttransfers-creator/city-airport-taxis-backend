@@ -1,7 +1,7 @@
 import { Document } from "mongoose";
-import { USER_ROLE } from "./auth.types";
+import { DRIVER_ROLE, USER_ROLE } from "./auth.types";
 
-export type UserRole = typeof USER_ROLE;
+export type UserRole = typeof USER_ROLE | typeof DRIVER_ROLE;
 export type UserStatus = "active" | "suspended";
 
 export interface IUser extends Document {

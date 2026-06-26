@@ -1,4 +1,9 @@
-const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+]);
 
 const MIME_SIGNATURES: Record<string, number[][]> = {
   "image/jpeg": [[0xff, 0xd8, 0xff]],
@@ -7,6 +12,7 @@ const MIME_SIGNATURES: Record<string, number[][]> = {
     [0x52, 0x49, 0x46, 0x46],
     [0x57, 0x45, 0x42, 0x50],
   ],
+  "application/pdf": [[0x25, 0x50, 0x44, 0x46]],
 };
 
 const DEFAULT_UPLOAD_FOLDER = "uploads";

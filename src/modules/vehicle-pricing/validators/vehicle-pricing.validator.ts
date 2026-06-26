@@ -131,6 +131,7 @@ export const getPricingQuerySchema = Joi.object({
     .valid(...VEHICLE_PRICING_STATUSES)
     .optional(),
   sort: Joi.string().trim().optional(),
+  search: Joi.string().trim().allow("").optional(),
 });
 
 export const getPricingQuotesQuerySchema = Joi.object({
