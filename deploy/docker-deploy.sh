@@ -23,6 +23,7 @@ if [[ -n "${IMAGE:-}" ]]; then
 else
   echo "==> Building image locally"
   export IMAGE="city-airport-taxis-backend:latest"
+  docker compose -f "${COMPOSE_FILE}" build api
 fi
 
 echo "==> Starting services"

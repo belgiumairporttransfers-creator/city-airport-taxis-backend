@@ -5,17 +5,44 @@ import { parseDurationToMs } from "./duration";
 
 const isProduction = env.NODE_ENV === "production";
 
+const getCookieDomain = (): string | undefined => {
+  if (!isProduction) return undefined;
+
+  const configured = process.env.COOKIE_DOMAIN?.trim();
+  if (configured) {
+    return configured.startsWith(".") ? configured : `.${configured}`;
+  }
+
+  try {
+    const hostname = new URL(env.DRIVER_PORTAL_URL || env.ADMIN_FRONTEND_URL).hostname;
+    if (hostname === "localhost" || hostname.endsWith(".localhost")) return undefined;
+    const parts = hostname.split(".");
+    if (parts.length >= 2) return `.${parts.slice(-2).join(".")}`;
+  } catch {
+    // ignore invalid URL
+  }
+
+  return undefined;
+};
+
+const cookieDomain = getCookieDomain();
+
 const getCookieOptions = (maxAgeInMs: number, httpOnly = true) => {
   const options: {
     httpOnly: boolean;
     secure: boolean;
     sameSite: "none" | "lax";
+    domain?: string;
     expires?: Date;
   } = {
     httpOnly,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: isProduction ? "lax" : "lax",
   };
+
+  if (cookieDomain) {
+    options.domain = cookieDomain;
+  }
 
   if (maxAgeInMs > 0) {
     options.expires = new Date(Date.now() + maxAgeInMs);
@@ -23,6 +50,13 @@ const getCookieOptions = (maxAgeInMs: number, httpOnly = true) => {
 
   return options;
 };
+
+const getClearCookieOptions = (httpOnly = true) => ({
+  httpOnly,
+  secure: isProduction,
+  sameSite: isProduction ? ("lax" as const) : ("lax" as const),
+  ...(cookieDomain ? { domain: cookieDomain } : {}),
+});
 
 const setCsrfCookie = (res: Response): void => {
   const csrfToken = generateCsrfToken();
@@ -59,23 +93,15 @@ export const setUserAuthCookies = (
 };
 
 export const clearAdminAuthCookies = (res: Response): void => {
-  const clearOptions = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? ("none" as const) : ("lax" as const),
-  };
+  const clearOptions = getClearCookieOptions(true);
   res.clearCookie("accessToken", clearOptions);
   res.clearCookie("refreshToken", clearOptions);
-  res.clearCookie("csrfToken", { ...clearOptions, httpOnly: false });
+  res.clearCookie("csrfToken", getClearCookieOptions(false));
 };
 
 export const clearUserAuthCookies = (res: Response): void => {
-  const clearOptions = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? ("none" as const) : ("lax" as const),
-  };
+  const clearOptions = getClearCookieOptions(true);
   res.clearCookie("userAccessToken", clearOptions);
   res.clearCookie("userRefreshToken", clearOptions);
-  res.clearCookie("csrfToken", { ...clearOptions, httpOnly: false });
+  res.clearCookie("csrfToken", getClearCookieOptions(false));
 };

@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors, { type CorsOptions } from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -31,7 +31,8 @@ const corsOptions: CorsOptions = {
     if (env.corsOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    logger.warn("CORS origin rejected", { origin, allowedOrigins: env.corsOrigins });
+    return callback(null, false);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-CSRF-Token"],
@@ -67,6 +68,15 @@ app.use("/api", (_req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const csrfToken = req.cookies?.csrfToken;
+  if (csrfToken) {
+    res.setHeader("X-CSRF-Token", csrfToken);
+  }
+  next();
+});
+
 app.use(compression());
 
 if (env.NODE_ENV === "development") {
