@@ -139,8 +139,9 @@ describe("Communication domain integration", () => {
     csrf = driver.csrf;
     driverUserId = driver.driverUserId;
 
-    adminAgent = request.agent(app);
-    ({ csrf, adminId } = await loginAdmin(adminAgent));
+    const adminMe = await adminAgent.get("/api/admin/auth/me");
+    expect(adminMe.status).toBe(200);
+    adminId = adminMe.body.data._id as string;
   });
 
   it("creates admin-driver conversation and sends messages", async () => {

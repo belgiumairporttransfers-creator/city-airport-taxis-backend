@@ -12,6 +12,7 @@ import { Admin } from "@/infrastructure/database/models/Admin";
 import { User } from "@/infrastructure/database/models/User";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
+import mongoose from "mongoose";
 
 const enrichActor = async (socket: AuthenticatedSocket) => {
   const actor = resolveSocketActor({
@@ -21,12 +22,14 @@ const enrichActor = async (socket: AuthenticatedSocket) => {
   });
 
   if (socket.data.type === "admin") {
-    const admin = await Admin.findById(socket.data.userId).lean();
-    if (admin) {
-      actor.displayName = `${admin.firstName} ${admin.lastName}`.trim();
-      actor.avatarUrl = admin.avatar;
+    if (mongoose.Types.ObjectId.isValid(socket.data.userId)) {
+      const admin = await Admin.findById(socket.data.userId).lean();
+      if (admin) {
+        actor.displayName = `${admin.firstName} ${admin.lastName}`.trim();
+        actor.avatarUrl = admin.avatar;
+      }
     }
-  } else {
+  } else if (mongoose.Types.ObjectId.isValid(socket.data.userId)) {
     const user = await User.findById(socket.data.userId).lean();
     if (user) {
       actor.displayName = `${user.firstName} ${user.lastName}`.trim();
@@ -39,19 +42,23 @@ const enrichActor = async (socket: AuthenticatedSocket) => {
 };
 
 export const registerCommunicationHandlers = (socket: AuthenticatedSocket): void => {
-  void enrichActor(socket).then(async (actor) => {
-    await presenceService.handleConnect(actor.accountType, actor.accountId);
+  void enrichActor(socket)
+    .then(async (actor) => {
+      await presenceService.handleConnect(actor.accountType, actor.accountId);
 
-    await communicationPubSub.publish({
-      event: "user:online",
-      payload: {
-        accountType: actor.accountType,
-        accountId: actor.accountId,
-      },
-      recipientAccountType: actor.accountType,
-      recipientAccountIds: [actor.accountId],
+      await communicationPubSub.publish({
+        event: "user:online",
+        payload: {
+          accountType: actor.accountType,
+          accountId: actor.accountId,
+        },
+        recipientAccountType: actor.accountType,
+        recipientAccountIds: [actor.accountId],
+      });
+    })
+    .catch((error) => {
+      logger.warn("Failed to initialize communication socket presence", { error });
     });
-  });
 
   socket.on("conversation:join", async (payload: { conversationId?: string }, callback) => {
     try {
@@ -209,19 +216,23 @@ export const registerCommunicationHandlers = (socket: AuthenticatedSocket): void
   });
 
   socket.on("disconnect", () => {
-    void enrichActor(socket).then(async (actor) => {
-      const result = await presenceService.handleDisconnect(actor.accountType, actor.accountId);
+    void enrichActor(socket)
+      .then(async (actor) => {
+        const result = await presenceService.handleDisconnect(actor.accountType, actor.accountId);
 
-      await communicationPubSub.publish({
-        event: "user:offline",
-        payload: {
-          accountType: actor.accountType,
-          accountId: actor.accountId,
-          lastSeenAt: result.lastSeenAt,
-        },
-        recipientAccountType: actor.accountType,
-        recipientAccountIds: [actor.accountId],
+        await communicationPubSub.publish({
+          event: "user:offline",
+          payload: {
+            accountType: actor.accountType,
+            accountId: actor.accountId,
+            lastSeenAt: result.lastSeenAt,
+          },
+          recipientAccountType: actor.accountType,
+          recipientAccountIds: [actor.accountId],
+        });
+      })
+      .catch((error) => {
+        logger.warn("Failed to finalize communication socket presence", { error });
       });
-    });
   });
 };

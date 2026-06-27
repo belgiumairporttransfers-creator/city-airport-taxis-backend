@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { Types } from "mongoose";
 import { handleConnection } from "@/infrastructure/socket/handlers/connection.handler";
 import type { AuthenticatedSocket } from "@/infrastructure/socket/types/socket.types";
 
@@ -16,6 +17,15 @@ vi.mock("@/infrastructure/socket/registry/online-users.registry", () => ({
   },
 }));
 
+vi.mock("@/modules/communication/socket/communication.handlers", () => ({
+  registerCommunicationHandlers: vi.fn(),
+}));
+
+const flushPromises = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
 describe("handleConnection", () => {
   beforeEach(() => {
     registerMock.mockClear();
@@ -24,9 +34,10 @@ describe("handleConnection", () => {
 
   it("registers socket and handles disconnect", async () => {
     const listeners: Record<string, (...args: unknown[]) => void> = {};
+    const userId = new Types.ObjectId().toString();
     const socket = {
       id: "sock-1",
-      data: { userId: "user-1", type: "user", role: "user" },
+      data: { userId, type: "user", role: "user" },
       join: vi.fn(),
       on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
         listeners[event] = handler;
@@ -35,12 +46,12 @@ describe("handleConnection", () => {
 
     handleConnection(socket);
 
-    await Promise.resolve();
-    expect(registerMock).toHaveBeenCalledWith("user-1", "sock-1");
+    await flushPromises();
+    expect(registerMock).toHaveBeenCalledWith(userId, "sock-1");
     expect(socket.join).toHaveBeenCalled();
 
     listeners.disconnect("client disconnect");
-    await Promise.resolve();
+    await flushPromises();
     expect(unregisterMock).toHaveBeenCalledWith("sock-1");
   });
 });

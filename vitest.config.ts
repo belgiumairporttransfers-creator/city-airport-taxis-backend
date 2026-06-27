@@ -37,6 +37,7 @@ export default defineConfig({
       },
     },
     env: {
+      NODE_ENV: "test",
       REDIS_ENABLED: "false",
       SOCKET_ENABLED: "false",
       JWT_SECRET: "test-jwt-secret-minimum-32-characters-long",

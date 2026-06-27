@@ -42,22 +42,26 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 
-const rateLimitStore = createRateLimitStore("global");
+const isTestEnv = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
 
-const limiter = rateLimit({
-  windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX_REQUESTS,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    error: "Too many requests from this IP, please try again later.",
-    errorCode: "RATE_LIMIT_EXCEEDED",
-  },
-  ...(rateLimitStore ? { store: rateLimitStore } : {}),
-});
+if (!isTestEnv) {
+  const rateLimitStore = createRateLimitStore("global");
 
-app.use("/api/", limiter);
+  const limiter = rateLimit({
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    max: env.RATE_LIMIT_MAX_REQUESTS,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      error: "Too many requests from this IP, please try again later.",
+      errorCode: "RATE_LIMIT_EXCEEDED",
+    },
+    ...(rateLimitStore ? { store: rateLimitStore } : {}),
+  });
+
+  app.use("/api/", limiter);
+}
 
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
