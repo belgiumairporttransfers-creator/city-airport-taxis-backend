@@ -21,6 +21,7 @@ import type {
 import {
   DRIVER_DOCUMENT_FIELDS,
   DRIVER_EDITABLE_STATUSES,
+  DRIVER_PORTAL_EDITABLE_STATUSES,
   DRIVER_UPLOAD_ALLOWED_STATUSES,
 } from "@/modules/drivers/types/driver.types";
 import uploadService from "@/modules/upload/services/upload.service";
@@ -157,8 +158,10 @@ class DriverService {
     lastName: string;
     email: string;
     phone: string;
+    profilePhoto?: string;
   }) {
     const email = normalizeEmail(application.email);
+    const profilePhoto = application.profilePhoto?.trim() || undefined;
     let user = await userRepository.findByEmail(email);
 
     if (user) {
@@ -168,6 +171,9 @@ class DriverService {
       user.phoneNumber = application.phone;
       user.status = "active";
       user.isVerified = true;
+      if (profilePhoto && !user.avatar?.trim()) {
+        user.avatar = profilePhoto;
+      }
       await userRepository.save(user);
       return user;
     }
@@ -183,6 +189,7 @@ class DriverService {
       role: DRIVER_ROLE,
       status: "active",
       isVerified: true,
+      avatar: profilePhoto,
     });
 
     return user;
@@ -395,6 +402,133 @@ class DriverService {
 
   async getApplication(id: string) {
     return this.getApplicationOrThrow(id);
+  }
+
+  async getApplicationForUser(userId: string) {
+    const application = await driverRepository.findByUserId(userId);
+
+    if (!application) {
+      throw new AppError("Driver application not found", 404);
+    }
+
+    return application;
+  }
+
+  async updateApplicationForUser(userId: string, data: UpdateDriverApplicationData) {
+    const application = await driverRepository.findByUserId(userId);
+
+    if (!application) {
+      throw new AppError("Driver application not found", 404);
+    }
+
+    if (
+      !(DRIVER_PORTAL_EDITABLE_STATUSES as readonly string[]).includes(application.status)
+    ) {
+      throw new AppError("This application cannot be edited", 409);
+    }
+
+    const updatePayload: UpdateDriverApplicationData & Record<string, unknown> = {
+      ...data,
+      ...(data.licensePlate
+        ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) }
+        : {}),
+      ...(data.documents
+        ? { documents: this.mergeDocuments(application.documents, data.documents) }
+        : {}),
+    };
+
+    const updated = await driverRepository.updateById(
+      application._id.toString(),
+      updatePayload
+    );
+
+    if (!updated) {
+      throw new AppError("Driver application not found", 404);
+    }
+
+    if (application.userId) {
+      const user = await userRepository.findById(application.userId.toString());
+
+      if (user) {
+        if (data.firstName) {
+          user.firstName = data.firstName;
+        }
+        if (data.lastName) {
+          user.lastName = data.lastName;
+        }
+        if (data.phone) {
+          user.phoneNumber = data.phone;
+        }
+        if (data.profilePhoto?.trim()) {
+          user.avatar = data.profilePhoto.trim();
+        }
+        await userRepository.save(user);
+      }
+    }
+
+    this.logDriverAudit(
+      AuditEvents.DRIVER_APPLICATION_UPDATED,
+      userId,
+      "user",
+      application._id.toString(),
+      {
+        applicationNumber: updated.applicationNumber,
+        status: updated.status,
+        source: "driver-portal",
+      }
+    );
+
+    const driverName = `${updated.firstName} ${updated.lastName}`;
+
+    if (data.documents) {
+      const mergedDocuments = this.mergeDocuments(application.documents, data.documents);
+      const documentsChanged =
+        JSON.stringify(this.toPlainDocuments(application.documents)) !==
+        JSON.stringify(mergedDocuments);
+
+      if (documentsChanged) {
+        await this.notifyAdminsAboutDriver(updated, {
+          title: "Driver Documents Updated",
+          message: `${driverName} updated their license and document uploads.`,
+          type: "driver.application.documents_updated",
+          severity: "info",
+        });
+      }
+    }
+
+    const vehicleChanged = (
+      [
+        "carType",
+        "carColor",
+        "licensePlate",
+        "carYearModel",
+        "shiftType",
+        "availableFrom",
+        "availableTo",
+      ] as const
+    ).some((field) => {
+      if (data[field] === undefined) {
+        return false;
+      }
+
+      const nextValue =
+        field === "licensePlate"
+          ? this.normalizeLicensePlate(data.licensePlate!)
+          : data[field];
+
+      return application[field] !== nextValue;
+    });
+
+    if (vehicleChanged) {
+      await this.notifyAdminsAboutDriver(updated, {
+        title: "Vehicle Information Updated",
+        message: `${driverName} updated their vehicle information.`,
+        type: "driver.application.vehicle_updated",
+        severity: "info",
+      });
+    }
+
+    return updated;
   }
 
   async updateApplication(id: string, data: UpdateDriverApplicationData, adminId: string) {

@@ -34,7 +34,9 @@ export const resetPasswordSchema = Joi.object({
   token: Joi.string().required().messages({
     "any.required": "Reset token is required",
   }),
-  password: strongPasswordSchema,
+  password: Joi.string().required().messages({
+    "any.required": "Password is required",
+  }),
 });
 
 export const updateProfileSchema = Joi.object({

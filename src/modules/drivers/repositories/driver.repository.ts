@@ -79,6 +79,10 @@ class DriverRepository {
     });
   }
 
+  findByUserId(userId: string) {
+    return DriverApplication.findOne({ userId }).sort({ updatedAt: -1 });
+  }
+
   findWithPagination(query: GetDriverApplicationsQuery) {
     return new APIFeature(DriverApplication, query, {
       pagination: { defaultLimit: 20 },

@@ -517,7 +517,7 @@ All JSON routes expect `Content-Type: application/json`. Protected routes requir
 1. Admin approves application
 2. Backend creates or links a `User` with `role: driver`
 3. A 24-hour password setup token is generated
-4. Driver receives email with link to `DRIVER_PORTAL_URL/set-password?token=...`
+4. Driver receives email with link to `DRIVER_PORTAL_URL/auth/set-password?token=...&email=...`
 5. Driver sets password via `POST /api/auth/set-password`
 6. Driver logs in via `POST /api/auth/login`
 

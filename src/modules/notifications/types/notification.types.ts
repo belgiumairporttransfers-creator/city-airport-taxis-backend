@@ -81,8 +81,17 @@ export type NotificationSocketEvent =
   | "notification:read"
   | "notification:all-read";
 
-/** Admin bell / notification center only surfaces new driver application alerts. */
-export const ADMIN_DRIVER_APPLICATION_NOTIFICATION_TYPE = "driver.application.submitted";
+/** Admin bell / notification center surfaces driver application lifecycle alerts. */
+export const ADMIN_DRIVER_NOTIFICATION_TYPES = [
+  "driver.application.submitted",
+  "driver.application.documents_updated",
+  "driver.application.vehicle_updated",
+] as const;
+
+export type AdminDriverNotificationType = (typeof ADMIN_DRIVER_NOTIFICATION_TYPES)[number];
+
+/** @deprecated Use ADMIN_DRIVER_NOTIFICATION_TYPES */
+export const ADMIN_DRIVER_APPLICATION_NOTIFICATION_TYPE = ADMIN_DRIVER_NOTIFICATION_TYPES[0];
 
 export interface NotificationPubSubMessage {
   event: NotificationSocketEvent;

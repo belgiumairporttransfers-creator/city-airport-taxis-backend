@@ -17,6 +17,13 @@ export const DRIVER_EDITABLE_STATUSES = [
   "changes_requested",
 ] as const;
 
+export const DRIVER_PORTAL_EDITABLE_STATUSES = [
+  "pending",
+  "under_review",
+  "changes_requested",
+  "approved",
+] as const;
+
 export const DRIVER_UPLOAD_ALLOWED_STATUSES = [
   "pending",
   "under_review",

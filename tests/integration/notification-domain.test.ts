@@ -553,11 +553,27 @@ describe("Notification domain integration", () => {
       expect(notifications).toHaveLength(0);
     });
 
-    it("returns only new driver application notifications to admin", async () => {
+    it("returns only driver application notifications to admin", async () => {
       await notificationService.create({
         title: "New Driver Application",
         message: "Visible driver application alert",
         type: "driver.application.submitted",
+        entityType: "driver",
+        recipientType: "admin",
+        recipientIds: [adminId],
+      });
+      await notificationService.create({
+        title: "Driver Documents Updated",
+        message: "Visible documents update alert",
+        type: "driver.application.documents_updated",
+        entityType: "driver",
+        recipientType: "admin",
+        recipientIds: [adminId],
+      });
+      await notificationService.create({
+        title: "Vehicle Information Updated",
+        message: "Visible vehicle update alert",
+        type: "driver.application.vehicle_updated",
         entityType: "driver",
         recipientType: "admin",
         recipientIds: [adminId],
@@ -574,7 +590,15 @@ describe("Notification domain integration", () => {
       const response = await adminAgent.get("/api/admin/notifications").set(csrf);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.items.every((item: { type: string }) => item.type === "driver.application.submitted")).toBe(true);
+      expect(
+        response.body.data.items.every((item: { type: string }) =>
+          [
+            "driver.application.submitted",
+            "driver.application.documents_updated",
+            "driver.application.vehicle_updated",
+          ].includes(item.type)
+        )
+      ).toBe(true);
       expect(response.body.data.items.some((item: { title: string }) => item.title === "Driver Approved")).toBe(false);
     });
   });

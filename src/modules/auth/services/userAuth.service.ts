@@ -9,8 +9,10 @@ import authLockoutService from "./auth-lockout.service";
 import { normalizeEmail } from "@/modules/auth/utils/email";
 import { env } from "@/config/env";
 import userRepository from "@/modules/auth/repositories/user.repository";
+import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import {
   AuthAuditContext,
+  DRIVER_ROLE,
   USER_ACCOUNT_TYPE,
   toUserTokenPayload,
   toTokenPayload,
@@ -20,6 +22,23 @@ import type { ActivityStatus, ActivityType } from "@/modules/auth/types/account-
 class UserAuthService {
   async findUserById(id: string) {
     return userRepository.findById(id);
+  }
+
+  async getProfileResponse(user: IUser) {
+    const profile = user.toObject();
+
+    if (user.role === DRIVER_ROLE && !profile.avatar?.trim()) {
+      const application = await driverRepository.findByUserId(user._id.toString());
+      const profilePhoto = application?.profilePhoto?.trim();
+
+      if (profilePhoto) {
+        profile.avatar = profilePhoto;
+        user.avatar = profilePhoto;
+        await userRepository.save(user);
+      }
+    }
+
+    return profile;
   }
 
   private async issueTokens(user: IUser, audit: AuthAuditContext) {

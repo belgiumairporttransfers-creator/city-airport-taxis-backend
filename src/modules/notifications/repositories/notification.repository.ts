@@ -18,11 +18,21 @@ class NotificationRepository {
     return Notification.findById(id);
   }
 
-  findByRecipient(recipientId: string, query: GetNotificationsQuery, type?: string) {
+  findByRecipient(
+    recipientId: string,
+    query: GetNotificationsQuery,
+    type?: string | string[]
+  ) {
+    const typeFilter = type
+      ? Array.isArray(type)
+        ? { type: { $in: type } }
+        : { type }
+      : {};
+
     return new APIFeature(Notification, query, {
       initialFilter: {
         recipientIds: recipientId,
-        ...(type ? { type } : {}),
+        ...typeFilter,
       },
       pagination: { defaultLimit: 20 },
       sort: {
@@ -38,11 +48,17 @@ class NotificationRepository {
     }).execute();
   }
 
-  countUnread(recipientId: string, type?: string) {
+  countUnread(recipientId: string, type?: string | string[]) {
+    const typeFilter = type
+      ? Array.isArray(type)
+        ? { type: { $in: type } }
+        : { type }
+      : {};
+
     return Notification.countDocuments({
       recipientIds: recipientId,
       isRead: false,
-      ...(type ? { type } : {}),
+      ...typeFilter,
     });
   }
 
@@ -54,12 +70,18 @@ class NotificationRepository {
     );
   }
 
-  markAllAsRead(recipientId: string, type?: string) {
+  markAllAsRead(recipientId: string, type?: string | string[]) {
+    const typeFilter = type
+      ? Array.isArray(type)
+        ? { type: { $in: type } }
+        : { type }
+      : {};
+
     return Notification.updateMany(
       {
         recipientIds: recipientId,
         isRead: false,
-        ...(type ? { type } : {}),
+        ...typeFilter,
       },
       { isRead: true, readAt: new Date() }
     );

@@ -50,7 +50,8 @@ class UserAuthController {
     );
 
     setUserAuthCookies(res, accessToken, refreshToken, req.body.rememberMe);
-    return sendSuccess(res, user.toObject(), { message: "Authentication successful" });
+    const profile = await userAuthService.getProfileResponse(user);
+    return sendSuccess(res, profile, { message: "Authentication successful" });
   });
 
   refresh = asyncHandler(async (req: Request, res: Response) => {
@@ -135,7 +136,9 @@ class UserAuthController {
   getMe = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw new AppError("Unauthorized", 401);
 
-    return sendSuccess(res, req.user.toObject());
+    const profile = await userAuthService.getProfileResponse(req.user);
+
+    return sendSuccess(res, profile);
   });
 
   forgotPassword = asyncHandler(async (req: Request, res: Response) => {
@@ -168,7 +171,9 @@ class UserAuthController {
       getAuthAuditContext(req)
     );
 
-    return sendSuccess(res, user.toObject(), { message: "Profile updated successfully" });
+    const profile = await userAuthService.getProfileResponse(user);
+
+    return sendSuccess(res, profile, { message: "Profile updated successfully" });
   });
 }
 
