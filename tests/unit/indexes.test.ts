@@ -2,8 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { ensureDatabaseIndexes } from "@/infrastructure/database/indexes/indexes";
 
 const syncIndexes = vi.fn().mockResolvedValue(undefined);
+const dropIndex = vi.fn().mockResolvedValue(undefined);
 
 const mockModel = () => ({ syncIndexes });
+
+const mockMessageModel = () => ({
+  syncIndexes,
+  collection: { dropIndex },
+});
 
 vi.mock("@/infrastructure/database/models/User", () => ({ User: mockModel() }));
 vi.mock("@/infrastructure/database/models/Admin", () => ({ Admin: mockModel() }));
@@ -32,10 +38,30 @@ vi.mock("@/infrastructure/database/models/VehiclePricing", () => ({
 vi.mock("@/infrastructure/database/models/DriverApplication", () => ({
   DriverApplication: mockModel(),
 }));
+vi.mock("@/infrastructure/database/models/Conversation", () => ({
+  Conversation: mockModel(),
+}));
+vi.mock("@/infrastructure/database/models/Message", () => ({
+  Message: mockMessageModel(),
+}));
+vi.mock("@/infrastructure/database/models/MessageAttachment", () => ({
+  MessageAttachment: mockModel(),
+}));
+vi.mock("@/infrastructure/database/models/CallSession", () => ({
+  CallSession: mockModel(),
+}));
+vi.mock("@/infrastructure/database/models/Notification", () => ({
+  Notification: mockModel(),
+}));
 
 describe("ensureDatabaseIndexes", () => {
   it("syncs indexes for all models", async () => {
+    syncIndexes.mockClear();
+    dropIndex.mockClear();
+
     await ensureDatabaseIndexes();
-    expect(syncIndexes).toHaveBeenCalledTimes(15);
+
+    expect(dropIndex).toHaveBeenCalledWith("clientMessageId_1");
+    expect(syncIndexes).toHaveBeenCalledTimes(20);
   });
 });
