@@ -1,12 +1,12 @@
 import { Response } from "express";
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
   errorCode?: string;
-  options?: any;
+  options?: Record<string, unknown>;
   meta?: {
     page?: number;
     limit?: number;
@@ -24,14 +24,14 @@ export interface PaginationMeta {
   pages: number;
 }
 
-export const sendSuccess = <T = any>(
+export const sendSuccess = <T = unknown>(
   res: Response,
   data?: T,
   options?: {
     message?: string;
     statusCode?: number;
     meta?: PaginationMeta;
-    options?: any;
+    options?: Record<string, unknown>;
   }
 ): Response => {
   const response: ApiResponse<T> = {

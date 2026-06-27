@@ -67,7 +67,10 @@ class ParticipantService {
       if (target.accountType === "admin") {
         throw new AppError("Admin-to-admin conversations are not supported in Phase 1", 403);
       }
-      throw new AppError("Admins can only start conversations with approved drivers in Phase 1", 403);
+      throw new AppError(
+        "Admins can only start conversations with approved drivers in Phase 1",
+        403
+      );
     }
 
     throw new AppError("You are not allowed to create conversations", 403);

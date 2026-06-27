@@ -103,7 +103,11 @@ class CommunicationController {
   listAttachments = asyncHandler(async (req: Request, res: Response) => {
     if (req.user) this.assertDriverIfPortal(req);
     const actor = resolveActorFromRequest(req);
-    const result = await attachmentService.listByConversation(actor, req.params.id, req.query as never);
+    const result = await attachmentService.listByConversation(
+      actor,
+      req.params.id,
+      req.query as never
+    );
     return sendSuccess(res, {
       items: result.data.map((item) => toAttachmentResponse(item)),
       page: result.page,

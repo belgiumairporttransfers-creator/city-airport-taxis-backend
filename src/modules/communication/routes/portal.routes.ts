@@ -67,7 +67,11 @@ portalCommunicationRoutes.delete(
   communicationController.deleteMessage
 );
 portalCommunicationRoutes.get("/unread-count", communicationController.getUnreadCount);
-portalCommunicationRoutes.get("/search", validateQuery(searchQuerySchema), communicationController.search);
+portalCommunicationRoutes.get(
+  "/search",
+  validateQuery(searchQuerySchema),
+  communicationController.search
+);
 portalCommunicationRoutes.post(
   "/attachments/upload",
   communicationUploadSingle,

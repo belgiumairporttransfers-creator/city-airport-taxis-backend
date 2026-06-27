@@ -12,14 +12,7 @@ export type ParticipantRole = (typeof PARTICIPANT_ROLES)[number];
 export const PRESENCE_STATUSES = ["online", "offline", "away", "busy"] as const;
 export type PresenceStatus = (typeof PRESENCE_STATUSES)[number];
 
-export const MESSAGE_TYPES = [
-  "text",
-  "image",
-  "document",
-  "voice",
-  "location",
-  "system",
-] as const;
+export const MESSAGE_TYPES = ["text", "image", "document", "voice", "location", "system"] as const;
 export type MessageType = (typeof MESSAGE_TYPES)[number];
 
 export const MESSAGE_STATUSES = ["sent", "delivered", "seen"] as const;

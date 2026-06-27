@@ -8,7 +8,7 @@ export interface UploadResult {
 export interface UploadOptions {
   folder?: string;
   resource_type?: "image" | "video" | "raw" | "auto";
-  transformation?: any[];
+  transformation?: Record<string, unknown>[];
   public_id?: string;
   overwrite?: boolean;
   invalidate?: boolean;

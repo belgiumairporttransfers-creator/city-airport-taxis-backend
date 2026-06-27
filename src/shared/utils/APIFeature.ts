@@ -57,14 +57,14 @@ export interface PaginatedResult<T> {
 
 class APIFeature<T extends Document> {
   private query: Query<T[], T>;
-  private queryString: Record<string, any>;
+  private queryString: Record<string, unknown>;
   private filterQuery: FilterQuery<T> = {};
   private defaultLimit: number;
   private maxLimit: number;
   private options?: APIFeatureOptions;
 
-  constructor(model: Model<T>, queryString: Record<string, any>, options?: APIFeatureOptions) {
-    this.queryString = queryString;
+  constructor(model: Model<T>, queryString: object, options?: APIFeatureOptions) {
+    this.queryString = queryString as Record<string, unknown>;
     this.query = model.find();
     this.defaultLimit = options?.pagination?.defaultLimit || PAGINATION.DEFAULT_LIMIT;
     this.maxLimit = options?.pagination?.maxLimit || PAGINATION.MAX_LIMIT;
@@ -101,8 +101,8 @@ class APIFeature<T extends Document> {
     // Apply search
     if (this.options.search) {
       const searchFields = this.options.search.searchFields || [];
-      const searchTerm = this.options.search.search || this.queryString.search;
-      if (searchFields.length > 0) {
+      const searchTerm = this.options.search.search || this.getQueryString("search");
+      if (searchFields.length > 0 && searchTerm) {
         this.search(searchFields, searchTerm);
       }
     }
@@ -144,23 +144,14 @@ class APIFeature<T extends Document> {
 
       const value = this.queryString[field];
       if (value !== undefined && value !== null && value !== "") {
-        // Handle ObjectId fields
-        if (this.isValidObjectId(value)) {
-          this.filterQuery[field as keyof FilterQuery<T>] = value as any;
-        }
-        // Handle boolean strings
-        else if (value === "true" || value === "false") {
-          this.filterQuery[field as keyof FilterQuery<T>] = (value === "true") as any;
-        }
-        // Handle array values (comma-separated)
-        else if (typeof value === "string" && value.includes(",")) {
-          this.filterQuery[field as keyof FilterQuery<T>] = {
-            $in: value.split(","),
-          } as any;
-        }
-        // Regular field match
-        else {
-          this.filterQuery[field as keyof FilterQuery<T>] = value as any;
+        if (typeof value === "string" && this.isValidObjectId(value)) {
+          this.setFilterField(field, value);
+        } else if (value === "true" || value === "false") {
+          this.setFilterField(field, value === "true");
+        } else if (typeof value === "string" && value.includes(",")) {
+          this.setFilterField(field, { $in: value.split(",") });
+        } else {
+          this.setFilterField(field, value);
         }
       }
     });
@@ -174,18 +165,18 @@ class APIFeature<T extends Document> {
    * Example: ?startDate=2024-01-01&endDate=2024-12-31
    */
   dateRange(field: string, startDate?: string | Date, endDate?: string | Date): this {
-    const start = startDate || this.queryString.startDate;
-    const end = endDate || this.queryString.endDate;
+    const start = startDate ?? this.getQueryString("startDate");
+    const end = endDate ?? this.getQueryString("endDate");
 
     if (start || end) {
-      const dateFilter: any = {};
+      const dateFilter: { $gte?: Date; $lte?: Date } = {};
       if (start) {
         dateFilter.$gte = new Date(start);
       }
       if (end) {
         dateFilter.$lte = new Date(end);
       }
-      this.filterQuery[field as keyof FilterQuery<T>] = dateFilter as any;
+      this.setFilterField(field, dateFilter);
       this.query = this.query.find(this.filterQuery);
     }
 
@@ -197,7 +188,7 @@ class APIFeature<T extends Document> {
    * Example: ?search=john
    */
   search(searchFields: string[], searchTerm?: string): this {
-    const search = searchTerm || this.queryString.search;
+    const search = searchTerm || this.getQueryString("search");
 
     if (search && searchFields.length > 0) {
       const searchRegex = { $regex: escapeRegex(search), $options: "i" };
@@ -205,11 +196,11 @@ class APIFeature<T extends Document> {
         [field]: searchRegex,
       }));
 
-      // If filterQuery already has $or, merge conditions
       if (this.filterQuery.$or) {
-        this.filterQuery.$or = [...(this.filterQuery.$or as any[]), ...orConditions];
+        const existingOr = Array.isArray(this.filterQuery.$or) ? this.filterQuery.$or : [];
+        this.filterQuery.$or = [...existingOr, ...orConditions] as FilterQuery<T>["$or"];
       } else {
-        this.filterQuery.$or = orConditions as any;
+        this.filterQuery.$or = orConditions as FilterQuery<T>["$or"];
       }
 
       this.query = this.query.find(this.filterQuery);
@@ -224,7 +215,7 @@ class APIFeature<T extends Document> {
    * Default: -createdAt (newest first)
    */
   sort(defaultSort: string = "-createdAt"): this {
-    const sortBy = this.queryString.sort || defaultSort;
+    const sortBy = this.getQueryString("sort") || defaultSort;
     const allowedFields = this.options?.sort?.allowedFields;
     const sortFields = sortBy
       .split(",")
@@ -257,8 +248,9 @@ class APIFeature<T extends Document> {
    * Example: ?fields=name,email,phone
    */
   limitFields(): this {
-    if (this.queryString.fields) {
-      const fields = this.queryString.fields.split(",").join(" ");
+    const fieldsValue = this.getQueryString("fields");
+    if (fieldsValue) {
+      const fields = fieldsValue.split(",").join(" ");
       this.query = this.query.select(fields);
     }
     return this;
@@ -297,8 +289,11 @@ class APIFeature<T extends Document> {
    * Example: ?page=1&limit=10
    */
   paginate(): this {
-    const page = parseInt(this.queryString.page) || 1;
-    const limit = Math.min(parseInt(this.queryString.limit) || this.defaultLimit, this.maxLimit);
+    const page = parseInt(this.getQueryString("page") ?? "1", 10) || 1;
+    const limit = Math.min(
+      parseInt(this.getQueryString("limit") ?? String(this.defaultLimit), 10) || this.defaultLimit,
+      this.maxLimit
+    );
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);
@@ -309,8 +304,11 @@ class APIFeature<T extends Document> {
    * Execute query and return paginated results
    */
   async execute(): Promise<PaginatedResult<T>> {
-    const page = parseInt(this.queryString.page) || 1;
-    const limit = Math.min(parseInt(this.queryString.limit) || this.defaultLimit, this.maxLimit);
+    const page = parseInt(this.getQueryString("page") ?? "1", 10) || 1;
+    const limit = Math.min(
+      parseInt(this.getQueryString("limit") ?? String(this.defaultLimit), 10) || this.defaultLimit,
+      this.maxLimit
+    );
 
     // Clone the query for counting
     const countQuery = this.query.model.find(this.filterQuery);
@@ -364,6 +362,17 @@ class APIFeature<T extends Document> {
    */
   private isValidObjectId(id: string): boolean {
     return /^[0-9a-fA-F]{24}$/.test(id);
+  }
+
+  private getQueryString(key: string): string | undefined {
+    const value = this.queryString[key];
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    return undefined;
+  }
+
+  private setFilterField(field: string, value: unknown): void {
+    (this.filterQuery as Record<string, unknown>)[field] = value;
   }
 }
 

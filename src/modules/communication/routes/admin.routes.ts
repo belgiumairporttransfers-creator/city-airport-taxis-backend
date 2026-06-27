@@ -64,7 +64,11 @@ adminCommunicationRoutes.delete(
   communicationController.deleteMessage
 );
 adminCommunicationRoutes.get("/unread-count", communicationController.getUnreadCount);
-adminCommunicationRoutes.get("/search", validateQuery(searchQuerySchema), communicationController.search);
+adminCommunicationRoutes.get(
+  "/search",
+  validateQuery(searchQuerySchema),
+  communicationController.search
+);
 adminCommunicationRoutes.post(
   "/attachments/upload",
   communicationUploadSingle,

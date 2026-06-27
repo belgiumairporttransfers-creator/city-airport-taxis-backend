@@ -8,7 +8,12 @@ import {
 
 const messageSchema = new Schema<IMessage>(
   {
-    conversationId: { type: Schema.Types.ObjectId, ref: "Conversation", required: true, index: true },
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Conversation",
+      required: true,
+      index: true,
+    },
     senderAccountType: { type: String, enum: PARTICIPANT_ACCOUNT_TYPES, required: true },
     senderAccountId: { type: String, required: true, index: true },
     type: { type: String, enum: MESSAGE_TYPES, required: true },

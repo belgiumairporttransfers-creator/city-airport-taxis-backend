@@ -44,7 +44,10 @@ class CallService {
       throw new AppError("Recipient is busy on another call", 409);
     }
 
-    const callerBusy = await callRepository.findActiveByParticipant(actor.accountType, actor.accountId);
+    const callerBusy = await callRepository.findActiveByParticipant(
+      actor.accountType,
+      actor.accountId
+    );
     if (callerBusy) {
       throw new AppError("You are already on a call", 409);
     }
@@ -162,7 +165,10 @@ class CallService {
   async accept(callId: string, actor: CommunicationActor) {
     const call = await this.assertCallParticipant(callId, actor);
 
-    if (call.receiverAccountId !== actor.accountId || call.receiverAccountType !== actor.accountType) {
+    if (
+      call.receiverAccountId !== actor.accountId ||
+      call.receiverAccountType !== actor.accountType
+    ) {
       throw new AppError("Only the receiver can accept this call", 403);
     }
 
@@ -172,7 +178,9 @@ class CallService {
 
     this.clearRingTimeout(callId);
 
-    const updated = await callRepository.updateStatus(callId, "accepted", { answeredAt: new Date() });
+    const updated = await callRepository.updateStatus(callId, "accepted", {
+      answeredAt: new Date(),
+    });
     const dto = toCallSessionResponse(updated!);
 
     await communicationPubSub.publish({

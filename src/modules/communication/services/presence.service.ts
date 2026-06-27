@@ -1,6 +1,9 @@
 import { RedisClient } from "@/infrastructure/redis/client";
 import { onlineUsersRegistry } from "@/infrastructure/socket/registry/online-users.registry";
-import type { ParticipantAccountType, PresenceStatus } from "@/modules/communication/types/communication.types";
+import type {
+  ParticipantAccountType,
+  PresenceStatus,
+} from "@/modules/communication/types/communication.types";
 
 const presenceKey = (accountType: ParticipantAccountType, accountId: string) =>
   `comm:presence:${accountType}:${accountId}`;
@@ -39,7 +42,10 @@ class PresenceService {
       const data = await client.hGetAll(presenceKey(accountType, accountId));
       if (data.status && data.lastSeenAt) {
         const status = (online ? data.status : "offline") as PresenceStatus;
-        return { status: status === "offline" && online ? "online" : status, lastSeenAt: data.lastSeenAt };
+        return {
+          status: status === "offline" && online ? "online" : status,
+          lastSeenAt: data.lastSeenAt,
+        };
       }
     }
 

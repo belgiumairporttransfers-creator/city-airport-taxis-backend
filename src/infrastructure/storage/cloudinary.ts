@@ -46,8 +46,9 @@ export const uploadToCloudinary = async (
       url: result.secure_url,
       public_id: result.public_id,
     };
-  } catch (error: any) {
-    logger.error(`Cloudinary upload error: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown upload error";
+    logger.error(`Cloudinary upload error: ${message}`);
     return {
       success: false,
       error: "Upload failed",

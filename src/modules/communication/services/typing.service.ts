@@ -3,13 +3,20 @@ import type { ParticipantAccountType } from "@/modules/communication/types/commu
 
 const TYPING_TTL_SECONDS = 5;
 
-const typingKey = (conversationId: string, accountType: ParticipantAccountType, accountId: string) =>
-  `comm:typing:${conversationId}:${accountType}:${accountId}`;
+const typingKey = (
+  conversationId: string,
+  accountType: ParticipantAccountType,
+  accountId: string
+) => `comm:typing:${conversationId}:${accountType}:${accountId}`;
 
 const memoryTyping = new Set<string>();
 
 class TypingService {
-  async startTyping(conversationId: string, accountType: ParticipantAccountType, accountId: string) {
+  async startTyping(
+    conversationId: string,
+    accountType: ParticipantAccountType,
+    accountId: string
+  ) {
     const key = typingKey(conversationId, accountType, accountId);
     memoryTyping.add(key);
 

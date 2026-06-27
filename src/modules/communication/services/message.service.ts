@@ -4,7 +4,11 @@ import { AppError } from "@/shared/errors/AppError";
 import auditService from "@/shared/audit/audit.service";
 import { AuditEvents } from "@/shared/audit/audit.events";
 import logger from "@/shared/utils/logger";
-import { buildLastMessagePreview, toAttachmentResponse, toMessageResponse } from "@/modules/communication/dto";
+import {
+  buildLastMessagePreview,
+  toAttachmentResponse,
+  toMessageResponse,
+} from "@/modules/communication/dto";
 import { buildMessagePreview } from "@/modules/communication/utils/actor";
 import conversationRepository from "@/modules/communication/repositories/conversation.repository";
 import messageRepository from "@/modules/communication/repositories/message.repository";
@@ -93,7 +97,10 @@ class MessageService {
     }
 
     if (data.attachmentId) {
-      await attachmentService.assertAttachmentForConversation(data.attachmentId, data.conversationId);
+      await attachmentService.assertAttachmentForConversation(
+        data.attachmentId,
+        data.conversationId
+      );
     }
 
     const message = await messageRepository.create({
@@ -274,7 +281,11 @@ class MessageService {
     const updated = await messageRepository.markDelivered(messageId);
     if (!updated) return null;
 
-    await this.syncLastMessagePreviewStatus(message.conversationId.toString(), messageId, "delivered");
+    await this.syncLastMessagePreviewStatus(
+      message.conversationId.toString(),
+      messageId,
+      "delivered"
+    );
 
     const payload = {
       messageId,

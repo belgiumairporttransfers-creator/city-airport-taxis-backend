@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import newsletterDraftService from "../services/newsletter-draft.service";
+import type { GetNewsletterDraftsQuery } from "@/modules/newsletter/types/newsletter-draft.types";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
@@ -18,7 +19,9 @@ class NewsletterDraftController {
   getAll = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const result = await newsletterDraftService.getDrafts(req.query as any);
+    const result = await newsletterDraftService.getDrafts(
+      req.query as unknown as GetNewsletterDraftsQuery
+    );
 
     return sendSuccess(res, {
       items: result.items.map((item) => item.toObject()),

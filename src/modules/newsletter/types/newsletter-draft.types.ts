@@ -43,7 +43,7 @@ export interface SaveNewsletterDraftData {
   imagePublicId?: string;
 }
 
-export interface UpdateNewsletterDraftData extends Partial<SaveNewsletterDraftData> {}
+export type UpdateNewsletterDraftData = Partial<SaveNewsletterDraftData>;
 
 export interface GetNewsletterDraftsQuery {
   page?: number;

@@ -29,11 +29,7 @@ class ConversationRepository {
     return Conversation.findById(id);
   }
 
-  async findByParticipant(
-    accountType: string,
-    accountId: string,
-    query: GetConversationsQuery
-  ) {
+  async findByParticipant(accountType: string, accountId: string, query: GetConversationsQuery) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;

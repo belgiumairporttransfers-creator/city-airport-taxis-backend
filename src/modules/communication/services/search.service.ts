@@ -1,4 +1,8 @@
-import { toAttachmentResponse, toConversationListItem, toMessageResponse } from "@/modules/communication/dto";
+import {
+  toAttachmentResponse,
+  toConversationListItem,
+  toMessageResponse,
+} from "@/modules/communication/dto";
 import { buildMessagePreview } from "@/modules/communication/utils/actor";
 import conversationRepository from "@/modules/communication/repositories/conversation.repository";
 import messageRepository from "@/modules/communication/repositories/message.repository";
@@ -6,7 +10,10 @@ import messageAttachmentRepository from "@/modules/communication/repositories/me
 import conversationService from "@/modules/communication/services/conversation.service";
 import presenceService from "@/modules/communication/services/presence.service";
 import typingService from "@/modules/communication/services/typing.service";
-import type { CommunicationActor, SearchQuery } from "@/modules/communication/types/communication.types";
+import type {
+  CommunicationActor,
+  SearchQuery,
+} from "@/modules/communication/types/communication.types";
 
 class SearchService {
   async search(actor: CommunicationActor, query: SearchQuery) {

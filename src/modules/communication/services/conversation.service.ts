@@ -16,7 +16,10 @@ import type {
 } from "@/modules/communication/types/communication.types";
 
 class ConversationService {
-  async assertParticipant(conversationId: string, actor: CommunicationActor): Promise<IConversation> {
+  async assertParticipant(
+    conversationId: string,
+    actor: CommunicationActor
+  ): Promise<IConversation> {
     const conversation = await conversationRepository.findById(conversationId);
 
     if (!conversation) {
@@ -58,10 +61,7 @@ class ConversationService {
 
     const conversation = await conversationRepository.create({
       participantKey,
-      participants: [
-        participantService.getActorParticipant(actor),
-        target,
-      ],
+      participants: [participantService.getActorParticipant(actor), target],
     });
 
     auditService.log({
@@ -81,7 +81,11 @@ class ConversationService {
     const syncedConversation = await ensureConversationPreview(conversation);
     const other = this.getOtherParticipant(syncedConversation, actor);
     const presence = await presenceService.getStatus(other.accountType, other.accountId);
-    const isTyping = await typingService.isTyping(conversationId, other.accountType, other.accountId);
+    const isTyping = await typingService.isTyping(
+      conversationId,
+      other.accountType,
+      other.accountId
+    );
 
     return {
       ...toConversationListItem(syncedConversation, actor.accountId, {

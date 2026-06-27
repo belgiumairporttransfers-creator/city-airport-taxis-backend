@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import newsletterSendService from "../services/newsletter-send.service";
 import newsletterCampaignService from "../services/newsletter-campaign.service";
+import type { GetNewsletterCampaignsQuery } from "@/modules/newsletter/types/newsletter-campaign.types";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
@@ -36,7 +37,9 @@ class NewsletterCampaignController {
   getAll = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const result = await newsletterCampaignService.getCampaigns(req.query as any);
+    const result = await newsletterCampaignService.getCampaigns(
+      req.query as unknown as GetNewsletterCampaignsQuery
+    );
 
     return sendSuccess(res, {
       items: result.items.map((item) =>
