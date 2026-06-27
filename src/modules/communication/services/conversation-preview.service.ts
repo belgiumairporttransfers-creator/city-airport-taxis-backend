@@ -24,7 +24,7 @@ export const syncConversationPreview = async (conversationId: string) => {
   await conversationRepository.updatePreview(conversationId, preview);
 };
 
-export const ensureConversationPreview = async (conversation: IConversation) => {
+export const ensureConversationPreview = async (conversation: IConversation): Promise<IConversation> => {
   const preview = conversation.lastMessagePreview;
   if (!preview) return conversation;
 
@@ -36,7 +36,7 @@ export const ensureConversationPreview = async (conversation: IConversation) => 
         preview.messageId,
         message.status
       );
-      return conversationRepository.findById(conversation._id.toString());
+      return (await conversationRepository.findById(conversation._id.toString())) ?? conversation;
     }
     return conversation;
   }
