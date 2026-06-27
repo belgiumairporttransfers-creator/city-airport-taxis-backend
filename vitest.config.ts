@@ -45,6 +45,9 @@ export default defineConfig({
       JWT_REFRESH_EXPIRES_IN: "7d",
       BCRYPT_ROUNDS: "12",
       REQUIRE_EMAIL_VERIFICATION: "false",
+      FRONTEND_URL: "http://localhost:3000",
+      ADMIN_FRONTEND_URL: "http://localhost:3001",
+      DRIVER_PORTAL_URL: "http://localhost:3002",
     },
   },
 });

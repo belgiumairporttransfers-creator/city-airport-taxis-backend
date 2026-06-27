@@ -1,6 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { Request, Response } from "express";
 import { AppError } from "../../src/shared/errors/AppError";
+
+vi.mock("@/config/env", () => ({
+  env: {
+    corsOrigins: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+    ],
+  },
+}));
+
 import { csrfProtection } from "../../src/middleware/csrf";
 
 const createMockRes = (): Response => ({}) as Response;
