@@ -47,6 +47,21 @@ describe("csrfProtection", () => {
     expect(error.message).toContain("CSRF");
   });
 
+  it("accepts csrf cookie with allowed Origin when header is missing", () => {
+    const next = vi.fn();
+    csrfProtection(
+      {
+        method: "POST",
+        headers: { origin: "http://localhost:3002" },
+        cookies: { csrfToken: "abc" },
+        get: (name: string) => (name === "Origin" ? "http://localhost:3002" : undefined),
+      } as unknown as Request,
+      createMockRes(),
+      next
+    );
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it("accepts matching csrf cookie and header", () => {
     const next = vi.fn();
     csrfProtection(
