@@ -6,6 +6,7 @@ import { uploadRoutes } from "../modules/upload";
 import { publicVehicleCategoryRoutes } from "../modules/vehicle-categories";
 import { publicVehiclePricingRoutes } from "../modules/vehicle-pricing";
 import { publicDriverRoutes, portalDriverRoutes } from "../modules/drivers";
+import { portalCommunicationRoutes } from "../modules/communication";
 
 const publicRoutes: IRouter = Router();
 
@@ -15,6 +16,7 @@ publicRoutes.use("/vehicle-categories", publicVehicleCategoryRoutes);
 publicRoutes.use("/vehicle-pricing", publicVehiclePricingRoutes);
 publicRoutes.use("/drivers", publicDriverRoutes);
 publicRoutes.use("/drivers", portalDriverRoutes);
+publicRoutes.use("/communication", portalCommunicationRoutes);
 publicRoutes.use("/auth", userAuthRoutes);
 publicRoutes.use("/upload", uploadRoutes);
 

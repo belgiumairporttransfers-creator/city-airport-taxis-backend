@@ -19,6 +19,7 @@ export const NOTIFICATION_ENTITY_TYPES = [
   "vehicle",
   "payment",
   "system",
+  "communication",
   "other",
 ] as const;
 export type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];

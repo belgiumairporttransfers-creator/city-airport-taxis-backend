@@ -54,6 +54,16 @@ export const AuditEvents = {
   NOTIFICATION_READ: "notification.read",
   NOTIFICATION_READ_ALL: "notification.read_all",
 
+  // Communication
+  CONVERSATION_CREATED: "conversation.created",
+  MESSAGE_SENT: "message.sent",
+  MESSAGE_DELETED: "message.deleted",
+  MESSAGE_READ: "message.read",
+  ATTACHMENT_UPLOADED: "attachment.uploaded",
+  CALL_STARTED: "call.started",
+  CALL_ENDED: "call.ended",
+  CALL_MISSED: "call.missed",
+
   // Security
   SECURITY_SUSPICIOUS_LOGIN: "security.suspicious_login",
   SECURITY_ACCOUNT_LOCKED: "security.account_locked",

@@ -20,6 +20,10 @@ import {
   initNotificationInfrastructure,
   shutdownNotificationInfrastructure,
 } from "@/modules/notifications";
+import {
+  initCommunicationInfrastructure,
+  shutdownCommunicationInfrastructure,
+} from "@/modules/communication";
 
 const PORT = env.PORT || 5000;
 
@@ -37,6 +41,7 @@ const bootstrap = async (): Promise<void> => {
   httpServer = http.createServer(app);
   await initSocketServer(httpServer);
   await initNotificationInfrastructure();
+  await initCommunicationInfrastructure();
 
   httpServer.listen(PORT, () => {
     startNewsletterScheduler();
@@ -65,6 +70,7 @@ const shutdown = async (signal: string): Promise<void> => {
     stopNewsletterScheduler();
     await stopNewsletterDeliveryWorker();
     await shutdownNotificationInfrastructure();
+    await shutdownCommunicationInfrastructure();
     await shutdownSocketServer();
     await RedisClient.disconnect();
 

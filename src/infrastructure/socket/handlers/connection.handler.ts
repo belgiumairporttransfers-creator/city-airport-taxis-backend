@@ -6,6 +6,7 @@ import {
   incrementSocketDisconnect,
 } from "@/shared/observability/metrics";
 import type { AuthenticatedSocket } from "../types/socket.types";
+import { registerCommunicationHandlers } from "@/modules/communication/socket/communication.handlers";
 
 export const handleConnection = (socket: AuthenticatedSocket): void => {
   const { userId, type, role } = socket.data;
@@ -13,6 +14,7 @@ export const handleConnection = (socket: AuthenticatedSocket): void => {
   void onlineUsersRegistry.register(userId, socket.id).then(() => {
     joinUserRoom(socket, userId, type);
     incrementSocketConnection();
+    registerCommunicationHandlers(socket);
 
     logger.info("Socket connected", {
       socketId: socket.id,

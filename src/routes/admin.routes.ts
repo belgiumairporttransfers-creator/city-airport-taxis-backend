@@ -15,6 +15,7 @@ import {
 import { adminSettingsRoutes } from "../modules/settings";
 import { adminDriverRoutes } from "../modules/drivers";
 import { adminNotificationRoutes } from "../modules/notifications";
+import { adminCommunicationRoutes } from "../modules/communication";
 
 const adminRoutes: IRouter = Router();
 
@@ -31,6 +32,7 @@ adminRoutes.use("/vehicle-pricing", adminVehiclePricingRoutes);
 adminRoutes.use("/vehicles", adminVehicleRoutes);
 adminRoutes.use("/drivers", adminDriverRoutes);
 adminRoutes.use("/notifications", adminNotificationRoutes);
+adminRoutes.use("/communication", adminCommunicationRoutes);
 adminRoutes.use("/newsletters", adminNewsletterRoutes);
 adminRoutes.use("/newsletter-drafts", adminNewsletterDraftRoutes);
 adminRoutes.use("/newsletter-campaigns", adminNewsletterCampaignRoutes);

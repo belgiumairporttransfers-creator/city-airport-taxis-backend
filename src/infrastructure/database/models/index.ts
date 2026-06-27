@@ -13,3 +13,8 @@ export { VehicleCategory } from "./VehicleCategory";
 export { Vehicle } from "./Vehicle";
 export { VehiclePricing } from "./VehiclePricing";
 export { DriverApplication } from "./DriverApplication";
+export { Conversation } from "./Conversation";
+export { Message } from "./Message";
+export { MessageAttachment } from "./MessageAttachment";
+export { CallSession } from "./CallSession";
+export { Notification } from "./Notification";
