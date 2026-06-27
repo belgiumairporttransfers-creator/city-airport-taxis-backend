@@ -1,8 +1,5 @@
 import type { Document, Types } from "mongoose";
-import type {
-  NewsletterDraftAudience,
-  NewsletterDraftSendMode,
-} from "./newsletter-draft.types";
+import type { NewsletterDraftAudience, NewsletterDraftSendMode } from "./newsletter-draft.types";
 
 export const NEWSLETTER_CAMPAIGN_STATUSES = [
   "scheduled",

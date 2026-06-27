@@ -11,11 +11,7 @@ export const DRIVER_APPLICATION_STATUSES = [
 
 export type DriverApplicationStatus = (typeof DRIVER_APPLICATION_STATUSES)[number];
 
-export const DRIVER_EDITABLE_STATUSES = [
-  "pending",
-  "under_review",
-  "changes_requested",
-] as const;
+export const DRIVER_EDITABLE_STATUSES = ["pending", "under_review", "changes_requested"] as const;
 
 export const DRIVER_PORTAL_EDITABLE_STATUSES = [
   "pending",

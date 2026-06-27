@@ -5,10 +5,7 @@ import { adminAuthRoutes } from "../modules/auth";
 import { adminCustomerRoutes } from "../modules/customers";
 import { adminVehicleCategoryRoutes } from "../modules/vehicle-categories";
 import { adminVehicleRoutes } from "../modules/vehicles";
-import {
-  adminCategoryPricingRoutes,
-  adminVehiclePricingRoutes,
-} from "../modules/vehicle-pricing";
+import { adminCategoryPricingRoutes, adminVehiclePricingRoutes } from "../modules/vehicle-pricing";
 import {
   adminNewsletterRoutes,
   adminNewsletterDraftRoutes,

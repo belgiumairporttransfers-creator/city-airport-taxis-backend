@@ -12,10 +12,7 @@ import {
   type SampleDriverApplication,
 } from "@/scripts/data/driver-applications.samples";
 
-const buildDriverSeedNotification = (
-  application: SampleDriverApplication,
-  entityId: string
-) => {
+const buildDriverSeedNotification = (application: SampleDriverApplication, entityId: string) => {
   const name = `${application.firstName} ${application.lastName}`;
 
   return {

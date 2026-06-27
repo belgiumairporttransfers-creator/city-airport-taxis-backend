@@ -43,7 +43,4 @@ const newsletterDraftSchema = new Schema<INewsletterDraft>(
   }
 );
 
-export const NewsletterDraft = model<INewsletterDraft>(
-  "NewsletterDraft",
-  newsletterDraftSchema
-);
+export const NewsletterDraft = model<INewsletterDraft>("NewsletterDraft", newsletterDraftSchema);

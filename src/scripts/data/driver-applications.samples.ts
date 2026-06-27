@@ -277,10 +277,7 @@ const reviewCountForIndex = (index: number): number => {
 const statusMeta = (
   status: DriverApplicationStatus,
   index: number
-): Pick<
-  SampleDriverApplication,
-  "reviewNotes" | "reviewedAt" | "approvedAt" | "rejectedAt"
-> => {
+): Pick<SampleDriverApplication, "reviewNotes" | "reviewedAt" | "approvedAt" | "rejectedAt"> => {
   if (status === "pending") {
     return {};
   }

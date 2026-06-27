@@ -10,7 +10,12 @@ import {
   flushObservability,
 } from "@/shared/observability/apm";
 import logger from "@/shared/utils/logger";
-import { startNewsletterScheduler, stopNewsletterScheduler, startNewsletterDeliveryWorker, stopNewsletterDeliveryWorker } from "@/modules/newsletter";
+import {
+  startNewsletterScheduler,
+  stopNewsletterScheduler,
+  startNewsletterDeliveryWorker,
+  stopNewsletterDeliveryWorker,
+} from "@/modules/newsletter";
 import {
   initNotificationInfrastructure,
   shutdownNotificationInfrastructure,

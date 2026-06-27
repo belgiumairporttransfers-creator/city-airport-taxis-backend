@@ -103,9 +103,7 @@ export const resolveCategoryCapacities = (
   };
   const derived = deriveCategoryCapacities(vehicles);
   const hasStoredMarketingValues =
-    stored.passengerCapacity > 0 ||
-    stored.luggageCapacity > 0 ||
-    stored.handLuggageCapacity > 0;
+    stored.passengerCapacity > 0 || stored.luggageCapacity > 0 || stored.handLuggageCapacity > 0;
 
   if (hasStoredMarketingValues) {
     return stored;

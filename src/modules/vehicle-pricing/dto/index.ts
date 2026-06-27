@@ -47,9 +47,7 @@ export const toVehiclePricingResponse = (pricing: unknown): VehiclePricingRespon
       : Number(record.increasePercentage);
 
   const perKmRate =
-    pricingType === "base_plus_per_unit"
-      ? (storedPerKmRate ?? storedIncrease)
-      : storedPerKmRate;
+    pricingType === "base_plus_per_unit" ? (storedPerKmRate ?? storedIncrease) : storedPerKmRate;
   const increasePercentage =
     pricingType === "base_plus_per_unit" &&
     storedPerKmRate !== undefined &&

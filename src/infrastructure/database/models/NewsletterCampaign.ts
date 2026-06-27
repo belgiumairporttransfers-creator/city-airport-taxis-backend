@@ -1,8 +1,6 @@
 import { Schema, model } from "mongoose";
 import type { INewsletterCampaign } from "@/modules/newsletter/types/newsletter-campaign.types";
-import {
-  NEWSLETTER_CAMPAIGN_STATUSES,
-} from "@/modules/newsletter/types/newsletter-campaign.types";
+import { NEWSLETTER_CAMPAIGN_STATUSES } from "@/modules/newsletter/types/newsletter-campaign.types";
 import {
   NEWSLETTER_DRAFT_AUDIENCES,
   NEWSLETTER_DRAFT_SEND_MODES,

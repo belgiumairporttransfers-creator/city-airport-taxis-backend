@@ -59,10 +59,7 @@ const processDeliveryJob = async (job: Job<NewsletterDeliveryJobData>) => {
 };
 
 export const isNewsletterQueueEnabled = () =>
-  env.NEWSLETTER_QUEUE_ENABLED &&
-  env.REDIS_ENABLED &&
-  Boolean(env.REDIS_URL) &&
-  !queueUnavailable;
+  env.NEWSLETTER_QUEUE_ENABLED && env.REDIS_ENABLED && Boolean(env.REDIS_URL) && !queueUnavailable;
 
 export const startNewsletterDeliveryWorker = async () => {
   if (worker || queueUnavailable || !env.NEWSLETTER_QUEUE_ENABLED || !env.REDIS_ENABLED) {

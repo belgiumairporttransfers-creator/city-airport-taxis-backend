@@ -8,10 +8,7 @@ class NewsletterDraftController {
   create = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const draft = await newsletterDraftService.createDraft(
-      req.body,
-      req.admin._id.toString()
-    );
+    const draft = await newsletterDraftService.createDraft(req.body, req.admin._id.toString());
 
     return sendSuccess(res, draft.toObject(), {
       message: "Newsletter draft saved successfully",

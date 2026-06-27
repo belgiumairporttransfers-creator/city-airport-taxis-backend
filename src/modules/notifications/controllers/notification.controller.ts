@@ -53,9 +53,13 @@ class NotificationController {
 
     await notificationService.markAllAsRead(req.admin._id.toString());
 
-    return sendSuccess(res, { success: true }, {
-      message: "All notifications marked as read",
-    });
+    return sendSuccess(
+      res,
+      { success: true },
+      {
+        message: "All notifications marked as read",
+      }
+    );
   });
 
   deleteOne = asyncHandler(async (req: Request, res: Response) => {
@@ -63,9 +67,13 @@ class NotificationController {
 
     await notificationService.deleteNotification(req.params.id, req.admin._id.toString());
 
-    return sendSuccess(res, { success: true }, {
-      message: "Notification deleted",
-    });
+    return sendSuccess(
+      res,
+      { success: true },
+      {
+        message: "Notification deleted",
+      }
+    );
   });
 }
 

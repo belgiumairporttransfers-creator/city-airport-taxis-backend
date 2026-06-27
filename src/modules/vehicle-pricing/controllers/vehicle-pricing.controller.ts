@@ -89,10 +89,7 @@ class VehiclePricingController {
   deleteOne = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const deleted = await vehiclePricingService.deleteSlab(
-      req.params.id,
-      req.admin._id.toString()
-    );
+    const deleted = await vehiclePricingService.deleteSlab(req.params.id, req.admin._id.toString());
 
     return sendSuccess(res, toVehiclePricingResponse(deleted), {
       message: "Vehicle pricing slab deleted successfully",

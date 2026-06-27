@@ -63,9 +63,7 @@ export async function processNewsletterDelivery(
     const counts = await newsletterCampaignRecipientRepository.countByCampaign(campaignId);
     const processedCount = counts.sent + counts.failed;
     const shouldUpdate =
-      force ||
-      processedCount % progressEvery === 0 ||
-      processedCount === recipients.length;
+      force || processedCount % progressEvery === 0 || processedCount === recipients.length;
 
     if (!shouldUpdate) return;
 

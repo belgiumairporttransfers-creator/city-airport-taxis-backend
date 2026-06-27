@@ -6,10 +6,7 @@ import { generateCategorySlug } from "@/modules/vehicle-categories/dto";
 import { normalizeRegistrationNumber } from "@/modules/vehicles/dto";
 import { env } from "@/config/env";
 import logger from "@/shared/utils/logger";
-import {
-  sampleVehicleCategories,
-  sampleVehicles,
-} from "@/scripts/data/vehicle-fleet.samples";
+import { sampleVehicleCategories, sampleVehicles } from "@/scripts/data/vehicle-fleet.samples";
 import { sampleVehiclePricing } from "@/scripts/data/vehicle-pricing.samples";
 
 const seedVehicleFleet = async () => {

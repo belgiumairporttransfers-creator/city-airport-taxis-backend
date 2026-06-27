@@ -8,10 +8,7 @@ import {
 
 const adminNotificationRoutes: IRouter = Router();
 
-adminNotificationRoutes.get(
-  "/unread-count",
-  notificationController.getUnreadCount
-);
+adminNotificationRoutes.get("/unread-count", notificationController.getUnreadCount);
 adminNotificationRoutes.patch("/read-all", notificationController.markAllAsRead);
 adminNotificationRoutes.get(
   "/",

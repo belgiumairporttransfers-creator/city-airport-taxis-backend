@@ -172,8 +172,7 @@ const getEnvConfig = (): EnvConfig => {
   const tracesSampleRate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.2");
 
   const emailProviderEnv = process.env.EMAIL_PROVIDER?.toLowerCase();
-  const emailProvider: "smtp" | "ses" =
-    emailProviderEnv === "ses" ? "ses" : "smtp";
+  const emailProvider: "smtp" | "ses" = emailProviderEnv === "ses" ? "ses" : "smtp";
 
   if (emailProvider === "ses") {
     const message =

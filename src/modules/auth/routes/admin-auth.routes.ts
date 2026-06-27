@@ -43,11 +43,7 @@ router.post(
   authController.changePassword
 );
 router.post("/logout-all", authController.logoutAllDevices);
-router.get(
-  "/activities",
-  validateQuery(authListQuerySchema),
-  authController.getActivities
-);
+router.get("/activities", validateQuery(authListQuerySchema), authController.getActivities);
 router.get("/sessions", validateQuery(authListQuerySchema), authController.getSessions);
 router.delete(
   "/sessions/:sessionId",

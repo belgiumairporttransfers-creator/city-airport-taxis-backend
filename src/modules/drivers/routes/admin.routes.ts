@@ -12,10 +12,7 @@ import { idParamSchema } from "@/shared/validators/object-id.schema";
 
 const adminDriverRoutes: IRouter = Router();
 
-adminDriverRoutes.get(
-  "/stats",
-  driverController.getStats
-);
+adminDriverRoutes.get("/stats", driverController.getStats);
 
 adminDriverRoutes.get(
   "/",
@@ -29,11 +26,7 @@ adminDriverRoutes.post(
   driverController.create
 );
 
-adminDriverRoutes.get(
-  "/:id",
-  validateParams(idParamSchema),
-  driverController.getOne
-);
+adminDriverRoutes.get("/:id", validateParams(idParamSchema), driverController.getOne);
 
 adminDriverRoutes.patch(
   "/:id",
@@ -55,11 +48,7 @@ adminDriverRoutes.post(
   driverController.requestChanges
 );
 
-adminDriverRoutes.post(
-  "/:id/approve",
-  validateParams(idParamSchema),
-  driverController.approve
-);
+adminDriverRoutes.post("/:id/approve", validateParams(idParamSchema), driverController.approve);
 
 adminDriverRoutes.post(
   "/:id/reject",

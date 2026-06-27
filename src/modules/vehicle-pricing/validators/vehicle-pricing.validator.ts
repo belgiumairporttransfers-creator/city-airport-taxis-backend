@@ -1,9 +1,6 @@
 import Joi from "joi";
 import { objectIdSchema } from "@/shared/validators/object-id.schema";
-import {
-  VEHICLE_PRICING_STATUSES,
-  VEHICLE_PRICING_TYPES,
-} from "../types/vehicle-pricing.types";
+import { VEHICLE_PRICING_STATUSES, VEHICLE_PRICING_TYPES } from "../types/vehicle-pricing.types";
 
 const maxDistanceSchema = Joi.number().min(0).allow(null).messages({
   "number.base": "Maximum distance must be a number or null",
@@ -33,38 +30,37 @@ export const createVehiclePricingSchema = Joi.object({
     .valid(...VEHICLE_PRICING_STATUSES)
     .default("active"),
   sortOrder: Joi.number().integer().min(0).default(0),
-})
-  .custom((value, helpers) => {
-    if (value.maxDistance !== null && value.maxDistance <= value.minDistance) {
-      return helpers.message({
-        custom:
-          value.maxDistance === value.minDistance
-            ? "Maximum distance must be greater than minimum distance (ranges cannot be empty)"
-            : "Maximum distance must be greater than minimum distance unless null",
-      });
-    }
+}).custom((value, helpers) => {
+  if (value.maxDistance !== null && value.maxDistance <= value.minDistance) {
+    return helpers.message({
+      custom:
+        value.maxDistance === value.minDistance
+          ? "Maximum distance must be greater than minimum distance (ranges cannot be empty)"
+          : "Maximum distance must be greater than minimum distance unless null",
+    });
+  }
 
-    if (
-      value.pricingType === "base_plus_per_unit" &&
-      (value.perKmRate === undefined || value.perKmRate === null)
-    ) {
-      return helpers.message({
-        custom: "Per km rate is required for base_plus_per_unit pricing",
-      });
-    }
+  if (
+    value.pricingType === "base_plus_per_unit" &&
+    (value.perKmRate === undefined || value.perKmRate === null)
+  ) {
+    return helpers.message({
+      custom: "Per km rate is required for base_plus_per_unit pricing",
+    });
+  }
 
-    if (
-      value.increasePercentage !== undefined &&
-      value.increasePercentage !== null &&
-      (value.increasePercentage < -100 || value.increasePercentage > 100)
-    ) {
-      return helpers.message({
-        custom: "Price adjustment must be between -100 and 100",
-      });
-    }
+  if (
+    value.increasePercentage !== undefined &&
+    value.increasePercentage !== null &&
+    (value.increasePercentage < -100 || value.increasePercentage > 100)
+  ) {
+    return helpers.message({
+      custom: "Price adjustment must be between -100 and 100",
+    });
+  }
 
-    return value;
-  });
+  return value;
+});
 
 export const updateVehiclePricingSchema = Joi.object({
   minDistance: Joi.number().min(0).optional(),

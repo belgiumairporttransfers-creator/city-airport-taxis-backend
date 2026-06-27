@@ -43,9 +43,7 @@ class VehiclePricingRepository {
     return { $or: orConditions };
   }
 
-  create(
-    data: CreateVehiclePricingData & { createdBy?: string; updatedBy?: string }
-  ) {
+  create(data: CreateVehiclePricingData & { createdBy?: string; updatedBy?: string }) {
     return VehiclePricing.create(data);
   }
 
@@ -131,8 +129,7 @@ class VehiclePricingRepository {
     return slabs.some((slab) => {
       const existing = { minDistance: slab.minDistance, maxDistance: slab.maxDistance };
       const aMax = maxDistance === null ? Number.POSITIVE_INFINITY : maxDistance;
-      const bMax =
-        existing.maxDistance === null ? Number.POSITIVE_INFINITY : existing.maxDistance;
+      const bMax = existing.maxDistance === null ? Number.POSITIVE_INFINITY : existing.maxDistance;
 
       return minDistance < bMax && existing.minDistance < aMax;
     });

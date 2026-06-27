@@ -92,11 +92,9 @@ class NotificationService {
   }
 
   async getNotifications(adminId: string, query: GetNotificationsQuery) {
-    const result = await notificationRepository.findByRecipient(
-      adminId,
-      query,
-      [...ADMIN_DRIVER_NOTIFICATION_TYPES]
-    );
+    const result = await notificationRepository.findByRecipient(adminId, query, [
+      ...ADMIN_DRIVER_NOTIFICATION_TYPES,
+    ]);
 
     return {
       items: result.data,
@@ -132,9 +130,7 @@ class NotificationService {
 
     const dto = toNotificationResponse(notification);
 
-    await this.deliver("notification:read", dto, notification.recipientType, [
-      adminId,
-    ]);
+    await this.deliver("notification:read", dto, notification.recipientType, [adminId]);
 
     auditService.log({
       event: AuditEvents.NOTIFICATION_READ,

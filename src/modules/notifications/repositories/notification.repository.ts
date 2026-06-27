@@ -18,16 +18,8 @@ class NotificationRepository {
     return Notification.findById(id);
   }
 
-  findByRecipient(
-    recipientId: string,
-    query: GetNotificationsQuery,
-    type?: string | string[]
-  ) {
-    const typeFilter = type
-      ? Array.isArray(type)
-        ? { type: { $in: type } }
-        : { type }
-      : {};
+  findByRecipient(recipientId: string, query: GetNotificationsQuery, type?: string | string[]) {
+    const typeFilter = type ? (Array.isArray(type) ? { type: { $in: type } } : { type }) : {};
 
     return new APIFeature(Notification, query, {
       initialFilter: {
@@ -49,11 +41,7 @@ class NotificationRepository {
   }
 
   countUnread(recipientId: string, type?: string | string[]) {
-    const typeFilter = type
-      ? Array.isArray(type)
-        ? { type: { $in: type } }
-        : { type }
-      : {};
+    const typeFilter = type ? (Array.isArray(type) ? { type: { $in: type } } : { type }) : {};
 
     return Notification.countDocuments({
       recipientIds: recipientId,
@@ -71,11 +59,7 @@ class NotificationRepository {
   }
 
   markAllAsRead(recipientId: string, type?: string | string[]) {
-    const typeFilter = type
-      ? Array.isArray(type)
-        ? { type: { $in: type } }
-        : { type }
-      : {};
+    const typeFilter = type ? (Array.isArray(type) ? { type: { $in: type } } : { type }) : {};
 
     return Notification.updateMany(
       {

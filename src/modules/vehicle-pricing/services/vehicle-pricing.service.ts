@@ -157,25 +157,15 @@ class VehiclePricingService {
     await this.assertActiveCategory(existing.categoryId.toString());
 
     const minDistance = data.minDistance ?? existing.minDistance;
-    const maxDistance =
-      data.maxDistance !== undefined ? data.maxDistance : existing.maxDistance;
+    const maxDistance = data.maxDistance !== undefined ? data.maxDistance : existing.maxDistance;
     const pricingType = data.pricingType ?? existing.pricingType;
-    const perKmRate =
-      data.perKmRate !== undefined ? data.perKmRate : existing.perKmRate;
+    const perKmRate = data.perKmRate !== undefined ? data.perKmRate : existing.perKmRate;
 
-    if (
-      pricingType === "base_plus_per_unit" &&
-      (perKmRate === undefined || perKmRate === null)
-    ) {
+    if (pricingType === "base_plus_per_unit" && (perKmRate === undefined || perKmRate === null)) {
       throw new AppError("Per km rate is required for base_plus_per_unit pricing", 400);
     }
 
-    await this.validateSlabRules(
-      existing.categoryId.toString(),
-      minDistance,
-      maxDistance,
-      id
-    );
+    await this.validateSlabRules(existing.categoryId.toString(), minDistance, maxDistance, id);
 
     const slab = await vehiclePricingRepository.updateById(id, {
       ...data,

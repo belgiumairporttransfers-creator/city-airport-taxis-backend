@@ -16,13 +16,21 @@ adminNewsletterDraftRoutes.get(
   validateQuery(getDraftsQuerySchema),
   newsletterDraftController.getAll
 );
-adminNewsletterDraftRoutes.post("/", validateRequest(saveDraftSchema), newsletterDraftController.create);
+adminNewsletterDraftRoutes.post(
+  "/",
+  validateRequest(saveDraftSchema),
+  newsletterDraftController.create
+);
 adminNewsletterDraftRoutes.delete(
   "/bulk",
   validateRequest(bulkDeleteDraftsSchema),
   newsletterDraftController.bulkDelete
 );
-adminNewsletterDraftRoutes.get("/:id", validateParams(idParamSchema), newsletterDraftController.getOne);
+adminNewsletterDraftRoutes.get(
+  "/:id",
+  validateParams(idParamSchema),
+  newsletterDraftController.getOne
+);
 adminNewsletterDraftRoutes.put(
   "/:id",
   validateParams(idParamSchema),

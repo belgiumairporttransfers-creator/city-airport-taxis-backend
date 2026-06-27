@@ -30,11 +30,7 @@ class NewsletterCampaignController {
               ? "Newsletter sent successfully"
               : "Newsletter send completed with some failures";
 
-    return sendSuccess(
-      res,
-      { ...toCampaignResponse(campaign), queued },
-      { message }
-    );
+    return sendSuccess(res, { ...toCampaignResponse(campaign), queued }, { message });
   });
 
   getAll = asyncHandler(async (req: Request, res: Response) => {
@@ -81,11 +77,7 @@ class NewsletterCampaignController {
           ? "Newsletter resent successfully"
           : "Newsletter resend completed with failures";
 
-    return sendSuccess(
-      res,
-      { ...toCampaignResponse(campaign), queued },
-      { message }
-    );
+    return sendSuccess(res, { ...toCampaignResponse(campaign), queued }, { message });
   });
 
   deleteOne = asyncHandler(async (req: Request, res: Response) => {
@@ -93,11 +85,9 @@ class NewsletterCampaignController {
 
     const deleted = await newsletterCampaignService.deleteCampaign(req.params.id);
 
-    return sendSuccess(
-      res,
-      typeof deleted.toObject === "function" ? deleted.toObject() : deleted,
-      { message: "Campaign deleted successfully" }
-    );
+    return sendSuccess(res, typeof deleted.toObject === "function" ? deleted.toObject() : deleted, {
+      message: "Campaign deleted successfully",
+    });
   });
 }
 

@@ -72,10 +72,7 @@ class DriverController {
   startReview = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const application = await driverService.startReview(
-      req.params.id,
-      req.admin._id.toString()
-    );
+    const application = await driverService.startReview(req.params.id, req.admin._id.toString());
 
     return sendSuccess(res, toDriverApplicationResponse(application), {
       message: "Driver application moved to under review",

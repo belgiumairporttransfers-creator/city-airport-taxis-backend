@@ -50,9 +50,7 @@ class VehicleCategoryRepository {
   }
 
   findActive() {
-    return VehicleCategory.find({ status: "active" })
-      .sort({ sortOrder: 1, name: 1 })
-      .lean();
+    return VehicleCategory.find({ status: "active" }).sort({ sortOrder: 1, name: 1 }).lean();
   }
 
   clearDefaultFlag(excludeId?: string) {

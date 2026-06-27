@@ -19,7 +19,11 @@ const toIsoString = (value: unknown): string | undefined => {
 };
 
 const toRecord = (vehicle: unknown): Record<string, unknown> => {
-  if (typeof vehicle === "object" && vehicle !== null && typeof (vehicle as VehicleLike).toObject === "function") {
+  if (
+    typeof vehicle === "object" &&
+    vehicle !== null &&
+    typeof (vehicle as VehicleLike).toObject === "function"
+  ) {
     return (vehicle as VehicleLike).toObject!();
   }
 

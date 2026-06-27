@@ -66,7 +66,7 @@ class NewsletterCampaignRecipientRepository {
       { campaignId: new Types.ObjectId(campaignId), email },
       {
         status: result.success ? "sent" : "failed",
-        errorMessage: result.success ? "" : result.errorMessage ?? "Delivery failed",
+        errorMessage: result.success ? "" : (result.errorMessage ?? "Delivery failed"),
         sentAt: result.success ? new Date() : undefined,
         lastAttemptAt: new Date(),
         $inc: { attemptCount: 1 },

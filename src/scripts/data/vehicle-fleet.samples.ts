@@ -178,12 +178,7 @@ export const sampleVehicles: SampleVehicle[] = [
     passengerCapacity: 3,
     luggageCapacity: 3,
     status: "active",
-    features: [
-      "Massage seats",
-      "Ambient lighting",
-      "Chauffeur partition",
-      "Premium refreshments",
-    ],
+    features: ["Massage seats", "Ambient lighting", "Chauffeur partition", "Premium refreshments"],
     notes: "Flagship vehicle for executive and celebrity transfers.",
   },
   {

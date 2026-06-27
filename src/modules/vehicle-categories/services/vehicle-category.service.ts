@@ -140,10 +140,7 @@ class VehicleCategoryService {
     const pricingCount = await vehiclePricingRepository.countByCategoryId(id);
 
     if (vehicleCount > 0 && pricingCount > 0) {
-      throw new AppError(
-        "Cannot delete category because vehicles and pricing slabs exist.",
-        400
-      );
+      throw new AppError("Cannot delete category because vehicles and pricing slabs exist.", 400);
     }
 
     if (vehicleCount > 0) {

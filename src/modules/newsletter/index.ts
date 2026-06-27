@@ -5,7 +5,10 @@ export { default as newsletterService } from "./services/newsletter.service";
 export { default as newsletterDraftService } from "./services/newsletter-draft.service";
 export { default as newsletterCampaignService } from "./services/newsletter-campaign.service";
 export { default as newsletterSendService } from "./services/newsletter-send.service";
-export { startNewsletterScheduler, stopNewsletterScheduler } from "./services/newsletter-scheduler.service";
+export {
+  startNewsletterScheduler,
+  stopNewsletterScheduler,
+} from "./services/newsletter-scheduler.service";
 export {
   startNewsletterDeliveryWorker,
   stopNewsletterDeliveryWorker,

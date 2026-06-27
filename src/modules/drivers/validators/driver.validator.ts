@@ -92,10 +92,7 @@ export const resubmitDriverApplicationSchema = Joi.object({
   profilePhoto: Joi.string().trim().uri().allow("").optional(),
   documents: Joi.object(
     Object.fromEntries(
-      DRIVER_DOCUMENT_FIELDS.map((field) => [
-        field,
-        Joi.string().trim().uri().optional(),
-      ])
+      DRIVER_DOCUMENT_FIELDS.map((field) => [field, Joi.string().trim().uri().optional()])
     )
   ).optional(),
 })
@@ -126,10 +123,7 @@ export const updateDriverApplicationSchema = Joi.object({
   skills: Joi.array().items(Joi.string().trim().min(1).max(80)).max(30).optional(),
   documents: Joi.object(
     Object.fromEntries(
-      DRIVER_DOCUMENT_FIELDS.map((field) => [
-        field,
-        Joi.string().trim().uri().optional(),
-      ])
+      DRIVER_DOCUMENT_FIELDS.map((field) => [field, Joi.string().trim().uri().optional()])
     )
   ).optional(),
   reviewNotes: Joi.string().trim().allow("").max(5000).optional(),

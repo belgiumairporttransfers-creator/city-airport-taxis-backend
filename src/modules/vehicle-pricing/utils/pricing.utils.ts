@@ -31,9 +31,8 @@ export const slabsOverlap = (
   return a.minDistance < bMax && b.minDistance < aMax;
 };
 
-export const countOpenEndedSlabs = (
-  slabs: Array<Pick<PricingSlabLike, "maxDistance">>
-): number => slabs.filter((slab) => slab.maxDistance === null).length;
+export const countOpenEndedSlabs = (slabs: Array<Pick<PricingSlabLike, "maxDistance">>): number =>
+  slabs.filter((slab) => slab.maxDistance === null).length;
 
 export const calculateFareAmount = (
   pricingType: VehiclePricingType,
@@ -147,13 +146,8 @@ export const buildResolvedFareResult = (
 ): ResolvedFareResult => ({
   slab,
   distanceKm,
-  amount: calculateFareAmount(
-    slab.pricingType,
-    slab.priceAmount,
-    distanceKm,
-    {
-      perKmRate: slab.perKmRate,
-      increasePercentage: slab.increasePercentage,
-    }
-  ),
+  amount: calculateFareAmount(slab.pricingType, slab.priceAmount, distanceKm, {
+    perKmRate: slab.perKmRate,
+    increasePercentage: slab.increasePercentage,
+  }),
 });

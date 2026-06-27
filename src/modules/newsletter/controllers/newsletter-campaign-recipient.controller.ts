@@ -22,7 +22,12 @@ class NewsletterCampaignRecipientController {
       items: result.items.map((item) => {
         const record = toPlainRecord(item);
         const campaign = record.campaignId as
-          | { _id?: { toString(): string }; campaignName?: string; subject?: string; status?: string }
+          | {
+              _id?: { toString(): string };
+              campaignName?: string;
+              subject?: string;
+              status?: string;
+            }
           | string
           | undefined;
 
@@ -34,10 +39,8 @@ class NewsletterCampaignRecipientController {
               : String(record.campaignId),
           campaignName:
             campaign && typeof campaign === "object" ? campaign.campaignName : undefined,
-          campaignSubject:
-            campaign && typeof campaign === "object" ? campaign.subject : undefined,
-          campaignStatus:
-            campaign && typeof campaign === "object" ? campaign.status : undefined,
+          campaignSubject: campaign && typeof campaign === "object" ? campaign.subject : undefined,
+          campaignStatus: campaign && typeof campaign === "object" ? campaign.status : undefined,
         };
       }),
       meta: {

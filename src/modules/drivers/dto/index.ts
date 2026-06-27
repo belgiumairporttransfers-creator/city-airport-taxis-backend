@@ -6,9 +6,7 @@ import type {
   IDriverApplication,
 } from "@/modules/drivers/types/driver.types";
 
-type DriverApplicationLike =
-  | IDriverApplication
-  | (Record<string, unknown> & { _id: unknown });
+type DriverApplicationLike = IDriverApplication | (Record<string, unknown> & { _id: unknown });
 
 const toIdString = (value: unknown): string | undefined => {
   if (!value) return undefined;
@@ -55,9 +53,7 @@ const toDriverReviewsResponse = (reviews: unknown): DriverReviewResponse[] => {
         createdAt: toIsoString(record.createdAt) ?? "",
       };
     })
-    .sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 export const toDriverApplicationResponse = (

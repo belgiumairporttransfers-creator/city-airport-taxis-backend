@@ -85,11 +85,7 @@ class DriverService {
     return application;
   }
 
-  private assertStatus(
-    application: { status: string },
-    allowed: string[],
-    message: string
-  ) {
+  private assertStatus(application: { status: string }, allowed: string[], message: string) {
     if (!allowed.includes(application.status)) {
       throw new AppError(message, 400);
     }
@@ -316,9 +312,7 @@ class DriverService {
       ...(data.homeAddress ? { homeAddress: data.homeAddress } : {}),
       ...(data.carType ? { carType: data.carType } : {}),
       ...(data.carColor ? { carColor: data.carColor } : {}),
-      ...(data.licensePlate
-        ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) }
-        : {}),
+      ...(data.licensePlate ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) } : {}),
       ...(data.carYearModel ? { carYearModel: data.carYearModel } : {}),
       ...(data.yearsOfExperience !== undefined
         ? { yearsOfExperience: data.yearsOfExperience }
@@ -343,10 +337,7 @@ class DriverService {
       { applicationNumber: updated.applicationNumber, status: updated.status }
     );
 
-    await emailService.sendDriverApplicationResubmittedEmail(
-      updated,
-      updated.applicationNumber
-    );
+    await emailService.sendDriverApplicationResubmittedEmail(updated, updated.applicationNumber);
 
     return updated;
   }
@@ -421,26 +412,19 @@ class DriverService {
       throw new AppError("Driver application not found", 404);
     }
 
-    if (
-      !(DRIVER_PORTAL_EDITABLE_STATUSES as readonly string[]).includes(application.status)
-    ) {
+    if (!(DRIVER_PORTAL_EDITABLE_STATUSES as readonly string[]).includes(application.status)) {
       throw new AppError("This application cannot be edited", 409);
     }
 
     const updatePayload: UpdateDriverApplicationData & Record<string, unknown> = {
       ...data,
-      ...(data.licensePlate
-        ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) }
-        : {}),
+      ...(data.licensePlate ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) } : {}),
       ...(data.documents
         ? { documents: this.mergeDocuments(application.documents, data.documents) }
         : {}),
     };
 
-    const updated = await driverRepository.updateById(
-      application._id.toString(),
-      updatePayload
-    );
+    const updated = await driverRepository.updateById(application._id.toString(), updatePayload);
 
     if (!updated) {
       throw new AppError("Driver application not found", 404);
@@ -512,9 +496,7 @@ class DriverService {
       }
 
       const nextValue =
-        field === "licensePlate"
-          ? this.normalizeLicensePlate(data.licensePlate!)
-          : data[field];
+        field === "licensePlate" ? this.normalizeLicensePlate(data.licensePlate!) : data[field];
 
       return application[field] !== nextValue;
     });
@@ -540,9 +522,7 @@ class DriverService {
 
     const updatePayload: UpdateDriverApplicationData & Record<string, unknown> = {
       ...data,
-      ...(data.licensePlate
-        ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) }
-        : {}),
+      ...(data.licensePlate ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) } : {}),
       ...(data.documents
         ? { documents: this.mergeDocuments(existing.documents, data.documents) }
         : {}),
@@ -613,13 +593,9 @@ class DriverService {
       throw new AppError("Driver application not found", 404);
     }
 
-    this.logDriverAudit(
-      AuditEvents.DRIVER_APPLICATION_CHANGES_REQUESTED,
-      adminId,
-      "admin",
-      id,
-      { applicationNumber: application.applicationNumber }
-    );
+    this.logDriverAudit(AuditEvents.DRIVER_APPLICATION_CHANGES_REQUESTED, adminId, "admin", id, {
+      applicationNumber: application.applicationNumber,
+    });
 
     await emailService.sendDriverChangesRequestedEmail(
       application,
@@ -633,11 +609,7 @@ class DriverService {
   async approveApplication(id: string, adminId: string) {
     const existing = await this.getApplicationOrThrow(id);
 
-    this.assertStatus(
-      existing,
-      ["under_review"],
-      "Only applications under review can be approved"
-    );
+    this.assertStatus(existing, ["under_review"], "Only applications under review can be approved");
 
     const user = await this.ensureDriverUser(existing);
     const setupToken = await this.createPasswordSetupToken(user._id.toString());
@@ -668,11 +640,7 @@ class DriverService {
   async rejectApplication(id: string, reviewNotes: string, adminId: string) {
     const existing = await this.getApplicationOrThrow(id);
 
-    this.assertStatus(
-      existing,
-      ["under_review"],
-      "Only applications under review can be rejected"
-    );
+    this.assertStatus(existing, ["under_review"], "Only applications under review can be rejected");
 
     const application = await driverRepository.updateById(id, {
       status: "rejected",

@@ -34,22 +34,14 @@ class NotificationGateway {
         this.emitToRooms(io, message.event, message.notification, rooms);
         break;
       case "notification:all-read":
-        this.emitToRooms(
-          io,
-          message.event,
-          { unreadCount: message.unreadCount ?? 0 },
-          rooms
-        );
+        this.emitToRooms(io, message.event, { unreadCount: message.unreadCount ?? 0 }, rooms);
         break;
       default:
         logger.warn("Unknown notification socket event", { event: message.event });
     }
   }
 
-  private resolveRooms(
-    recipientType: NotificationRecipientType,
-    recipientIds: string[]
-  ): string[] {
+  private resolveRooms(recipientType: NotificationRecipientType, recipientIds: string[]): string[] {
     switch (recipientType) {
       case "admin":
         return recipientIds.map((id) => SocketRooms.admin(id));

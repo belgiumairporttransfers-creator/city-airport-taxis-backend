@@ -120,16 +120,17 @@ class DriverRepository {
   }
 
   async countByStatus() {
-    const results = await DriverApplication.aggregate<{ _id: DriverApplicationStatus; count: number }>(
-      [
-        {
-          $group: {
-            _id: "$status",
-            count: { $sum: 1 },
-          },
+    const results = await DriverApplication.aggregate<{
+      _id: DriverApplicationStatus;
+      count: number;
+    }>([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
         },
-      ]
-    );
+      },
+    ]);
 
     return results.map((item) => ({
       status: item._id,

@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import driverService from "../services/driver.service";
-import {
-  toDriverApplicationStatusResponse,
-} from "../dto";
+import { toDriverApplicationStatusResponse } from "../dto";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";

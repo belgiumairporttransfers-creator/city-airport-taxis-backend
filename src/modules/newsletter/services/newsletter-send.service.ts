@@ -10,7 +10,6 @@ import {
 } from "@/modules/newsletter/queues/newsletter-delivery.queue";
 import type { SendNewsletterData } from "@/modules/newsletter/types/newsletter-campaign.types";
 
-
 class NewsletterSendService {
   private async queueCampaignDelivery(campaignId: string): Promise<boolean> {
     const queued = await enqueueNewsletterDelivery(campaignId);
@@ -127,10 +126,11 @@ class NewsletterSendService {
 
     for (const campaign of dueCampaigns) {
       try {
-        const claimed = await newsletterCampaignRepository.updateById(
-          campaign._id.toString(),
-          { status: "sending", sentCount: 0, failedCount: 0 }
-        );
+        const claimed = await newsletterCampaignRepository.updateById(campaign._id.toString(), {
+          status: "sending",
+          sentCount: 0,
+          failedCount: 0,
+        });
 
         if (!claimed || claimed.status !== "sending") continue;
 
