@@ -92,8 +92,12 @@ jobs:
               echo "Copy your local .env.production to the server first (never commit it to git)."
               exit 1
             fi
-            if [ -n "${GHCR_TOKEN:-}" ]; then
-              echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            LOGIN_TOKEN="${GHCR_TOKEN:-}"
+            if [ -z "${LOGIN_TOKEN}" ]; then
+              LOGIN_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            fi
+            if [ -n "${LOGIN_TOKEN}" ]; then
+              echo "${LOGIN_TOKEN}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             fi
             export IMAGE="${IMAGE}"
             export PULL_POLICY=always
@@ -109,3 +113,13 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script: |
             curl -fsS "http://127.0.0.1:${{ secrets.DEPLOY_PORT_APP || 5000 }}/health/live"
+
+      - name: Auto-deploy status
+        if: always()
+        run: |
+          if [ "${{ vars.SSH_DEPLOY_ENABLED }}" = "true" ]; then
+            echo "VPS auto-deploy is enabled for this repo."
+          else
+            echo "::warning::SSH_DEPLOY_ENABLED is not true — image was pushed to GHCR but the VPS was not updated."
+            echo "Run backend/deploy/configure-all-repos.sh once (see .github/DEPLOY.md)."
+          fi

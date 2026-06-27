@@ -20,20 +20,38 @@ sudo bash deploy/docker-vps-setup.sh
 nano .env.production   # copy from local machine — never commit
 ```
 
-## GitHub secrets
+## GitHub secrets (one-time — enables auto-deploy on push)
+
+**Quick setup (all 3 repos at once):**
+
+```bash
+cd backend
+cp deploy/github-actions.secrets.example deploy/github-actions.secrets
+# Edit deploy/github-actions.secrets — set DEPLOY_HOST and DEPLOY_SSH_KEY_FILE
+gh auth login
+chmod +x deploy/*.sh
+./deploy/configure-all-repos.sh
+```
 
 | Setting | Value |
 |---------|--------|
-| Variable `SSH_DEPLOY_ENABLED` | `true` |
-| Secret `DEPLOY_HOST` | VPS IP |
-| Secret `DEPLOY_USER` | SSH user |
-| Secret `DEPLOY_SSH_KEY` | Private SSH key |
+| Variable `SSH_DEPLOY_ENABLED` | `true` (set by script) |
+| Secret `DEPLOY_HOST` | VPS IP (`82.29.177.100`) |
+| Secret `DEPLOY_USER` | `root` |
+| Secret `DEPLOY_SSH_KEY` | Private SSH key (same key you use for VPS) |
 | Secret `DEPLOY_PATH` | `/opt/city-airport-taxis-backend` |
-| Secret `GHCR_TOKEN` | PAT with `read:packages` |
+| Secret `DEPLOY_PORT_APP` | `5000` |
+| Secret `GHCR_TOKEN` | Optional — leave empty to use `GITHUB_TOKEN` |
+
+Per-repo only:
+
+```bash
+./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-backend
+```
 
 ## Deploy
 
-- **Auto:** push to `main`
+- **Auto:** push to `main` → build image → SSH to VPS → `docker compose up`
 - **Manual:** Actions → **Deploy** → Run workflow
 
 ## Nginx + SSL
