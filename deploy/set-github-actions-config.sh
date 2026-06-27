@@ -1,27 +1,22 @@
 #!/usr/bin/env bash
 # Push GitHub Actions secrets/variables for auto-deploy on push to main.
 #
-# Prerequisites:
-#   1. GitHub CLI: https://cli.github.com/  →  gh auth login
-#   2. Copy deploy/github-actions.secrets.example → deploy/github-actions.secrets
-#
 # Usage:
 #   ./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-backend
+#   ./deploy/configure-all-repos.sh   # all three repos at once
 set -euo pipefail
 
 REPO="${1:-}"
 CONFIG="${2:-deploy/github-actions.secrets}"
 ENV_NAME="${GITHUB_ENVIRONMENT:-production}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -z "$REPO" ]]; then
   echo "Usage: $0 <github-owner/repo> [config-file]"
-  echo "Example: $0 belgiumairporttransfers-creator/city-airport-taxis-backend"
   exit 1
 fi
 
 if ! command -v gh >/dev/null 2>&1; then
-  echo "Install GitHub CLI first: https://cli.github.com/"
+  echo "Install GitHub CLI: https://cli.github.com/"
   exit 1
 fi
 
@@ -31,9 +26,8 @@ if ! gh auth status >/dev/null 2>&1; then
 fi
 
 if [[ ! -f "$CONFIG" ]]; then
-  cp "${SCRIPT_DIR}/github-actions.secrets.example" "$CONFIG"
-  echo "Created $CONFIG"
-  echo "Edit it with your VPS values, then run this script again."
+  echo "Missing ${CONFIG}"
+  echo "Create it with DEPLOY_HOST, DEPLOY_USER, and DEPLOY_SSH_KEY_FILE."
   exit 1
 fi
 
@@ -42,8 +36,7 @@ source "$CONFIG"
 
 require_var() {
   local name="$1"
-  local value="${!name:-}"
-  if [[ -z "$value" ]]; then
+  if [[ -z "${!name:-}" ]]; then
     echo "Missing $name in $CONFIG"
     exit 1
   fi
@@ -61,7 +54,7 @@ fi
 echo "Ensuring GitHub environment: ${ENV_NAME}"
 gh api --method PUT "repos/${REPO}/environments/${ENV_NAME}" -f wait_timer=0 >/dev/null
 
-echo "Configuring GitHub Actions for ${REPO} (environment: ${ENV_NAME}) ..."
+echo "Configuring ${REPO} ..."
 
 gh secret set DEPLOY_HOST --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_HOST"
 gh secret set DEPLOY_USER --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_USER"
@@ -83,8 +76,18 @@ if [[ -n "${DEPLOY_PORT_APP:-}" ]]; then
   gh secret set DEPLOY_PORT_APP --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_PORT_APP"
 fi
 
+if [[ -n "${NEXT_PUBLIC_BACKEND_URL:-}" ]]; then
+  gh variable set NEXT_PUBLIC_BACKEND_URL --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_BACKEND_URL"
+fi
+
+if [[ -n "${NEXT_PUBLIC_SITE_URL:-}" ]]; then
+  gh variable set NEXT_PUBLIC_SITE_URL --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_SITE_URL"
+fi
+
+if [[ -n "${NEXT_PUBLIC_SOCKET_PATH:-}" ]]; then
+  gh variable set NEXT_PUBLIC_SOCKET_PATH --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_SOCKET_PATH"
+fi
+
 gh variable set SSH_DEPLOY_ENABLED --env "${ENV_NAME}" -R "$REPO" -b "true"
 
-echo ""
-echo "Done. Auto-deploy is enabled for ${REPO}."
-echo "Push to main or run the Deploy workflow in GitHub Actions."
+echo "Done — auto-deploy enabled for ${REPO}."

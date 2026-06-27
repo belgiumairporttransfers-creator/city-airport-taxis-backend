@@ -284,9 +284,7 @@ Deploy on a **Hostinger VPS** (Ubuntu) with **Docker Compose** + **Nginx** + **S
 ```bash
 git clone git@github.com:belgiumairporttransfers-creator/city-airport-taxis-backend.git /opt/city-airport-taxis-backend
 cd /opt/city-airport-taxis-backend
-
-# One-time Docker + Nginx setup
-sudo bash deploy/docker-vps-setup.sh
+nano .env.production   # copy from local machine — never commit
 ```
 
 ### 2. Configure production env
@@ -337,48 +335,24 @@ export IMAGE=ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:
 
 ### 4. Nginx reverse proxy
 
+Create `/etc/nginx/sites-available/api.city-airport-taxis.be`, then:
+
 ```bash
-sudo cp deploy/nginx-api.conf.example /etc/nginx/sites-available/api.airport-transfers.be
-# Edit server_name to your domain
-sudo ln -s /etc/nginx/sites-available/api.airport-transfers.be /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/api.city-airport-taxis.be /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Point DNS: `api.airport-transfers.be` → VPS IP (A record).
+Point DNS: `api.city-airport-taxis.be` → VPS IP (A record).
 
 ### 5. SSL (HTTPS)
 
 ```bash
-sudo certbot --nginx -d api.airport-transfers.be
+sudo certbot --nginx -d api.city-airport-taxis.be
 ```
 
 ### 6. GitHub Actions auto-deploy
 
-Full setup guide: **[`.github/DEPLOY.md`](../.github/DEPLOY.md)** (repo root)
-
-Quick summary — in GitHub **Settings → Secrets and variables → Actions**:
-
-| Setting | Value |
-| ------- | ----- |
-| Variable `SSH_DEPLOY_ENABLED` | `true` |
-| Secret `DEPLOY_HOST` | VPS IP |
-| Secret `DEPLOY_USER` | SSH user |
-| Secret `DEPLOY_SSH_KEY` | Private SSH key |
-| Secret `DEPLOY_PATH` | `/opt/city-airport-taxis-backend` |
-| Secret `GHCR_TOKEN` | PAT with `read:packages` |
-
-**VPS one-time clone from GitHub:**
-
-```bash
-git clone git@github.com:belgiumairporttransfers-creator/city-airport-taxis-backend.git /opt/city-airport-taxis-backend
-cd /opt/city-airport-taxis-backend
-nano .env.production          # copy your local .env.production to the VPS (never commit)
-sudo bash deploy/docker-vps-setup.sh
-```
-
-Deploy runs automatically on push to `main`, or manually via **Actions → Deploy**.
-
-Image: `ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:latest`
+Run `backend/deploy/configure-all-repos.sh` once (after `gh auth login`), then push to `main` to deploy.
 
 ### 7. Verify
 
