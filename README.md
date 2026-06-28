@@ -352,7 +352,19 @@ sudo certbot --nginx -d api.city-airport-taxis.be
 
 ### 6. Deploy updates
 
-On the VPS, from each app directory:
+**Auto-deploy:** Push to `main` runs `.github/workflows/deploy.yml`. Configure **Settings → Environments → production → Secrets**:
+
+| Secret | Example |
+|--------|---------|
+| `DEPLOY_HOST` | `82.29.177.100` |
+| `DEPLOY_USER` | `root` |
+| `DEPLOY_SSH_KEY` | Private SSH key (full PEM) |
+| `GHCR_TOKEN` | GitHub PAT with `read:packages` |
+| `DEPLOY_PATH` | `/opt/city-airport-taxis-backend` |
+
+Optional: `DEPLOY_PORT` (`22`), `DEPLOY_PORT_APP` (`5000`).
+
+**Manual deploy** on the VPS, from the app directory:
 
 ```bash
 ./deploy/docker-deploy.sh
