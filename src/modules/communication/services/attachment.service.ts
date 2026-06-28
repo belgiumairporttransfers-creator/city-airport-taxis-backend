@@ -21,8 +21,11 @@ const VOICE_MIMES = new Set([
 class AttachmentService {
   detectKind(mimetype: string, explicit?: AttachmentKind): AttachmentKind {
     if (explicit) return explicit;
-    if (mimetype.startsWith("image/")) return "image";
-    if (VOICE_MIMES.has(mimetype)) return "voice";
+
+    const normalized = mimetype.split(";")[0].trim().toLowerCase();
+
+    if (normalized.startsWith("image/")) return "image";
+    if (VOICE_MIMES.has(normalized)) return "voice";
     return "document";
   }
 
@@ -40,7 +43,9 @@ class AttachmentService {
     const uploadResult =
       kind === "image"
         ? await uploadService.uploadImage(file, folder)
-        : await uploadService.uploadDocument(file, folder);
+        : kind === "voice"
+          ? await uploadService.uploadVoice(file, folder)
+          : await uploadService.uploadDocument(file, folder);
 
     const attachment = await messageAttachmentRepository.create({
       conversationId,

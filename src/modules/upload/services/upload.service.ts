@@ -10,8 +10,23 @@ const IMAGE_TRANSFORMATION = [
 ];
 
 class UploadService {
+  private normalizeMimeType(mimetype: string): string {
+    return mimetype.split(";")[0].trim().toLowerCase();
+  }
+
   private resolveResourceType(mimetype: string): "image" | "raw" {
-    return mimetype === "application/pdf" ? "raw" : "image";
+    const normalized = this.normalizeMimeType(mimetype);
+
+    if (normalized === "application/pdf") return "raw";
+    if (normalized.startsWith("audio/")) return "raw";
+    if (
+      normalized.startsWith("application/") ||
+      normalized.startsWith("text/")
+    ) {
+      return "raw";
+    }
+
+    return "image";
   }
 
   private async upload(
@@ -60,6 +75,17 @@ class UploadService {
     return this.upload(file, folder, {
       resource_type: resourceType,
       ...(resourceType === "image" ? { transformation: IMAGE_TRANSFORMATION } : {}),
+      ...options,
+    });
+  }
+
+  async uploadVoice(
+    file: Express.Multer.File,
+    folder: string = "uploads",
+    options?: Partial<UploadOptions>
+  ) {
+    return this.upload(file, folder, {
+      resource_type: "video",
       ...options,
     });
   }

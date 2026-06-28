@@ -20,16 +20,23 @@ const ALLOWED_MIMES = new Set([
   "audio/x-wav",
 ]);
 
+const normalizeMimeType = (mimetype: string) =>
+  mimetype.split(";")[0].trim().toLowerCase();
+
 const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIMES.has(file.mimetype)) {
+    const normalized = normalizeMimeType(file.mimetype);
+
+    if (!ALLOWED_MIMES.has(normalized)) {
       cb(new AppError("Unsupported file type", 400));
       return;
     }
+
+    file.mimetype = normalized;
     cb(null, true);
   },
 });

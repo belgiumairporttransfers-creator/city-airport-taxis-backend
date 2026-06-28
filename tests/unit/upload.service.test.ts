@@ -76,6 +76,24 @@ describe("uploadService", () => {
     expect(uploadMock.mock.calls[0][1]).not.toHaveProperty("transformation");
   });
 
+  it("uploads voice files with video resource type", async () => {
+    uploadMock.mockResolvedValue({
+      success: true,
+      url: "https://cdn.example.com/voice.webm",
+      public_id: "voice-id",
+    });
+
+    await uploadService.uploadVoice(createFile("audio/webm", "voice.webm"), "communication/abc");
+
+    expect(uploadMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        folder: "communication/abc",
+        resource_type: "video",
+      })
+    );
+  });
+
   it("throws when cloudinary upload fails", async () => {
     uploadMock.mockResolvedValue({ success: false, error: "Upload failed" });
 
