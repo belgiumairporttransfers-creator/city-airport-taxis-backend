@@ -19,10 +19,7 @@ class UploadService {
 
     if (normalized === "application/pdf") return "raw";
     if (normalized.startsWith("audio/")) return "raw";
-    if (
-      normalized.startsWith("application/") ||
-      normalized.startsWith("text/")
-    ) {
+    if (normalized.startsWith("application/") || normalized.startsWith("text/")) {
       return "raw";
     }
 

@@ -20,8 +20,7 @@ const ALLOWED_MIMES = new Set([
   "audio/x-wav",
 ]);
 
-const normalizeMimeType = (mimetype: string) =>
-  mimetype.split(";")[0].trim().toLowerCase();
+const normalizeMimeType = (mimetype: string) => mimetype.split(";")[0].trim().toLowerCase();
 
 const storage = multer.memoryStorage();
 
