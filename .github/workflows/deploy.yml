@@ -17,66 +17,70 @@ on:
       - "**.md"
 
 concurrency:
-  group: deploy-backend-${{ github.ref }}
+  group: deploy-backend-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
   cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: city-airport-taxis-backend
   IMAGE: ghcr.io/${{ github.repository_owner }}/city-airport-taxis-backend
+  DEFAULT_DEPLOY_PATH: /opt/city-airport-taxis-backend
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
     permissions:
       contents: read
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Validate deploy files
+      - name: Validate deployment files
         run: |
+          set -euo pipefail
           test -f Dockerfile
           test -f docker-compose.prod.yml
+          test -f deploy/docker-deploy.sh
+          echo "Deployment files OK"
 
-      - name: Validate VPS deploy configuration
+      - name: Validate VPS secrets
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -euo pipefail
           missing=0
-          if [ -z "${DEPLOY_HOST}" ]; then
-            echo "::error::Missing secret DEPLOY_HOST in the production environment."
-            missing=1
-          fi
-          if [ -z "${DEPLOY_USER}" ]; then
-            echo "::error::Missing secret DEPLOY_USER in the production environment."
-            missing=1
-          fi
-          if [ -z "${DEPLOY_SSH_KEY}" ]; then
-            echo "::error::Missing secret DEPLOY_SSH_KEY in the production environment."
-            missing=1
-          fi
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY GHCR_TOKEN DEPLOY_PATH; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret ${name} in the production environment."
+              missing=1
+            fi
+          done
           if [ "${missing}" -ne 0 ]; then
             echo ""
             echo "Configure GitHub → Settings → Environments → production → Secrets:"
-            echo "  DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, GHCR_TOKEN"
-            echo "  DEPLOY_PATH=/opt/city-airport-taxis-backend"
+            echo "  DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, GHCR_TOKEN, DEPLOY_PATH"
+            echo "  Example DEPLOY_PATH=${{ env.DEFAULT_DEPLOY_PATH }}"
             exit 1
           fi
-          echo "VPS deploy secrets are configured."
+          echo "VPS secrets configured"
+          echo "Deploy path: ${DEPLOY_PATH}"
 
-      - name: Log in to GHCR
+      - name: Log in to GHCR (CI)
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -85,21 +89,22 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Sync compose files on VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "docker-compose.prod.yml,deploy/docker-deploy.sh"
-          target: ${{ secrets.DEPLOY_PATH || '/opt/city-airport-taxis-backend' }}
+      - name: Log image published
+        run: |
+          echo "Image built and pushed:"
+          echo "  ${{ env.IMAGE }}:${{ github.sha }} (production deploy tag)"
+          echo "  ${{ env.IMAGE }}:latest (convenience tag)"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
 
-      - name: Deploy to VPS via SSH
+      - name: Deploy on VPS (Docker only)
         uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
           IMAGE: ${{ env.IMAGE }}:${{ github.sha }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
@@ -107,35 +112,14 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: GHCR_TOKEN,IMAGE,DEPLOY_PATH
+          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE,DEPLOY_PATH
           script: |
             set -euo pipefail
-            APP_DIR="${DEPLOY_PATH:-/opt/city-airport-taxis-backend}"
-            cd "${APP_DIR}"
+            echo "[ci $(date -u +%Y-%m-%dT%H:%M:%SZ)] Connecting to VPS"
+            echo "[ci] Deploy path: ${DEPLOY_PATH}"
+            echo "[ci] Deploy image: ${IMAGE}"
+            cd "${DEPLOY_PATH}"
             chmod +x deploy/docker-deploy.sh
-            if [ ! -f .env.production ]; then
-              echo "ERROR: Missing .env.production on VPS at ${APP_DIR}"
-              echo "Copy your local .env.production to the server first (never commit it to git)."
-              exit 1
-            fi
-            LOGIN_TOKEN="${GHCR_TOKEN:-}"
-            if [ -z "${LOGIN_TOKEN}" ]; then
-              LOGIN_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-            fi
-            if [ -n "${LOGIN_TOKEN}" ]; then
-              echo "${LOGIN_TOKEN}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            fi
-            export IMAGE="${IMAGE}"
-            export PULL_POLICY=always
             ./deploy/docker-deploy.sh
-
-      - name: Post-deploy health check
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script: |
-            curl -fsS "http://127.0.0.1:${{ secrets.DEPLOY_PORT_APP || 5000 }}/health/live"
-            echo "Backend deployed successfully."
+            echo "[ci] Backend deployment finished"

@@ -275,17 +275,25 @@ Deploy on a **Hostinger VPS** (Ubuntu) with **Docker Compose** + **Nginx** + **S
 
 **Stack on VPS:** Docker · Redis (container) · Nginx · Certbot · MongoDB Atlas
 
-### 1. VPS setup (one-time)
+### 1. VPS setup (one-time, no Git on server)
+
+The VPS only needs **Docker** and **Docker Compose**. No Git repository is required on the server.
 
 1. Hostinger → **VPS** → create instance (Ubuntu 24.04, EU region)
 2. Note the **server IP** — add it to MongoDB Atlas **Network Access**
-3. SSH in: `ssh root@YOUR_VPS_IP`
+3. From your **local machine**, bootstrap the deploy directory:
 
 ```bash
-git clone git@github.com:belgiumairporttransfers-creator/city-airport-taxis-backend.git /opt/city-airport-taxis-backend
-cd /opt/city-airport-taxis-backend
-nano .env.production   # copy from local machine — never commit
+cd city-airport-taxis-backend
+VPS_HOST=YOUR_VPS_IP VPS_USER=root APP_PATH=/opt/city-airport-taxis-backend ./deploy/bootstrap-vps.sh
+scp .env.production root@YOUR_VPS_IP:/opt/city-airport-taxis-backend/.env.production
 ```
+
+The VPS directory contains only:
+
+* `docker-compose.prod.yml`
+* `deploy/docker-deploy.sh`
+* `.env.production` (secrets — never commit)
 
 ### 2. Configure production env
 
@@ -308,29 +316,29 @@ nano .env.production   # use your production env (copy from local machine — ne
 | `NEWSLETTER_QUEUE_ENABLED` | `true` |
 | `SOCKET_ENABLED` | `true` for WebSockets |
 
-### 3. Start the API
+### 3. Deploy
 
-**First deploy (build on VPS):**
+**Automatic (recommended):** push to `main` → GitHub Actions builds the image, pushes to GHCR (`:latest` + commit SHA), SSHs to the VPS, and deploys the **immutable SHA tag**.
 
-```bash
-chmod +x deploy/docker-deploy.sh
-./deploy/docker-deploy.sh
-```
+Regular deploys only run Docker commands on the VPS (no file sync). To update `docker-compose.prod.yml` or `deploy/docker-deploy.sh`, run the **Bootstrap VPS Deploy Files** workflow (`bootstrap-deploy.yml`) or `deploy/bootstrap-vps.sh`.
 
-**Deploy from GitHub Container Registry (CI/CD):**
+**Manual on VPS** (pull from GHCR only — no local build):
 
 ```bash
+cd /opt/city-airport-taxis-backend
 export GHCR_USER=your-github-username
 export GHCR_TOKEN=ghp_xxxx   # PAT with read:packages
-export IMAGE=ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:latest
+export IMAGE=ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:<commit-sha>
 ./deploy/docker-deploy.sh
 ```
+
+Deployments verify `/health/live`, prune unused images older than 24h, and automatically roll back to the previous SHA on failure.
 
 | Command | Purpose |
 | ------- | ------- |
 | `docker compose -f docker-compose.prod.yml ps` | Service status |
 | `docker compose -f docker-compose.prod.yml logs -f api` | API logs |
-| `./deploy/docker-deploy.sh` | Pull/build + restart |
+| `./deploy/docker-deploy.sh` | Pull from GHCR + restart |
 | `docker compose -f docker-compose.prod.yml down` | Stop stack |
 
 ### 4. Nginx reverse proxy
@@ -352,7 +360,7 @@ sudo certbot --nginx -d api.city-airport-taxis.be
 
 ### 6. Deploy updates
 
-**Auto-deploy:** Push to `main` runs `.github/workflows/deploy.yml`. Configure **Settings → Environments → production → Secrets**:
+**Auto-deploy:** Push to `main` runs `.github/workflows/deploy.yml` (SHA-tagged images). Configure **Settings → Environments → production → Secrets**:
 
 | Secret | Example |
 |--------|---------|
@@ -362,11 +370,17 @@ sudo certbot --nginx -d api.city-airport-taxis.be
 | `GHCR_TOKEN` | GitHub PAT with `read:packages` |
 | `DEPLOY_PATH` | `/opt/city-airport-taxis-backend` |
 
-Optional: `DEPLOY_PORT` (`22`), `DEPLOY_PORT_APP` (`5000`).
+Optional: `DEPLOY_PORT` (`22`).
 
-**Manual deploy** on the VPS, from the app directory:
+**Bootstrap deploy infrastructure** (only when compose/deploy scripts change): run `.github/workflows/bootstrap-deploy.yml` manually, or use `deploy/bootstrap-vps.sh` from your machine.
+
+**Manual deploy** on the VPS:
 
 ```bash
+cd /opt/city-airport-taxis-backend
+export GHCR_USER=your-github-username
+export GHCR_TOKEN=ghp_xxxx
+export IMAGE=ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:<commit-sha>
 ./deploy/docker-deploy.sh
 ```
 
@@ -542,6 +556,98 @@ Enforced in Joi (`validators/password.schema.ts`), not duplicated in services:
 | `pnpm format` | Prettier write |
 | `pnpm test` | Run Vitest test suite |
 | `pnpm seed:admin` | Seed initial admin (`SEED_ADMIN_PASSWORD` required) |
+
+## Production operations
+
+### Architecture
+
+```
+Developer → git push → GitHub Actions → build image → push GHCR
+         → SSH VPS → docker login → pull SHA image → compose up → health check
+```
+
+The VPS has **no Git**. Each app directory contains only `docker-compose.prod.yml`, `deploy/docker-deploy.sh`, `.env.production`, and runtime state files (`.deploy-state`, `.deploy.lock`).
+
+### Release process
+
+1. Merge to `main` — triggers `deploy.yml` automatically.
+2. CI builds and pushes `ghcr.io/<owner>/<app>:<commit-sha>` and `:latest`.
+3. CI deploys the **SHA tag** only (never `:latest` in production).
+4. On success, `.deploy-state` records the running image for future rollbacks.
+
+Enable **environment protection rules** on the `production` environment in GitHub for manual approval before deploy if desired.
+
+### Required secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `DEPLOY_HOST` | VPS IP or hostname |
+| `DEPLOY_USER` | SSH user (e.g. `root`) |
+| `DEPLOY_SSH_KEY` | Private SSH key (PEM) |
+| `GHCR_TOKEN` | PAT with `read:packages` |
+| `DEPLOY_PATH` | App directory on VPS |
+
+Optional: `DEPLOY_PORT` (default `22`), `DEPLOY_HOST_FINGERPRINT` (SSH host key for MITM protection).
+
+### Bootstrap (infrastructure updates only)
+
+Run when `docker-compose.prod.yml` or `deploy/docker-deploy.sh` changes:
+
+- **GitHub Actions:** `bootstrap-deploy.yml` (manual workflow_dispatch)
+- **Local machine:** `deploy/bootstrap-vps.sh`
+
+Regular deploys do **not** copy files to the VPS.
+
+### Rollback
+
+**Automatic:** If health checks fail after a deploy, the script rolls back to the image in `.deploy-state` (last known-good). The state file is only updated after a successful deploy. CI fails so you are notified.
+
+**Manual:** Deploy a previous SHA:
+
+```bash
+export IMAGE=ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-backend:<previous-sha>
+./deploy/docker-deploy.sh
+```
+
+### Health checks
+
+| App | Endpoint | Notes |
+|-----|----------|-------|
+| Backend | `http://127.0.0.1:5000/health/live` | Public liveness probe |
+| Admin | `http://127.0.0.1:3000/` | HTTP 200 from Next.js |
+| Driver | `http://127.0.0.1:3002/` | HTTP 200 from Next.js |
+
+Deploy script retries up to 30 times (~60s). Container-level healthchecks in compose provide ongoing monitoring.
+
+### Troubleshooting
+
+| Symptom | Action |
+|---------|--------|
+| Deploy lock error | Another deploy in progress, or stale `.deploy.lock` after crash — verify no running deploy, remove lock if safe |
+| GHCR login failed | Verify `GHCR_TOKEN` and `GHCR_USER` (must match PAT owner) |
+| Pull failed after retries | GHCR outage or bad image tag — check GHCR status, verify SHA exists |
+| Health check failed | `docker compose logs -f <service>` on VPS |
+| Rollback succeeded, CI red | Expected — investigate failed SHA before redeploying |
+| Disk space error | Free disk on VPS (`df -h`), prune old images manually if needed |
+
+### Disaster recovery
+
+| Scenario | Recovery |
+|----------|----------|
+| VPS reboot | `restart: unless-stopped` brings containers back automatically |
+| Docker daemon restart | Same — compose services restart on boot |
+| Interrupted deploy | Re-run deploy; lock prevents concurrent runs |
+| Partial deploy | Rollback restores previous image if health check fails |
+| Lost `.deploy-state` | Redeploy last known-good SHA manually |
+| GHCR unavailable | Pull retries (3x with backoff); fails cleanly if still down |
+
+### Deployment verification
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+cat .deploy-state
+curl http://127.0.0.1:5000/health/live
+```
 
 ## Security notes
 
