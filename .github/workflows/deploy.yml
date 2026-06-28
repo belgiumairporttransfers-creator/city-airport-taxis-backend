@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Backend
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ on:
       - "**.md"
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-backend-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -120,5 +120,5 @@ jobs:
             echo "VPS auto-deploy is enabled for this repo."
           else
             echo "::warning::SSH_DEPLOY_ENABLED is not true — image was pushed to GHCR but the VPS was not updated."
-            echo "Run backend/deploy/configure-all-repos.sh once to enable VPS auto-deploy."
+            echo "Deploy manually on the VPS with ./deploy/docker-deploy.sh"
           fi

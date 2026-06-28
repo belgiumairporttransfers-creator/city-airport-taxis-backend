@@ -41,7 +41,6 @@ out/
 .env.test.local
 .env.production
 .env.production.local
-deploy/github-actions.secrets
 .env.staging
 .env.staging.local
 

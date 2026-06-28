@@ -350,9 +350,15 @@ Point DNS: `api.city-airport-taxis.be` → VPS IP (A record).
 sudo certbot --nginx -d api.city-airport-taxis.be
 ```
 
-### 6. GitHub Actions auto-deploy
+### 6. Deploy updates
 
-Run `backend/deploy/configure-all-repos.sh` once (after `gh auth login`), then push to `main` to deploy.
+On the VPS, from each app directory:
+
+```bash
+./deploy/docker-deploy.sh
+```
+
+Each app (backend, admin, driver) is deployed separately from its own folder on the VPS.
 
 ### 7. Verify
 
