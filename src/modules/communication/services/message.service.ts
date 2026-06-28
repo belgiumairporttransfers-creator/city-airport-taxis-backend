@@ -23,6 +23,7 @@ import { syncConversationPreview } from "@/modules/communication/services/conver
 import type {
   CommunicationActor,
   GetMessagesQuery,
+  ParticipantAccountType,
   SendMessageData,
 } from "@/modules/communication/types/communication.types";
 
@@ -229,7 +230,7 @@ class MessageService {
   }
 
   async markRead(messageId: string, conversationId: string, actor: CommunicationActor) {
-    await conversationService.assertParticipant(conversationId, actor);
+    const conversation = await conversationService.assertParticipant(conversationId, actor);
 
     const message = await messageRepository.findById(messageId);
     if (!message || message.conversationId.toString() !== conversationId) {
@@ -257,9 +258,18 @@ class MessageService {
       readerAccountType: actor.accountType,
     };
 
+    const sender = conversationService.getOtherParticipant(conversation, actor);
+
     await communicationPubSub.publish({
       event: "message:read",
       conversationId,
+      payload,
+    });
+
+    await communicationPubSub.publish({
+      event: "message:read",
+      recipientAccountType: sender.accountType,
+      recipientAccountIds: [sender.accountId],
       payload,
     });
 
@@ -296,6 +306,13 @@ class MessageService {
     await communicationPubSub.publish({
       event: "message:delivered",
       conversationId: message.conversationId.toString(),
+      payload,
+    });
+
+    await communicationPubSub.publish({
+      event: "message:delivered",
+      recipientAccountType: message.senderAccountType as ParticipantAccountType,
+      recipientAccountIds: [message.senderAccountId],
       payload,
     });
 
