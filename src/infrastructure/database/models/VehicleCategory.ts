@@ -35,11 +35,6 @@ const vehicleCategorySchema = new Schema<IVehicleCategory>(
       min: 0,
       default: 0,
     },
-    handLuggageCapacity: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
     sortOrder: {
       type: Number,
       default: 0,

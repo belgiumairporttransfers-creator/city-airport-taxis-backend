@@ -39,7 +39,6 @@ export const toVehicleCategoryResponse = (
     image: record.image as string | undefined,
     passengerCapacity: Number(record.passengerCapacity ?? 0),
     luggageCapacity: Number(record.luggageCapacity ?? 0),
-    handLuggageCapacity: Number(record.handLuggageCapacity ?? 0),
     sortOrder: Number(record.sortOrder ?? 0),
     status: record.status as VehicleCategoryResponse["status"],
     isDefault: Boolean(record.isDefault),
@@ -68,7 +67,6 @@ export const deriveCategoryCapacities = (vehicles: CapacityVehicleLike[]) => {
     return {
       passengerCapacity: 0,
       luggageCapacity: 0,
-      handLuggageCapacity: 0,
     };
   }
 
@@ -82,14 +80,12 @@ export const deriveCategoryCapacities = (vehicles: CapacityVehicleLike[]) => {
   return {
     passengerCapacity,
     luggageCapacity,
-    handLuggageCapacity: luggageCapacity,
   };
 };
 
 type CategoryCapacityLike = {
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
 };
 
 export const resolveCategoryCapacities = (
@@ -99,11 +95,9 @@ export const resolveCategoryCapacities = (
   const stored = {
     passengerCapacity: Number(category.passengerCapacity ?? 0),
     luggageCapacity: Number(category.luggageCapacity ?? 0),
-    handLuggageCapacity: Number(category.handLuggageCapacity ?? 0),
   };
   const derived = deriveCategoryCapacities(vehicles);
-  const hasStoredMarketingValues =
-    stored.passengerCapacity > 0 || stored.luggageCapacity > 0 || stored.handLuggageCapacity > 0;
+  const hasStoredMarketingValues = stored.passengerCapacity > 0 || stored.luggageCapacity > 0;
 
   if (hasStoredMarketingValues) {
     return stored;
@@ -124,7 +118,6 @@ export const toVehicleCategoryPublicResponse = (
     {
       passengerCapacity: record.passengerCapacity as number | undefined,
       luggageCapacity: record.luggageCapacity as number | undefined,
-      handLuggageCapacity: record.handLuggageCapacity as number | undefined,
     },
     vehicles
   );

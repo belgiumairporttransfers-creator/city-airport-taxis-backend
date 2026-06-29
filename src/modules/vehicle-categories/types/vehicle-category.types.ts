@@ -10,7 +10,6 @@ export interface IVehicleCategory extends Document {
   image?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
   sortOrder: number;
   status: VehicleCategoryStatus;
   isDefault: boolean;
@@ -27,7 +26,6 @@ export interface CreateVehicleCategoryData {
   image?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
@@ -40,7 +38,6 @@ export interface UpdateVehicleCategoryData {
   image?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
@@ -62,7 +59,6 @@ export interface VehicleCategoryResponse {
   image?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
   sortOrder: number;
   status: VehicleCategoryStatus;
   isDefault: boolean;
@@ -90,7 +86,6 @@ export interface VehicleCategoryPublicResponse {
   image?: string;
   passengerCapacity: number;
   luggageCapacity: number;
-  handLuggageCapacity: number;
 }
 
 export interface VehicleCategoryPublicDetailResponse extends VehicleCategoryPublicResponse {

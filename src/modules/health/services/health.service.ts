@@ -92,16 +92,18 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, fallback: 
   }
 };
 
-export const getHealthReport = async (includeMetrics = false): Promise<HealthReport> => {
+export const getHealthReport = async (includeMetrics = false) => {
   const database = getMongoHealthStatus();
   const redis = await RedisClient.ping();
   const socket = getSocketHealthStatus();
   const email = await withTimeout(emailService.pingHealth(), 2000, {
     status: "unhealthy" as const,
+    latencyMs: 0,
     error: "Health check timed out",
   });
   const storage = await withTimeout(pingStorageHealth(), 2000, {
     status: "unhealthy" as const,
+    latencyMs: 0,
     error: "Health check timed out",
   });
 
@@ -127,10 +129,10 @@ export const getHealthReport = async (includeMetrics = false): Promise<HealthRep
     storage,
     services,
     ...(includeMetrics ? { metrics: getMetricsSnapshot() } : {}),
-  };
+  } as HealthReport;
 };
 
-export const getPublicHealthReport = async (): Promise<HealthReport> => {
+export const getPublicHealthReport = async () => {
   const database = getMongoHealthStatus();
   const redis = await RedisClient.ping();
   const socket = getSocketHealthStatus();
@@ -147,7 +149,7 @@ export const getPublicHealthReport = async (): Promise<HealthReport> => {
       email: "disabled",
       storage: "disabled",
     },
-  };
+  } as HealthReport;
 };
 
 export const getHealthStatusCode = (report: HealthReport, ready = true): number => {

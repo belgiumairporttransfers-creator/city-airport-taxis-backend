@@ -121,6 +121,25 @@ class VehicleCategoryService {
       throw new AppError("Vehicle category not found", 404);
     }
 
+    const capacitiesChanged =
+      data.passengerCapacity !== undefined || data.luggageCapacity !== undefined;
+
+    if (capacitiesChanged) {
+      const passengerCapacity = Number(category.passengerCapacity ?? 0);
+      const luggageCapacity = Number(category.luggageCapacity ?? 0);
+
+      if (passengerCapacity >= 1) {
+        await vehicleRepository.syncCapacitiesByCategoryId(
+          category._id.toString(),
+          {
+            passengerCapacity,
+            luggageCapacity,
+          },
+          adminId
+        );
+      }
+    }
+
     this.logCategoryAudit(AuditEvents.VEHICLE_CATEGORY_UPDATED, adminId, category._id.toString(), {
       name: category.name,
       slug: category.slug,
@@ -136,20 +155,10 @@ class VehicleCategoryService {
       throw new AppError("Vehicle category not found", 404);
     }
 
-    const vehicleCount = await vehicleRepository.countByCategoryId(id);
-    const pricingCount = await vehiclePricingRepository.countByCategoryId(id);
-
-    if (vehicleCount > 0 && pricingCount > 0) {
-      throw new AppError("Cannot delete category because vehicles and pricing slabs exist.", 400);
-    }
-
-    if (vehicleCount > 0) {
-      throw new AppError("Cannot delete category because vehicles are assigned.", 400);
-    }
-
-    if (pricingCount > 0) {
-      throw new AppError("Cannot delete category because pricing slabs exist.", 400);
-    }
+    const [pricingResult, vehiclesResult] = await Promise.all([
+      vehiclePricingRepository.deleteByCategoryId(id),
+      vehicleRepository.deleteByCategoryId(id),
+    ]);
 
     const deleted = await vehicleCategoryRepository.deleteById(id);
 
@@ -160,6 +169,8 @@ class VehicleCategoryService {
     this.logCategoryAudit(AuditEvents.VEHICLE_CATEGORY_DELETED, adminId, id, {
       name: existing.name,
       slug: existing.slug,
+      deletedPricingSlabCount: pricingResult.deletedCount ?? 0,
+      deletedVehicleCount: vehiclesResult.deletedCount ?? 0,
     });
 
     return deleted;

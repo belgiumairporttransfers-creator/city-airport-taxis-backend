@@ -33,7 +33,7 @@ class AuthLockoutService {
     password: string,
     userType: AccountUserType,
     audit: AuthAuditContext
-  ): Promise<boolean> {
+  ) {
     const valid = await account.comparePassword(password);
     if (valid) {
       account.failedLoginAttempts = 0;
@@ -50,7 +50,7 @@ class AuthLockoutService {
     account: LockableAccount,
     userType: AccountUserType,
     audit: AuthAuditContext
-  ): Promise<void> {
+  ) {
     account.failedLoginAttempts += 1;
     if (account.failedLoginAttempts >= MAX_ATTEMPTS) {
       account.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);

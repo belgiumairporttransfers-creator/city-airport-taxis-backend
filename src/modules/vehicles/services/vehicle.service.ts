@@ -27,12 +27,18 @@ class VehicleService {
     });
   }
 
-  private async assertCategoryExists(categoryId: string) {
+  private async getCategoryById(categoryId: string) {
     const category = await vehicleCategoryRepository.findById(categoryId);
 
     if (!category) {
       throw new AppError("Vehicle category not found", 404);
     }
+
+    return category;
+  }
+
+  private async assertActiveCategory(categoryId: string) {
+    const category = await this.getCategoryById(categoryId);
 
     if (category.status !== "active") {
       throw new AppError("Vehicle category is not active", 400);
@@ -41,16 +47,44 @@ class VehicleService {
     return category;
   }
 
-  async createVehicle(data: CreateVehicleData, adminId: string) {
-    await this.assertCategoryExists(data.categoryId);
+  private resolveCapacitiesFromCategory(category: {
+    passengerCapacity?: number;
+    luggageCapacity?: number;
+  }) {
+    const passengerCapacity = Number(category.passengerCapacity ?? 0);
+    const luggageCapacity = Number(category.luggageCapacity ?? 0);
 
-    const registrationNumber = normalizeRegistrationNumber(data.registrationNumber);
+    if (passengerCapacity < 1) {
+      throw new AppError(
+        "Category must have passenger capacity configured before assigning vehicles",
+        400
+      );
+    }
+
+    return { passengerCapacity, luggageCapacity };
+  }
+
+  private stripClientCapacities<T extends UpdateVehicleData>(data: T) {
+    const { passengerCapacity: _passengerCapacity, luggageCapacity: _luggageCapacity, ...rest } =
+      data;
+
+    return rest;
+  }
+
+  async createVehicle(data: CreateVehicleData, adminId: string) {
+    const category = await this.assertActiveCategory(data.categoryId);
+    const capacities = this.resolveCapacitiesFromCategory(category);
+    const { passengerCapacity: _passengerCapacity, luggageCapacity: _luggageCapacity, ...rest } =
+      data;
+
+    const registrationNumber = normalizeRegistrationNumber(rest.registrationNumber);
 
     const vehicle = await vehicleRepository.create({
-      ...data,
+      ...rest,
+      ...capacities,
       registrationNumber,
-      features: data.features ?? [],
-      status: data.status ?? "active",
+      features: rest.features ?? [],
+      status: rest.status ?? "active",
       createdBy: adminId,
       updatedBy: adminId,
     });
@@ -94,16 +128,22 @@ class VehicleService {
       throw new AppError("Vehicle not found", 404);
     }
 
-    if (data.categoryId) {
-      await this.assertCategoryExists(data.categoryId);
+    if (data.categoryId && data.categoryId !== existing.categoryId.toString()) {
+      await this.assertActiveCategory(data.categoryId);
     }
 
-    const registrationNumber = data.registrationNumber
-      ? normalizeRegistrationNumber(data.registrationNumber)
+    const effectiveCategoryId = data.categoryId ?? existing.categoryId.toString();
+    const category = await this.getCategoryById(effectiveCategoryId);
+    const capacities = this.resolveCapacitiesFromCategory(category);
+    const rest = this.stripClientCapacities(data);
+
+    const registrationNumber = rest.registrationNumber
+      ? normalizeRegistrationNumber(rest.registrationNumber)
       : undefined;
 
     const vehicle = await vehicleRepository.updateById(id, {
-      ...data,
+      ...rest,
+      ...capacities,
       ...(registrationNumber ? { registrationNumber } : {}),
       updatedBy: adminId,
     });

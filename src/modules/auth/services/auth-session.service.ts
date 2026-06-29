@@ -1,6 +1,5 @@
 import { UAParser } from "ua-parser-js";
 import { Types } from "mongoose";
-import type { ISession } from "@/modules/auth/types/session.types";
 import { JwtUtil } from "@/modules/auth/utils/jwt";
 import type { TokenPayload } from "@/modules/auth/types/auth.types";
 import { AppError } from "@/shared/errors/AppError";
@@ -16,7 +15,7 @@ class AuthSessionService {
     userType: AccountUserType,
     refreshToken: string,
     audit: AuthAuditContext
-  ): Promise<ISession> {
+  ) {
     const { ip, userAgent } = audit;
 
     await this.enforceMaxSessions(userId, userType);
@@ -41,7 +40,7 @@ class AuthSessionService {
     refreshToken: string,
     userType: AccountUserType,
     buildPayload: (userId: string) => Promise<TokenPayload | null>
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ) {
     const decoded = JwtUtil.verifyRefreshToken(refreshToken);
 
     if (decoded.type !== userType) {
@@ -74,12 +73,12 @@ class AuthSessionService {
     return { accessToken, refreshToken: newRefreshToken };
   }
 
-  async invalidate(refreshToken: string, userId: string, userType: AccountUserType): Promise<void> {
+  async invalidate(refreshToken: string, userId: string, userType: AccountUserType) {
     const hashedToken = JwtUtil.hashToken(refreshToken);
     await sessionRepository.invalidateByRefreshToken(hashedToken, userId, userType);
   }
 
-  async invalidateAll(userId: string, userType: AccountUserType): Promise<void> {
+  async invalidateAll(userId: string, userType: AccountUserType) {
     await sessionRepository.invalidateAllForUser(userId, userType);
   }
 
@@ -101,12 +100,12 @@ class AuthSessionService {
     };
   }
 
-  async revokeById(sessionId: string, userId: string, userType: AccountUserType): Promise<boolean> {
+  async revokeById(sessionId: string, userId: string, userType: AccountUserType) {
     const result = await sessionRepository.revokeById(sessionId, userId, userType);
     return Boolean(result);
   }
 
-  private async enforceMaxSessions(userId: string, userType: AccountUserType): Promise<void> {
+  private async enforceMaxSessions(userId: string, userType: AccountUserType) {
     const max = env.MAX_SESSIONS_PER_USER;
     const sessions = await sessionRepository.findValidSessionIds(userId, userType);
 

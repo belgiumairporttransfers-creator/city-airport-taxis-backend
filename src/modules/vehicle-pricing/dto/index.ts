@@ -37,24 +37,28 @@ const toRecord = (pricing: unknown): Record<string, unknown> => {
 export const toVehiclePricingResponse = (pricing: unknown): VehiclePricingResponse => {
   const record = toRecord(pricing);
   const pricingType = record.pricingType as VehiclePricingType;
-  const storedPerKmRate =
-    record.perKmRate === undefined || record.perKmRate === null
-      ? undefined
-      : Number(record.perKmRate);
+  const storedPerUnitRate =
+    record.perUnitRate === undefined || record.perUnitRate === null
+      ? record.perKmRate === undefined || record.perKmRate === null
+        ? undefined
+        : Number(record.perKmRate)
+      : Number(record.perUnitRate);
   const storedIncrease =
     record.increasePercentage === undefined || record.increasePercentage === null
       ? undefined
       : Number(record.increasePercentage);
 
-  const perKmRate =
-    pricingType === "base_plus_per_unit" ? (storedPerKmRate ?? storedIncrease) : storedPerKmRate;
+  const perUnitRate =
+    pricingType === "base_plus_per_unit"
+      ? (storedPerUnitRate ?? storedIncrease)
+      : storedPerUnitRate;
   const increasePercentage =
     pricingType === "base_plus_per_unit" &&
-    storedPerKmRate !== undefined &&
+    storedPerUnitRate !== undefined &&
     storedIncrease !== undefined &&
-    storedPerKmRate === storedIncrease
+    storedPerUnitRate === storedIncrease
       ? undefined
-      : pricingType === "base_plus_per_unit" && storedPerKmRate === undefined
+      : pricingType === "base_plus_per_unit" && storedPerUnitRate === undefined
         ? undefined
         : storedIncrease;
 
@@ -68,7 +72,7 @@ export const toVehiclePricingResponse = (pricing: unknown): VehiclePricingRespon
         : Number(record.maxDistance),
     pricingType,
     priceAmount: Number(record.priceAmount ?? 0),
-    perKmRate,
+    perUnitRate,
     increasePercentage,
     status: record.status as VehiclePricingStatus,
     sortOrder: Number(record.sortOrder ?? 0),

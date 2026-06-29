@@ -55,6 +55,10 @@ class VehicleRepository {
     return Vehicle.findByIdAndDelete(id);
   }
 
+  deleteByCategoryId(categoryId: string): Promise<{ deletedCount?: number }> {
+    return Vehicle.deleteMany({ categoryId });
+  }
+
   count() {
     return Vehicle.countDocuments();
   }
@@ -77,6 +81,21 @@ class VehicleRepository {
 
   countActiveByCategoryId(categoryId: string) {
     return Vehicle.countDocuments({ categoryId, status: "active" });
+  }
+
+  syncCapacitiesByCategoryId(
+    categoryId: string,
+    capacities: { passengerCapacity: number; luggageCapacity: number },
+    adminId?: string
+  ) {
+    return Vehicle.updateMany(
+      { categoryId },
+      {
+        passengerCapacity: capacities.passengerCapacity,
+        luggageCapacity: capacities.luggageCapacity,
+        ...(adminId ? { updatedBy: adminId } : {}),
+      }
+    );
   }
 }
 

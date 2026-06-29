@@ -35,7 +35,6 @@ const createCategory = async (
       description: "Premium saloon",
       passengerCapacity: 3,
       luggageCapacity: 2,
-      handLuggageCapacity: 2,
       sortOrder: 1,
       status: "active",
       ...payload,
@@ -93,15 +92,13 @@ describe("Vehicle domain integration", () => {
       expect(response.status).toBe(200);
     });
 
-    it("blocks delete when vehicles are assigned", async () => {
-      const category = await createCategory(agent, csrf, { name: "Fleet Blocked" });
+    it("cascade deletes vehicles when category is deleted", async () => {
+      const category = await createCategory(agent, csrf, { name: "Fleet Cascade" });
       const vehicleResponse = await agent.post("/api/admin/vehicles").set(csrf).send({
         categoryId: category._id,
         registrationNumber: "AB12CDE",
         make: "Toyota",
         model: "Prius",
-        passengerCapacity: 3,
-        luggageCapacity: 2,
       });
 
       expect(vehicleResponse.status).toBe(200);
@@ -110,14 +107,17 @@ describe("Vehicle domain integration", () => {
         .delete(`/api/admin/vehicle-categories/${category._id}`)
         .set(csrf);
 
-      expect(deleteResponse.status).toBe(400);
-      expect(deleteResponse.body.error).toBe(
-        "Cannot delete category because vehicles are assigned."
-      );
+      expect(deleteResponse.status).toBe(200);
+
+      const vehicleLookup = await agent
+        .get(`/api/admin/vehicles/${vehicleResponse.body.data._id}`)
+        .set(csrf);
+
+      expect(vehicleLookup.status).toBe(404);
     });
 
-    it("blocks delete when pricing slabs exist", async () => {
-      const category = await createCategory(agent, csrf, { name: "Pricing Blocked" });
+    it("cascade deletes pricing slabs when category is deleted", async () => {
+      const category = await createCategory(agent, csrf, { name: "Pricing Cascade" });
       const pricingResponse = await agent
         .post(`/api/admin/vehicle-categories/${category._id}/pricing`)
         .set(csrf)
@@ -134,10 +134,13 @@ describe("Vehicle domain integration", () => {
         .delete(`/api/admin/vehicle-categories/${category._id}`)
         .set(csrf);
 
-      expect(deleteResponse.status).toBe(400);
-      expect(deleteResponse.body.error).toBe(
-        "Cannot delete category because pricing slabs exist."
-      );
+      expect(deleteResponse.status).toBe(200);
+
+      const pricingLookup = await agent
+        .get(`/api/admin/vehicle-pricing/${pricingResponse.body.data._id}`)
+        .set(csrf);
+
+      expect(pricingLookup.status).toBe(404);
     });
   });
 
@@ -248,7 +251,7 @@ describe("Vehicle domain integration", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data.isComplete).toBe(false);
-      expect(response.body.data.gaps).toEqual([{ fromKm: 50, toKm: 70 }]);
+      expect(response.body.data.gaps).toEqual([{ fromDistance: 50, toDistance: 70 }]);
     });
 
     it("returns admin quote results for a distance", async () => {
@@ -266,7 +269,7 @@ describe("Vehicle domain integration", () => {
       const response = await agent.get("/api/admin/vehicle-pricing/quotes?distance=50").set(csrf);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.distanceKm).toBe(50);
+      expect(response.body.data.distance).toBe(50);
       expect(response.body.data.items.length).toBeGreaterThan(0);
     });
   });
@@ -279,13 +282,34 @@ describe("Vehicle domain integration", () => {
         registrationNumber: "XY99 ZZZ",
         make: "Mercedes-Benz",
         model: "E-Class",
-        passengerCapacity: 3,
-        luggageCapacity: 3,
       });
 
       expect(response.status).toBe(200);
       expect(response.body.data.categoryId).toBe(category._id);
+      expect(response.body.data.passengerCapacity).toBe(3);
+      expect(response.body.data.luggageCapacity).toBe(2);
       expect(response.body.data.pricingCategory).toBeUndefined();
+    });
+
+    it("ignores client capacity values and uses category capacities", async () => {
+      const category = await createCategory(agent, csrf, {
+        name: "Capacity Sync",
+        passengerCapacity: 5,
+        luggageCapacity: 4,
+      });
+
+      const response = await agent.post("/api/admin/vehicles").set(csrf).send({
+        categoryId: category._id,
+        registrationNumber: "CS01 TAL",
+        make: "Ford",
+        model: "Galaxy",
+        passengerCapacity: 2,
+        luggageCapacity: 1,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.passengerCapacity).toBe(5);
+      expect(response.body.data.luggageCapacity).toBe(4);
     });
 
     it("updates a vehicle", async () => {
@@ -295,8 +319,6 @@ describe("Vehicle domain integration", () => {
         registrationNumber: "UP01 DAT",
         make: "BMW",
         model: "5 Series",
-        passengerCapacity: 3,
-        luggageCapacity: 2,
       });
 
       const response = await agent
@@ -336,8 +358,6 @@ describe("Vehicle domain integration", () => {
         registrationNumber: "DT01 TAL",
         make: "Audi",
         model: "A6",
-        passengerCapacity: 3,
-        luggageCapacity: 2,
       });
 
       await agent
@@ -362,6 +382,12 @@ describe("Vehicle domain integration", () => {
 
     it("GET /api/vehicle-pricing/quotes returns public quote data", async () => {
       const category = await createCategory(agent, csrf, { name: "Public Quote" });
+      await agent.post("/api/admin/vehicles").set(csrf).send({
+        categoryId: category._id,
+        registrationNumber: "PQ01 TAL",
+        make: "Toyota",
+        model: "Camry",
+      });
       await agent
         .post(`/api/admin/vehicle-categories/${category._id}/pricing`)
         .set(csrf)
@@ -372,13 +398,74 @@ describe("Vehicle domain integration", () => {
           priceAmount: 85,
         });
 
-      const response = await request(app).get("/api/vehicle-pricing/quotes?distance=50");
+      const response = await request(app).get(
+        "/api/vehicle-pricing/quote?distance=50&passengers=2"
+      );
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(1);
-      expect(response.body.data[0].categoryName).toBe("Public Quote");
-      expect(response.body.data[0].price).toBe(85);
-      expect(response.body.data[0].registrationNumber).toBeUndefined();
+      expect(response.body.data[0].category.name).toBe("Public Quote");
+      expect(response.body.data[0].category.vehicles).toEqual(["Toyota Camry"]);
+      expect(response.body.data[0].priceBreakdown.totalPrice).toBe(85);
+      expect(response.body.data[0].passengers).toBe(3);
+      expect(response.body.data[0].luggage).toBe(2);
+      expect(response.body.data[0].bag).toBeUndefined();
+      expect(response.body.data[0].categoryName).toBeUndefined();
+      expect(response.body.data[0].vehicles).toBeUndefined();
+    });
+
+    it("GET /api/vehicle-pricing/quote filters categories by passenger capacity", async () => {
+      const saloon = await createCategory(agent, csrf, {
+        name: "Filter Saloon",
+        passengerCapacity: 3,
+      });
+      const minivan = await createCategory(agent, csrf, {
+        name: "Filter Minivan",
+        passengerCapacity: 7,
+      });
+
+      for (const category of [saloon, minivan]) {
+        await agent
+          .post(`/api/admin/vehicle-categories/${category._id}/pricing`)
+          .set(csrf)
+          .send({
+            minDistance: 0,
+            maxDistance: null,
+            pricingType: "fixed",
+            priceAmount: 60,
+          });
+      }
+
+      const response = await request(app).get(
+        "/api/vehicle-pricing/quote?distance=50&passengers=4"
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].category.name).toBe("Filter Minivan");
+      expect(response.body.data[0].passengers).toBe(7);
+    });
+
+    it("GET /api/vehicle-pricing/quote doubles total for return-trip category", async () => {
+      const category = await createCategory(agent, csrf, { name: "Return Quote" });
+      await agent
+        .post(`/api/admin/vehicle-categories/${category._id}/pricing`)
+        .set(csrf)
+        .send({
+          minDistance: 0,
+          maxDistance: null,
+          pricingType: "fixed",
+          priceAmount: 50,
+        });
+
+      const response = await request(app).get(
+        "/api/vehicle-pricing/quote?distance=50&passengers=2&category=return-trip"
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].priceBreakdown.totalPrice).toBe(100);
+      expect(response.body.data[0].priceBreakdown.returnPrice).toBeUndefined();
     });
   });
 });

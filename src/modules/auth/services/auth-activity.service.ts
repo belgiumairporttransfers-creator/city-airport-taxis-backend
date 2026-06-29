@@ -17,7 +17,7 @@ class AuthActivityService {
     audit: AuthAuditContext,
     type: ActivityType,
     status: ActivityStatus = "success"
-  ): Promise<void> {
+  ) {
     const { ip, userAgent } = audit;
 
     try {

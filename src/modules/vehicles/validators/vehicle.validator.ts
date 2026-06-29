@@ -20,12 +20,8 @@ export const createVehicleSchema = Joi.object({
   }),
   year: Joi.number().integer().min(1900).max(2100).optional(),
   color: Joi.string().trim().allow("").max(40).optional(),
-  passengerCapacity: Joi.number().integer().min(1).max(99).required().messages({
-    "any.required": "Passenger capacity is required",
-  }),
-  luggageCapacity: Joi.number().integer().min(0).max(99).required().messages({
-    "any.required": "Luggage capacity is required",
-  }),
+  passengerCapacity: Joi.number().integer().min(1).max(99).optional(),
+  luggageCapacity: Joi.number().integer().min(0).max(99).optional(),
   status: Joi.string()
     .valid(...VEHICLE_STATUSES)
     .default("active"),

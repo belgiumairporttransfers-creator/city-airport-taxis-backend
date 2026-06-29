@@ -32,8 +32,8 @@ export interface CreateVehicleData {
   model: string;
   year?: number;
   color?: string;
-  passengerCapacity: number;
-  luggageCapacity: number;
+  passengerCapacity?: number;
+  luggageCapacity?: number;
   status?: VehicleStatus;
   features?: string[];
   image?: string;

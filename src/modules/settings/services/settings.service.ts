@@ -67,7 +67,7 @@ class SettingsService {
     return settings;
   }
 
-  async getPublicSettings(): Promise<PublicSettingsPayload> {
+  async getPublicSettings() {
     const cached = await cacheGet<PublicSettingsPayload>(PUBLIC_SETTINGS_CACHE_KEY);
     if (cached) {
       return cached;

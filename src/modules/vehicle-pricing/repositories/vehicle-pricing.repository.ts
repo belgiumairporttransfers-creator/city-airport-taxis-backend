@@ -88,6 +88,10 @@ class VehiclePricingRepository {
     return VehiclePricing.findByIdAndDelete(id);
   }
 
+  deleteByCategoryId(categoryId: string): Promise<{ deletedCount?: number }> {
+    return VehiclePricing.deleteMany({ categoryId });
+  }
+
   findByCategoryId(categoryId: string, status?: "active" | "inactive") {
     const filter: Record<string, unknown> = { categoryId };
 
@@ -98,17 +102,17 @@ class VehiclePricingRepository {
     return VehiclePricing.find(filter).sort({ sortOrder: 1, minDistance: 1 }).lean();
   }
 
-  async findSlabForDistance(categoryId: string, distanceKm: number) {
+  async findSlabForDistance(categoryId: string, distance: number) {
     const slabs = await VehiclePricing.find({
       categoryId,
       status: "active",
-      minDistance: { $lte: distanceKm },
+      minDistance: { $lte: distance },
     })
       .sort({ minDistance: -1 })
       .lean();
 
     return slabs.find((slab) =>
-      distanceMatchesSlab(distanceKm, slab.minDistance, slab.maxDistance)
+      distanceMatchesSlab(distance, slab.minDistance, slab.maxDistance)
     );
   }
 

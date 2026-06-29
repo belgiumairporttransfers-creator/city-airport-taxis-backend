@@ -14,15 +14,14 @@ import {
   analyzePricingStructure,
   buildResolvedFareResult,
   countOpenEndedSlabs,
+  resolvePublicQuoteTotalPrice,
 } from "@/modules/vehicle-pricing/utils/pricing.utils";
 import type {
   CreateVehiclePricingData,
+  GetPublicVehiclePricingQuotesQuery,
   GetVehiclePricingQuery,
-  PricingStructureValidationResult,
   ResolvedFareResult,
   UpdateVehiclePricingData,
-  VehiclePricingQuotesResult,
-  VehiclePricingPublicQuote,
 } from "@/modules/vehicle-pricing/types/vehicle-pricing.types";
 
 class VehiclePricingService {
@@ -159,10 +158,10 @@ class VehiclePricingService {
     const minDistance = data.minDistance ?? existing.minDistance;
     const maxDistance = data.maxDistance !== undefined ? data.maxDistance : existing.maxDistance;
     const pricingType = data.pricingType ?? existing.pricingType;
-    const perKmRate = data.perKmRate !== undefined ? data.perKmRate : existing.perKmRate;
+    const perUnitRate = data.perUnitRate !== undefined ? data.perUnitRate : existing.perUnitRate;
 
-    if (pricingType === "base_plus_per_unit" && (perKmRate === undefined || perKmRate === null)) {
-      throw new AppError("Per km rate is required for base_plus_per_unit pricing", 400);
+    if (pricingType === "base_plus_per_unit" && (perUnitRate === undefined || perUnitRate === null)) {
+      throw new AppError("Per unit rate is required for base_plus_per_unit pricing", 400);
     }
 
     await this.validateSlabRules(existing.categoryId.toString(), minDistance, maxDistance, id);
@@ -208,24 +207,24 @@ class VehiclePricingService {
     return deleted;
   }
 
-  async resolveFare(categoryId: string, distanceKm: number): Promise<ResolvedFareResult> {
-    if (distanceKm < 0) {
+  async resolveFare(categoryId: string, distance: number) {
+    if (distance < 0) {
       throw new AppError("Distance must be a non-negative number", 400);
     }
 
     await this.assertActiveCategory(categoryId);
 
-    const slab = await vehiclePricingRepository.findSlabForDistance(categoryId, distanceKm);
+    const slab = await vehiclePricingRepository.findSlabForDistance(categoryId, distance);
 
     if (!slab) {
       throw new AppError("No active pricing slab found for the given distance", 404);
     }
 
-    return buildResolvedFareResult(toVehiclePricingResponse(slab), distanceKm);
+    return buildResolvedFareResult(toVehiclePricingResponse(slab), distance);
   }
 
-  async getDistanceQuotes(distanceKm: number): Promise<VehiclePricingQuotesResult> {
-    if (distanceKm < 0) {
+  async getDistanceQuotes(distance: number) {
+    if (distance < 0) {
       throw new AppError("Distance must be a non-negative number", 400);
     }
 
@@ -250,7 +249,7 @@ class VehiclePricingService {
         let fare: ResolvedFareResult | null = null;
 
         try {
-          fare = await this.resolveFare(categoryId, distanceKm);
+          fare = await this.resolveFare(categoryId, distance);
         } catch (error) {
           if (!(error instanceof AppError && error.statusCode === 404)) {
             throw error;
@@ -266,34 +265,49 @@ class VehiclePricingService {
     );
 
     return {
-      distanceKm,
+      distance,
       items,
     };
   }
 
-  async getPublicDistanceQuotes(distanceKm: number): Promise<VehiclePricingPublicQuote[]> {
-    const result = await this.getDistanceQuotes(distanceKm);
+  async getPublicDistanceQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+    const result = await this.getDistanceQuotes(query.distance);
+    const tripCategory = query.category ?? "one-way";
 
-    return result.items
-      .filter((item) => item.fare !== null)
-      .map((item) => {
-        const capacities = resolveCategoryCapacities(item.category, item.vehicles);
+    return result.items.flatMap((item) => {
+      if (item.fare === null) {
+        return [];
+      }
 
-        return {
+      const capacities = resolveCategoryCapacities(item.category, item.vehicles);
+
+      if (capacities.passengerCapacity < query.passengers) {
+        return [];
+      }
+
+      const priceBreakdown = {
+        totalPrice: resolvePublicQuoteTotalPrice(item.fare.amount, tripCategory),
+      };
+
+      return [
+        {
           categoryId: item.category._id,
-          categoryName: item.category.name,
-          categorySlug: item.category.slug,
-          passengerCapacity: capacities.passengerCapacity,
-          luggageCapacity: capacities.luggageCapacity,
-          price: item.fare!.amount,
-        };
-      });
+          category: {
+            name: item.category.name,
+            image: item.category.image,
+            vehicles: item.vehicles.map((vehicle) =>
+              [vehicle.make, vehicle.model].filter(Boolean).join(" ")
+            ),
+          },
+          priceBreakdown,
+          passengers: capacities.passengerCapacity,
+          luggage: capacities.luggageCapacity,
+        },
+      ];
+    });
   }
 
-  async validateCategoryCoverage(
-    categoryId: string,
-    adminId?: string
-  ): Promise<PricingStructureValidationResult> {
+  async validateCategoryCoverage(categoryId: string, adminId?: string) {
     const category = await vehicleCategoryRepository.findById(categoryId);
 
     if (!category) {

@@ -19,7 +19,6 @@ export const createVehicleCategorySchema = Joi.object({
   image: Joi.string().trim().allow("").optional(),
   passengerCapacity: Joi.number().integer().min(0).max(99).optional(),
   luggageCapacity: Joi.number().integer().min(0).max(99).optional(),
-  handLuggageCapacity: Joi.number().integer().min(0).max(99).optional(),
   sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string()
     .valid(...VEHICLE_CATEGORY_STATUSES)
@@ -34,7 +33,6 @@ export const updateVehicleCategorySchema = Joi.object({
   image: Joi.string().trim().allow("").optional(),
   passengerCapacity: Joi.number().integer().min(0).max(99).optional(),
   luggageCapacity: Joi.number().integer().min(0).max(99).optional(),
-  handLuggageCapacity: Joi.number().integer().min(0).max(99).optional(),
   sortOrder: Joi.number().integer().min(0).optional(),
   status: Joi.string()
     .valid(...VEHICLE_CATEGORY_STATUSES)

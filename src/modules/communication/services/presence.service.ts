@@ -15,7 +15,7 @@ class PresenceService {
     accountType: ParticipantAccountType,
     accountId: string,
     status: PresenceStatus
-  ): Promise<{ status: PresenceStatus; lastSeenAt: string }> {
+  ) {
     const lastSeenAt = new Date().toISOString();
     const payload = { status, lastSeenAt };
     memoryPresence.set(presenceKey(accountType, accountId), payload);
@@ -34,7 +34,7 @@ class PresenceService {
   async getStatus(
     accountType: ParticipantAccountType,
     accountId: string
-  ): Promise<{ status: PresenceStatus; lastSeenAt?: string }> {
+  ) {
     const online = await onlineUsersRegistry.isUserOnline(accountId);
     const client = await RedisClient.connect();
 

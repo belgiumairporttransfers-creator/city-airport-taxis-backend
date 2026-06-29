@@ -48,7 +48,7 @@ const vehiclePricingSchema = new Schema<IVehiclePricing>(
       required: [true, "Price amount is required"],
       min: 0,
     },
-    perKmRate: {
+    perUnitRate: {
       type: Number,
       min: 0,
     },

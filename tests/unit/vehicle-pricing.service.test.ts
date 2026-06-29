@@ -68,9 +68,9 @@ describe("vehicle pricing utils", () => {
     expect(calculateFareAmount("fixed", 100, 10, { increasePercentage: -10 })).toBe(90);
     expect(calculateFareAmount("per_unit", 1.2, 75)).toBe(90);
     expect(calculateFareAmount("per_unit", 1.1, 120, { increasePercentage: 5 })).toBe(138.6);
-    expect(calculateFareAmount("base_plus_per_unit", 20, 75, { perKmRate: 1.2 })).toBe(110);
+    expect(calculateFareAmount("base_plus_per_unit", 20, 75, { perUnitRate: 1.2 })).toBe(110);
     expect(
-      calculateFareAmount("base_plus_per_unit", 20, 75, { perKmRate: 1.2, increasePercentage: 10 })
+      calculateFareAmount("base_plus_per_unit", 20, 75, { perUnitRate: 1.2, increasePercentage: 10 })
     ).toBe(121);
   });
 
@@ -100,7 +100,7 @@ describe("vehicle pricing utils", () => {
     ]);
 
     expect(incomplete.isComplete).toBe(false);
-    expect(incomplete.gaps).toEqual([{ fromKm: 50, toKm: 60 }]);
+    expect(incomplete.gaps).toEqual([{ fromDistance: 50, toDistance: 60 }]);
     expect(incomplete.openEndedCount).toBe(1);
 
     const complete = analyzePricingStructure([
@@ -238,7 +238,7 @@ describe("VehiclePricingService", () => {
 
     const result = await vehiclePricingService.resolveFare(activeCategory._id, 75);
 
-    expect(result.distanceKm).toBe(75);
+    expect(result.distance).toBe(75);
     expect(result.amount).toBe(90);
     expect(result.slab.pricingType).toBe("per_unit");
   });

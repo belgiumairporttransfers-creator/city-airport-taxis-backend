@@ -13,7 +13,7 @@ export interface IVehiclePricing {
   maxDistance: number | null;
   pricingType: VehiclePricingType;
   priceAmount: number;
-  perKmRate?: number;
+  perUnitRate?: number;
   increasePercentage?: number;
   status: VehiclePricingStatus;
   sortOrder: number;
@@ -31,7 +31,7 @@ export interface CreateVehiclePricingData {
   maxDistance: number | null;
   pricingType: VehiclePricingType;
   priceAmount: number;
-  perKmRate?: number;
+  perUnitRate?: number;
   increasePercentage?: number;
   status?: VehiclePricingStatus;
   sortOrder?: number;
@@ -42,7 +42,7 @@ export interface UpdateVehiclePricingData {
   maxDistance?: number | null;
   pricingType?: VehiclePricingType;
   priceAmount?: number;
-  perKmRate?: number;
+  perUnitRate?: number;
   increasePercentage?: number;
   status?: VehiclePricingStatus;
   sortOrder?: number;
@@ -64,7 +64,7 @@ export interface VehiclePricingResponse {
   maxDistance: number | null;
   pricingType: VehiclePricingType;
   priceAmount: number;
-  perKmRate?: number;
+  perUnitRate?: number;
   increasePercentage?: number;
   status: VehiclePricingStatus;
   sortOrder: number;
@@ -75,8 +75,8 @@ export interface VehiclePricingResponse {
 }
 
 export interface PricingCoverageGap {
-  fromKm: number;
-  toKm: number | null;
+  fromDistance: number;
+  toDistance: number | null;
 }
 
 export interface PricingStructureValidationResult {
@@ -88,12 +88,21 @@ export interface PricingStructureValidationResult {
 
 export interface ResolvedFareResult {
   slab: VehiclePricingResponse;
-  distanceKm: number;
+  distance: number;
   amount: number;
 }
 
 export interface GetVehiclePricingQuotesQuery {
   distance: number;
+}
+
+export const BOOKING_TRIP_CATEGORIES = ["one-way", "hourly", "return-trip"] as const;
+export type BookingTripCategory = (typeof BOOKING_TRIP_CATEGORIES)[number];
+
+export interface GetPublicVehiclePricingQuotesQuery {
+  distance: number;
+  passengers: number;
+  category?: BookingTripCategory;
 }
 
 export interface VehiclePricingQuoteItem {
@@ -105,7 +114,6 @@ export interface VehiclePricingQuoteItem {
     image?: string;
     passengerCapacity?: number;
     luggageCapacity?: number;
-    handLuggageCapacity?: number;
     sortOrder: number;
     status: "active" | "inactive";
     isDefault: boolean;
@@ -127,15 +135,24 @@ export interface VehiclePricingQuoteItem {
 }
 
 export interface VehiclePricingQuotesResult {
-  distanceKm: number;
+  distance: number;
   items: VehiclePricingQuoteItem[];
+}
+
+export interface VehiclePricingPublicQuotePriceBreakdown {
+  totalPrice: number;
+}
+
+export interface VehiclePricingPublicQuoteCategory {
+  name: string;
+  image?: string;
+  vehicles: string[];
 }
 
 export interface VehiclePricingPublicQuote {
   categoryId: string;
-  categoryName: string;
-  categorySlug: string;
-  passengerCapacity: number;
-  luggageCapacity: number;
-  price: number;
+  category: VehiclePricingPublicQuoteCategory;
+  priceBreakdown: VehiclePricingPublicQuotePriceBreakdown;
+  passengers: number;
+  luggage: number;
 }

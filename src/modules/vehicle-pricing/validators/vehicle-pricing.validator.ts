@@ -1,6 +1,6 @@
 import Joi from "joi";
 import { objectIdSchema } from "@/shared/validators/object-id.schema";
-import { VEHICLE_PRICING_STATUSES, VEHICLE_PRICING_TYPES } from "../types/vehicle-pricing.types";
+import { VEHICLE_PRICING_STATUSES, VEHICLE_PRICING_TYPES, BOOKING_TRIP_CATEGORIES } from "../types/vehicle-pricing.types";
 
 const maxDistanceSchema = Joi.number().min(0).allow(null).messages({
   "number.base": "Maximum distance must be a number or null",
@@ -24,7 +24,7 @@ export const createVehiclePricingSchema = Joi.object({
     "any.required": "Price amount is required",
     "number.min": "Price amount must be at least 0",
   }),
-  perKmRate: Joi.number().min(0).allow(null).optional(),
+  perUnitRate: Joi.number().min(0).allow(null).optional(),
   increasePercentage: Joi.number().min(-100).max(100).allow(null).optional(),
   status: Joi.string()
     .valid(...VEHICLE_PRICING_STATUSES)
@@ -42,10 +42,10 @@ export const createVehiclePricingSchema = Joi.object({
 
   if (
     value.pricingType === "base_plus_per_unit" &&
-    (value.perKmRate === undefined || value.perKmRate === null)
+    (value.perUnitRate === undefined || value.perUnitRate === null)
   ) {
     return helpers.message({
-      custom: "Per km rate is required for base_plus_per_unit pricing",
+      custom: "Per unit rate is required for base_plus_per_unit pricing",
     });
   }
 
@@ -69,7 +69,7 @@ export const updateVehiclePricingSchema = Joi.object({
     .valid(...VEHICLE_PRICING_TYPES)
     .optional(),
   priceAmount: Joi.number().min(0).optional(),
-  perKmRate: Joi.number().min(0).allow(null).optional(),
+  perUnitRate: Joi.number().min(0).allow(null).optional(),
   increasePercentage: Joi.number().min(-100).max(100).allow(null).optional(),
   status: Joi.string()
     .valid(...VEHICLE_PRICING_STATUSES)
@@ -97,12 +97,12 @@ export const updateVehiclePricingSchema = Joi.object({
 
     if (
       value.pricingType === "base_plus_per_unit" &&
-      value.perKmRate !== undefined &&
-      value.perKmRate !== null &&
-      value.perKmRate < 0
+      value.perUnitRate !== undefined &&
+      value.perUnitRate !== null &&
+      value.perUnitRate < 0
     ) {
       return helpers.message({
-        custom: "Per km rate must be at least 0",
+        custom: "Per unit rate must be at least 0",
       });
     }
 
@@ -133,8 +133,25 @@ export const getPricingQuerySchema = Joi.object({
 export const getPricingQuotesQuerySchema = Joi.object({
   distance: Joi.number().min(0).required().messages({
     "any.required": "Distance is required",
+    "number.base": "Distance must be a number",
     "number.min": "Distance must be at least 0",
   }),
+});
+
+export const getPublicPricingQuotesQuerySchema = Joi.object({
+  distance: Joi.number().min(0).required().messages({
+    "any.required": "Distance is required",
+    "number.base": "Distance must be a number",
+    "number.min": "Distance must be at least 0",
+  }),
+  passengers: Joi.number().integer().min(1).required().messages({
+    "any.required": "Passengers is required",
+    "number.base": "Passengers must be a number",
+    "number.min": "Passengers must be at least 1",
+  }),
+  category: Joi.string()
+    .valid(...BOOKING_TRIP_CATEGORIES)
+    .default("one-way"),
 });
 
 export const validatePricingStructureSchema = Joi.object({}).default({});

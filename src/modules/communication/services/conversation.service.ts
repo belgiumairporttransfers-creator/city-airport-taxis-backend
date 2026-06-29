@@ -19,7 +19,7 @@ class ConversationService {
   async assertParticipant(
     conversationId: string,
     actor: CommunicationActor
-  ): Promise<IConversation> {
+  ) {
     const conversation = await conversationRepository.findById(conversationId);
 
     if (!conversation) {

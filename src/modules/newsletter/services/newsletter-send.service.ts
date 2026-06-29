@@ -11,7 +11,7 @@ import {
 import type { SendNewsletterData } from "@/modules/newsletter/types/newsletter-campaign.types";
 
 class NewsletterSendService {
-  private async queueCampaignDelivery(campaignId: string): Promise<boolean> {
+  private async queueCampaignDelivery(campaignId: string) {
     const queued = await enqueueNewsletterDelivery(campaignId);
 
     if (queued) {

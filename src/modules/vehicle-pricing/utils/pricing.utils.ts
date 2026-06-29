@@ -4,6 +4,7 @@ import type {
   ResolvedFareResult,
   VehiclePricingResponse,
   VehiclePricingType,
+  BookingTripCategory,
 } from "@/modules/vehicle-pricing/types/vehicle-pricing.types";
 
 export type PricingSlabLike = {
@@ -12,7 +13,7 @@ export type PricingSlabLike = {
   maxDistance: number | null;
   pricingType: VehiclePricingType;
   priceAmount: number;
-  perKmRate?: number;
+  perUnitRate?: number;
   increasePercentage?: number;
 };
 
@@ -37,13 +38,13 @@ export const countOpenEndedSlabs = (slabs: Array<Pick<PricingSlabLike, "maxDista
 export const calculateFareAmount = (
   pricingType: VehiclePricingType,
   priceAmount: number,
-  distanceKm: number,
+  distance: number,
   options?: {
-    perKmRate?: number;
+    perUnitRate?: number;
     increasePercentage?: number;
   }
 ): number => {
-  const perKmRate = options?.perKmRate;
+  const perUnitRate = options?.perUnitRate;
   const increasePercentage = options?.increasePercentage;
   const uplift = 1 + (increasePercentage ?? 0) / 100;
   let amount: number;
@@ -53,10 +54,10 @@ export const calculateFareAmount = (
       amount = priceAmount;
       break;
     case "per_unit":
-      amount = distanceKm * priceAmount;
+      amount = distance * priceAmount;
       break;
     case "base_plus_per_unit":
-      amount = priceAmount + distanceKm * (perKmRate ?? 0);
+      amount = priceAmount + distance * (perUnitRate ?? 0);
       break;
     default:
       amount = priceAmount;
@@ -66,11 +67,11 @@ export const calculateFareAmount = (
 };
 
 export const distanceMatchesSlab = (
-  distanceKm: number,
+  distance: number,
   minDistance: number,
   maxDistance: number | null
 ): boolean => {
-  if (distanceKm < minDistance) {
+  if (distance < minDistance) {
     return false;
   }
 
@@ -78,7 +79,7 @@ export const distanceMatchesSlab = (
     return true;
   }
 
-  return distanceKm < maxDistance;
+  return distance < maxDistance;
 };
 
 export const analyzePricingStructure = (
@@ -101,13 +102,13 @@ export const analyzePricingStructure = (
     return {
       isComplete: false,
       overlaps,
-      gaps: [{ fromKm: 0, toKm: null }],
+      gaps: [{ fromDistance: 0, toDistance: null }],
       openEndedCount,
     };
   }
 
   if (sorted[0].minDistance > 0) {
-    gaps.push({ fromKm: 0, toKm: sorted[0].minDistance });
+    gaps.push({ fromDistance: 0, toDistance: sorted[0].minDistance });
   }
 
   for (let i = 0; i < sorted.length - 1; i += 1) {
@@ -120,7 +121,7 @@ export const analyzePricingStructure = (
     }
 
     if (currentMax < next.minDistance) {
-      gaps.push({ fromKm: currentMax, toKm: next.minDistance });
+      gaps.push({ fromDistance: currentMax, toDistance: next.minDistance });
     }
   }
 
@@ -142,12 +143,25 @@ export const analyzePricingStructure = (
 
 export const buildResolvedFareResult = (
   slab: VehiclePricingResponse,
-  distanceKm: number
+  distance: number
 ): ResolvedFareResult => ({
   slab,
-  distanceKm,
-  amount: calculateFareAmount(slab.pricingType, slab.priceAmount, distanceKm, {
-    perKmRate: slab.perKmRate,
+  distance,
+  amount: calculateFareAmount(slab.pricingType, slab.priceAmount, distance, {
+    perUnitRate: slab.perUnitRate,
     increasePercentage: slab.increasePercentage,
   }),
 });
+
+export const resolvePublicQuoteTotalPrice = (
+  outwardAmount: number,
+  category: BookingTripCategory = "one-way"
+): number => {
+  const outwardPrice = roundMoney(outwardAmount);
+
+  if (category === "return-trip") {
+    return roundMoney(outwardPrice * 2);
+  }
+
+  return outwardPrice;
+};

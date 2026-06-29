@@ -1,15 +1,15 @@
 import { Router, type IRouter } from "express";
 import vehiclePricingPublicController from "../controllers/vehicle-pricing-public.controller";
 import { validateQuery } from "@/middleware/validate";
-import { getPricingQuotesQuerySchema } from "../validators/vehicle-pricing.validator";
+import { getPublicPricingQuotesQuerySchema } from "../validators/vehicle-pricing.validator";
 import { quoteRateLimiter } from "@/middleware/rateLimiters";
 
 const publicVehiclePricingRoutes: IRouter = Router();
 
 publicVehiclePricingRoutes.get(
-  "/quotes",
+  "/quote",
   quoteRateLimiter,
-  validateQuery(getPricingQuotesQuerySchema),
+  validateQuery(getPublicPricingQuotesQuerySchema),
   vehiclePricingPublicController.getQuotes
 );
 

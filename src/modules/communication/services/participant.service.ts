@@ -14,7 +14,7 @@ class ParticipantService {
   async resolveParticipant(
     accountType: ParticipantAccountType,
     accountId: string
-  ): Promise<ConversationParticipant> {
+  ) {
     if (accountType === "admin") {
       const admin = await Admin.findById(accountId).lean();
       if (!admin) {
@@ -30,7 +30,7 @@ class ParticipantService {
         unreadCount: 0,
         isMuted: false,
         joinedAt: new Date(),
-      };
+      } satisfies ConversationParticipant;
     }
 
     const user = await User.findById(accountId).lean();
@@ -49,7 +49,7 @@ class ParticipantService {
       unreadCount: 0,
       isMuted: false,
       joinedAt: new Date(),
-    };
+    } satisfies ConversationParticipant;
   }
 
   validateConversationCreation(actor: CommunicationActor, target: ConversationParticipant): void {
@@ -76,7 +76,7 @@ class ParticipantService {
     throw new AppError("You are not allowed to create conversations", 403);
   }
 
-  async assertDriverEligible(driverUserId: string): Promise<void> {
+  async assertDriverEligible(driverUserId: string) {
     const application = await DriverApplication.findOne({
       userId: driverUserId,
       status: "approved",

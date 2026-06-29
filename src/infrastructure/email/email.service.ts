@@ -160,18 +160,14 @@ class EmailService {
     });
   }
 
-  async pingHealth(): Promise<{
-    status: "healthy" | "unhealthy";
-    latencyMs?: number;
-    error?: string;
-  }> {
+  async pingHealth() {
     const start = Date.now();
     try {
       await this.transporter.verify();
-      return { status: "healthy", latencyMs: Date.now() - start };
+      return { status: "healthy" as const, latencyMs: Date.now() - start };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Email provider unreachable";
-      return { status: "unhealthy", latencyMs: Date.now() - start, error: message };
+      return { status: "unhealthy" as const, latencyMs: Date.now() - start, error: message };
     }
   }
 }
