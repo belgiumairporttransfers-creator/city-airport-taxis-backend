@@ -149,7 +149,7 @@ class BookingRepository {
     return Booking.findByIdAndDelete(id);
   }
 
-  deleteManyByIds(ids: string[]) {
+  deleteManyByIds(ids: string[]): Promise<{ deletedCount?: number }> {
     return Booking.deleteMany({ _id: { $in: ids } });
   }
 }

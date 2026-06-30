@@ -1,4 +1,3 @@
-import { env } from "@/config/env";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
 import {

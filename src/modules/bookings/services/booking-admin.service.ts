@@ -326,9 +326,9 @@ class BookingAdminService {
       uniqueIds.map((id) => bookingRepository.findById(id))
     );
 
-    const existingIds = bookings
-      .filter((booking): booking is IBooking => Boolean(booking))
-      .map((booking) => booking._id.toString());
+    const existingIds = bookings.flatMap((booking) =>
+      booking ? [booking._id.toString()] : []
+    );
 
     if (existingIds.length === 0) {
       throw new AppError("No bookings found to delete", 404);

@@ -70,6 +70,10 @@ class BookingPortalController {
     const commissionPercent = await this.getCommissionPercent();
     const result = await bookingPortalService.acceptOpenBooking(req.params.id, driverUserId);
 
+    if (!result.assignment) {
+      throw new AppError("Assignment was not created for this booking", 500);
+    }
+
     return sendSuccess(
       res,
       {

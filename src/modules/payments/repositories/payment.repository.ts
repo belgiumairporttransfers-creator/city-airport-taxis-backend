@@ -56,11 +56,11 @@ class PaymentRepository {
     return Payment.findByIdAndDelete(id);
   }
 
-  deleteManyByIds(ids: string[]) {
+  deleteManyByIds(ids: string[]): Promise<{ deletedCount?: number }> {
     return Payment.deleteMany({ _id: { $in: ids } });
   }
 
-  deleteByBookingIds(bookingIds: string[]) {
+  deleteByBookingIds(bookingIds: string[]): Promise<{ deletedCount?: number }> {
     return Payment.deleteMany({ bookingId: { $in: bookingIds } });
   }
 }
