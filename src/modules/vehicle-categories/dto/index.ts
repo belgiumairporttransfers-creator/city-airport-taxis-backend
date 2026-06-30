@@ -58,9 +58,14 @@ export const generateCategorySlug = (name: string): string =>
     .replace(/-+/g, "-");
 
 type CapacityVehicleLike = {
+  make?: string;
+  model?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
 };
+
+export const formatVehicleDisplayName = (vehicle: { make?: string; model?: string }) =>
+  [vehicle.make, vehicle.model].filter(Boolean).join(" ");
 
 export const deriveCategoryCapacities = (vehicles: CapacityVehicleLike[]) => {
   if (!vehicles.length) {
@@ -129,6 +134,7 @@ export const toVehicleCategoryPublicResponse = (
     description: record.description as string | undefined,
     image: record.image as string | undefined,
     ...capacities,
+    vehicles: vehicles.map(formatVehicleDisplayName).filter(Boolean),
   };
 };
 

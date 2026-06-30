@@ -86,6 +86,7 @@ export interface VehicleCategoryPublicResponse {
   image?: string;
   passengerCapacity: number;
   luggageCapacity: number;
+  vehicles: string[];
 }
 
 export interface VehicleCategoryPublicDetailResponse extends VehicleCategoryPublicResponse {

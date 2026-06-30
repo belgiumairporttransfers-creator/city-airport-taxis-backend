@@ -333,8 +333,15 @@ describe("Vehicle domain integration", () => {
 
   describe("Public vehicle routes", () => {
     it("GET /api/vehicle-categories returns active categories only", async () => {
-      await createCategory(agent, csrf, { name: "Public Active", status: "active" });
+      const category = await createCategory(agent, csrf, { name: "Public Active", status: "active" });
       await createCategory(agent, csrf, { name: "Public Inactive", status: "inactive" });
+
+      await agent.post("/api/admin/vehicles").set(csrf).send({
+        categoryId: category._id,
+        registrationNumber: "PA01 TAL",
+        make: "Mercedes",
+        model: "E-Class",
+      });
 
       const response = await request(app).get("/api/vehicle-categories");
 
@@ -345,6 +352,7 @@ describe("Vehicle domain integration", () => {
       expect(response.body.data[0].id).toBeDefined();
       expect(response.body.data[0].slug).toBe("public-active");
       expect(response.body.data[0].passengerCapacity).toBe(3);
+      expect(response.body.data[0].vehicles).toEqual(["Mercedes E-Class"]);
     });
 
     it("GET /api/vehicle-categories/:slug returns category details", async () => {
