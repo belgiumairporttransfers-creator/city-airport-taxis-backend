@@ -54,6 +54,33 @@ export const AuditEvents = {
   NOTIFICATION_READ: "notification.read",
   NOTIFICATION_READ_ALL: "notification.read_all",
 
+  // Bookings
+  BOOKING_CREATED: "booking.created",
+  BOOKING_UPDATED: "booking.updated",
+  BOOKING_CANCELLED: "booking.cancelled",
+  BOOKING_CONFIRMED: "booking.confirmed",
+  BOOKING_NO_SHOW: "booking.no_show",
+
+  // Assignments
+  ASSIGNMENT_CREATED: "assignment.created",
+  ASSIGNMENT_ACCEPTED: "assignment.accepted",
+  ASSIGNMENT_REJECTED: "assignment.rejected",
+  ASSIGNMENT_CANCELLED: "assignment.cancelled",
+  ASSIGNMENT_EXPIRED: "assignment.expired",
+  ASSIGNMENT_REASSIGNED: "assignment.reassigned",
+
+  // Trips
+  TRIP_DRIVER_ARRIVED: "trip.driver_arrived",
+  TRIP_PASSENGER_ONBOARD: "trip.passenger_onboard",
+  TRIP_STARTED: "trip.started",
+  TRIP_COMPLETED: "trip.completed",
+
+  // Payments
+  PAYMENT_CREATED: "payment.created",
+  PAYMENT_PAID: "payment.paid",
+  PAYMENT_FAILED: "payment.failed",
+  PAYMENT_REFUNDED: "payment.refunded",
+
   // Communication
   CONVERSATION_CREATED: "conversation.created",
   MESSAGE_SENT: "message.sent",
@@ -72,7 +99,7 @@ export const AuditEvents = {
 
 export type AuditEvent = (typeof AuditEvents)[keyof typeof AuditEvents];
 
-export type AuditActorType = "admin" | "user" | "system";
+export type AuditActorType = "admin" | "user" | "system" | "driver";
 
 export interface AuditLogEntry {
   event: AuditEvent;

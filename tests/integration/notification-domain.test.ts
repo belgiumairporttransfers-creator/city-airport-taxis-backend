@@ -3,7 +3,7 @@ import request from "supertest";
 import app from "@/app";
 import { Admin } from "@/infrastructure/database/models/Admin";
 import { Notification } from "@/infrastructure/database/models/Notification";
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import { AuditLog } from "@/infrastructure/database/models/AuditLog";
 import emailService from "@/infrastructure/email/email.service";
 import notificationService from "@/modules/notifications/services/notification.service";
@@ -123,7 +123,7 @@ describe("Notification domain integration", () => {
     return notification._id.toString();
   };
 
-  const submitDriverApplication = async () => {
+  const submitDriver = async () => {
     const response = await publicAgent
       .post("/api/drivers/apply")
       .send(buildDriverApplicationPayload());
@@ -133,7 +133,7 @@ describe("Notification domain integration", () => {
   };
 
   const getApplicationId = async (applicationNumber: string) => {
-    const application = await DriverApplication.findOne({ applicationNumber });
+    const application = await Driver.findOne({ applicationNumber });
     expect(application).toBeTruthy();
     return application!._id.toString();
   };

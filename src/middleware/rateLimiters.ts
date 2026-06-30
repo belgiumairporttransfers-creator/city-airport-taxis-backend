@@ -107,3 +107,25 @@ export const driverDocumentUploadLimiter: RequestHandler = createLimiter("driver
     error: "Too many document upload attempts, please try again later",
   },
 });
+
+export const bookingCreateLimiter: RequestHandler = createLimiter("booking-create", {
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many booking attempts, please try again later",
+  },
+});
+
+export const bookingStatusLimiter: RequestHandler = createLimiter("booking-status", {
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many booking status requests, please try again later",
+  },
+});

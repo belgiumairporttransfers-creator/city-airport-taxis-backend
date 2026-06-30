@@ -22,7 +22,8 @@
     "seed:admin": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedAdmin.ts",
     "seed:vehicles": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedVehicleFleet.ts",
     "seed:pricing": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedVehiclePricing.ts",
-    "seed:drivers": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedDriverApplications.ts"
+    "seed:drivers": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/seedDriverApplications.ts",
+    "clean:db": "ts-node -r tsconfig-paths/register --transpile-only src/scripts/cleanDatabase.ts"
   },
   "keywords": [
     "nodejs",

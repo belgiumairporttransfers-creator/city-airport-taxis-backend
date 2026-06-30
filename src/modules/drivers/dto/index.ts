@@ -1,12 +1,12 @@
 import type {
-  DriverApplicationResponse,
-  DriverApplicationStatusResponse,
+  DriverResponse,
+  DriverStatusResponse,
   DriverDocuments,
   DriverReviewResponse,
-  IDriverApplication,
+  IDriver,
 } from "@/modules/drivers/types/driver.types";
 
-type DriverApplicationLike = IDriverApplication | (Record<string, unknown> & { _id: unknown });
+type DriverLike = IDriver | (Record<string, unknown> & { _id: unknown });
 
 const toIdString = (value: unknown): string | undefined => {
   if (!value) return undefined;
@@ -24,13 +24,13 @@ const toIsoString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const toRecord = (application: DriverApplicationLike): Record<string, unknown> => {
+const toRecord = (application: DriverLike): Record<string, unknown> => {
   if (
     typeof application === "object" &&
     application !== null &&
-    typeof (application as IDriverApplication).toObject === "function"
+    typeof (application as IDriver).toObject === "function"
   ) {
-    return (application as IDriverApplication).toObject() as Record<string, unknown>;
+    return (application as IDriver).toObject() as Record<string, unknown>;
   }
 
   return application as Record<string, unknown>;
@@ -56,17 +56,17 @@ const toDriverReviewsResponse = (reviews: unknown): DriverReviewResponse[] => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
-export const toDriverApplicationResponse = (
-  application: DriverApplicationLike,
+export const toDriverResponse = (
+  application: DriverLike,
   options?: { includeReviews?: boolean }
-): DriverApplicationResponse => {
+): DriverResponse => {
   const record = toRecord(application);
 
   return {
     id: toIdString(record._id) ?? "",
     userId: toIdString(record.userId),
     applicationNumber: record.applicationNumber as string,
-    status: record.status as DriverApplicationResponse["status"],
+    status: record.status as DriverResponse["status"],
     operatingCountry: record.operatingCountry as string,
     operatingCity: record.operatingCity as string,
     firstName: record.firstName as string,
@@ -79,7 +79,7 @@ export const toDriverApplicationResponse = (
     licensePlate: record.licensePlate as string,
     carYearModel: record.carYearModel as string,
     yearsOfExperience: Number(record.yearsOfExperience ?? 0),
-    shiftType: record.shiftType as DriverApplicationResponse["shiftType"],
+    shiftType: record.shiftType as DriverResponse["shiftType"],
     availableFrom: record.availableFrom as string,
     availableTo: record.availableTo as string,
     profilePhoto: (record.profilePhoto as string | undefined) ?? "",
@@ -97,13 +97,13 @@ export const toDriverApplicationResponse = (
   };
 };
 
-export const toDriverApplicationStatusResponse = (
-  application: DriverApplicationLike
-): DriverApplicationStatusResponse => {
+export const toDriverStatusResponse = (
+  application: DriverLike
+): DriverStatusResponse => {
   const record = toRecord(application);
-  const status = record.status as DriverApplicationStatusResponse["status"];
+  const status = record.status as DriverStatusResponse["status"];
 
-  const response: DriverApplicationStatusResponse = {
+  const response: DriverStatusResponse = {
     applicationNumber: record.applicationNumber as string,
     status,
     updatedAt: toIsoString(record.updatedAt) ?? "",

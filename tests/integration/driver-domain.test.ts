@@ -3,7 +3,7 @@ import request from "supertest";
 import app from "@/app";
 import { Admin } from "@/infrastructure/database/models/Admin";
 import { User } from "@/infrastructure/database/models/User";
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import emailService from "@/infrastructure/email/email.service";
 import {
   connectTestDatabase,
@@ -113,7 +113,7 @@ describe("Driver onboarding integration", () => {
   };
 
   const getApplicationId = async (applicationNumber: string) => {
-    const application = await DriverApplication.findOne({ applicationNumber });
+    const application = await Driver.findOne({ applicationNumber });
     expect(application).toBeTruthy();
     return application!._id.toString();
   };
@@ -125,7 +125,7 @@ describe("Driver onboarding integration", () => {
       expect(data.applicationNumber).toMatch(/^DRV-\d{4}$/);
       expect(data.status).toBe("pending");
 
-      const stored = await DriverApplication.findOne({ applicationNumber: data.applicationNumber });
+      const stored = await Driver.findOne({ applicationNumber: data.applicationNumber });
       expect(stored?.email).toBe("jan.driver@example.com");
       expect(stored?.licensePlate).toBe("AB-123-CD");
     });

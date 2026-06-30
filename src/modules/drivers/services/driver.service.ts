@@ -10,12 +10,12 @@ import { normalizeEmail } from "@/modules/auth/utils/email";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import { generateApplicationNumber } from "@/modules/drivers/utils/application-number";
 import type {
-  CreateDriverApplicationData,
+  CreateDriverData,
   DriverDocuments,
-  GetDriverApplicationsQuery,
-  ResubmitDriverApplicationData,
-  SubmitDriverApplicationData,
-  UpdateDriverApplicationData,
+  GetDriversQuery,
+  ResubmitDriverData,
+  SubmitDriverData,
+  UpdateDriverData,
   UploadDriverDocumentData,
 } from "@/modules/drivers/types/driver.types";
 import {
@@ -191,7 +191,7 @@ class DriverService {
     return user;
   }
 
-  async submitApplication(data: SubmitDriverApplicationData) {
+  async submitApplication(data: SubmitDriverData) {
     const email = normalizeEmail(data.email);
     this.assertRequiredDocuments(data.documents);
 
@@ -230,7 +230,7 @@ class DriverService {
     return application;
   }
 
-  async createApplicationByAdmin(data: CreateDriverApplicationData, adminId: string) {
+  async createApplicationByAdmin(data: CreateDriverData, adminId: string) {
     const email = normalizeEmail(data.email);
     this.assertRequiredDocuments(data.documents);
 
@@ -283,7 +283,7 @@ class DriverService {
     return application;
   }
 
-  async resubmitApplication(applicationNumber: string, data: ResubmitDriverApplicationData) {
+  async resubmitApplication(applicationNumber: string, data: ResubmitDriverData) {
     const application = await driverRepository.findByApplicationNumber(applicationNumber);
 
     if (!application) {
@@ -377,7 +377,7 @@ class DriverService {
     };
   }
 
-  async getApplications(query: GetDriverApplicationsQuery) {
+  async getApplications(query: GetDriversQuery) {
     const result = await driverRepository.findWithPagination(query);
 
     return {
@@ -405,7 +405,7 @@ class DriverService {
     return application;
   }
 
-  async updateApplicationForUser(userId: string, data: UpdateDriverApplicationData) {
+  async updateApplicationForUser(userId: string, data: UpdateDriverData) {
     const application = await driverRepository.findByUserId(userId);
 
     if (!application) {
@@ -416,7 +416,7 @@ class DriverService {
       throw new AppError("This application cannot be edited", 409);
     }
 
-    const updatePayload: UpdateDriverApplicationData & Record<string, unknown> = {
+    const updatePayload: UpdateDriverData & Record<string, unknown> = {
       ...data,
       ...(data.licensePlate ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) } : {}),
       ...(data.documents
@@ -513,14 +513,14 @@ class DriverService {
     return updated;
   }
 
-  async updateApplication(id: string, data: UpdateDriverApplicationData, adminId: string) {
+  async updateApplication(id: string, data: UpdateDriverData, adminId: string) {
     const existing = await this.getApplicationOrThrow(id);
 
     if (!(DRIVER_EDITABLE_STATUSES as readonly string[]).includes(existing.status)) {
       throw new AppError("This application is locked and cannot be edited", 409);
     }
 
-    const updatePayload: UpdateDriverApplicationData & Record<string, unknown> = {
+    const updatePayload: UpdateDriverData & Record<string, unknown> = {
       ...data,
       ...(data.licensePlate ? { licensePlate: this.normalizeLicensePlate(data.licensePlate) } : {}),
       ...(data.documents

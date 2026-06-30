@@ -11,7 +11,7 @@ import { escapeRegex } from "@/shared/utils/escape-regex";
 import type { Document, FilterQuery, Model } from "mongoose";
 
 class VehiclePricingRepository {
-  private async buildSearchFilter(search: string): Promise<FilterQuery<Document>> {
+  private async buildSearchFilter(search: string) {
     const term = search.trim();
     if (!term) {
       return {};

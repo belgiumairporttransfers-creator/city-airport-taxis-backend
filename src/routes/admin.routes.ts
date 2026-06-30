@@ -16,6 +16,10 @@ import { adminSettingsRoutes } from "../modules/settings";
 import { adminDriverRoutes } from "../modules/drivers";
 import { adminNotificationRoutes } from "../modules/notifications";
 import { adminCommunicationRoutes } from "../modules/communication";
+import { adminBookingRoutes } from "../modules/bookings";
+import { adminAssignmentRoutes } from "../modules/assignments";
+import { adminTripRoutes } from "../modules/trips";
+import { adminPaymentRoutes } from "../modules/payments";
 
 const adminRoutes: IRouter = Router();
 
@@ -31,6 +35,10 @@ adminRoutes.use("/vehicle-categories/:categoryId/pricing", adminCategoryPricingR
 adminRoutes.use("/vehicle-pricing", adminVehiclePricingRoutes);
 adminRoutes.use("/vehicles", adminVehicleRoutes);
 adminRoutes.use("/drivers", adminDriverRoutes);
+adminRoutes.use("/bookings", adminBookingRoutes);
+adminRoutes.use("/assignments", adminAssignmentRoutes);
+adminRoutes.use("/trips", adminTripRoutes);
+adminRoutes.use("/payments", adminPaymentRoutes);
 adminRoutes.use("/notifications", adminNotificationRoutes);
 adminRoutes.use("/communication", adminCommunicationRoutes);
 adminRoutes.use("/newsletters", adminNewsletterRoutes);

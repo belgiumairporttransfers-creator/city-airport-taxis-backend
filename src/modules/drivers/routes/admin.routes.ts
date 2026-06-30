@@ -2,11 +2,11 @@ import { Router, type IRouter } from "express";
 import driverController from "../controllers/driver.controller";
 import { validateParams, validateQuery, validateRequest } from "@/middleware/validate";
 import {
-  createDriverApplicationSchema,
-  getDriverApplicationsQuerySchema,
+  createDriverSchema,
+  getDriversQuerySchema,
   optionalReviewNotesSchema,
   reviewNotesSchema,
-  updateDriverApplicationSchema,
+  updateDriverSchema,
 } from "../validators/driver.validator";
 import { idParamSchema } from "@/shared/validators/object-id.schema";
 
@@ -16,13 +16,13 @@ adminDriverRoutes.get("/stats", driverController.getStats);
 
 adminDriverRoutes.get(
   "/",
-  validateQuery(getDriverApplicationsQuerySchema),
+  validateQuery(getDriversQuerySchema),
   driverController.getAll
 );
 
 adminDriverRoutes.post(
   "/",
-  validateRequest(createDriverApplicationSchema),
+  validateRequest(createDriverSchema),
   driverController.create
 );
 
@@ -31,7 +31,7 @@ adminDriverRoutes.get("/:id", validateParams(idParamSchema), driverController.ge
 adminDriverRoutes.patch(
   "/:id",
   validateParams(idParamSchema),
-  validateRequest(updateDriverApplicationSchema),
+  validateRequest(updateDriverSchema),
   driverController.update
 );
 

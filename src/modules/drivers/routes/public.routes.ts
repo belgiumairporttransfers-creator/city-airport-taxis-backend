@@ -4,8 +4,8 @@ import { validateParams, validateRequest } from "@/middleware/validate";
 import {
   applicationNumberParamSchema,
   driverUploadDocumentSchema,
-  resubmitDriverApplicationSchema,
-  submitDriverApplicationSchema,
+  resubmitDriverSchema,
+  submitDriverSchema,
 } from "../validators/driver.validator";
 import { driverApplyLimiter, driverDocumentUploadLimiter } from "@/middleware/rateLimiters";
 import { uploadDriverDocument } from "../middleware/driver-document-upload";
@@ -15,7 +15,7 @@ const publicDriverRoutes: IRouter = Router();
 publicDriverRoutes.post(
   "/apply",
   driverApplyLimiter,
-  validateRequest(submitDriverApplicationSchema),
+  validateRequest(submitDriverSchema),
   driverPublicController.apply
 );
 
@@ -30,7 +30,7 @@ publicDriverRoutes.post(
   "/application/:applicationNumber/resubmit",
   driverApplyLimiter,
   validateParams(applicationNumberParamSchema),
-  validateRequest(resubmitDriverApplicationSchema),
+  validateRequest(resubmitDriverSchema),
   driverPublicController.resubmit
 );
 

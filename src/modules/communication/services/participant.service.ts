@@ -1,6 +1,6 @@
 import { Admin } from "@/infrastructure/database/models/Admin";
 import { User } from "@/infrastructure/database/models/User";
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import { AppError } from "@/shared/errors/AppError";
 import { DRIVER_ROLE } from "@/modules/auth/types/auth.types";
 import type {
@@ -77,7 +77,7 @@ class ParticipantService {
   }
 
   async assertDriverEligible(driverUserId: string) {
-    const application = await DriverApplication.findOne({
+    const application = await Driver.findOne({
       userId: driverUserId,
       status: "approved",
     }).lean();

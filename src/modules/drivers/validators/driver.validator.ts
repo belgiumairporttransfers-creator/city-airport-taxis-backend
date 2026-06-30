@@ -1,6 +1,6 @@
 import Joi from "joi";
 import {
-  DRIVER_APPLICATION_STATUSES,
+  DRIVER_STATUSES,
   DRIVER_DOCUMENT_FIELDS,
   DRIVER_SHIFT_TYPES,
 } from "../types/driver.types";
@@ -43,7 +43,7 @@ const applicationBodySchema = {
   documents: documentsSchema,
 };
 
-export const submitDriverApplicationSchema = Joi.object(applicationBodySchema);
+export const submitDriverSchema = Joi.object(applicationBodySchema);
 
 const adminCreateApplicationBodySchema = {
   operatingCountry: Joi.string().trim().min(1).max(120).required(),
@@ -69,9 +69,9 @@ const adminCreateApplicationBodySchema = {
   documents: documentsSchema,
 };
 
-export const createDriverApplicationSchema = Joi.object(adminCreateApplicationBodySchema);
+export const createDriverSchema = Joi.object(adminCreateApplicationBodySchema);
 
-export const resubmitDriverApplicationSchema = Joi.object({
+export const resubmitDriverSchema = Joi.object({
   email: Joi.string().trim().email().required(),
   operatingCountry: Joi.string().trim().min(1).max(120).optional(),
   operatingCity: Joi.string().trim().min(1).max(120).optional(),
@@ -101,7 +101,7 @@ export const resubmitDriverApplicationSchema = Joi.object({
     "object.min": "At least one field besides email is required to resubmit",
   });
 
-export const updateDriverApplicationSchema = Joi.object({
+export const updateDriverSchema = Joi.object({
   operatingCountry: Joi.string().trim().min(1).max(120).optional(),
   operatingCity: Joi.string().trim().min(1).max(120).optional(),
   firstName: Joi.string().trim().min(1).max(80).optional(),
@@ -149,12 +149,12 @@ export const optionalReviewNotesSchema = Joi.object({
   reviewNotes: Joi.string().trim().allow("").max(5000).optional(),
 });
 
-export const getDriverApplicationsQuerySchema = Joi.object({
+export const getDriversQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
   search: Joi.string().trim().allow("").optional(),
   status: Joi.string()
-    .valid(...DRIVER_APPLICATION_STATUSES)
+    .valid(...DRIVER_STATUSES)
     .optional(),
   sort: Joi.string().trim().optional(),
 });

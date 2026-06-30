@@ -10,13 +10,15 @@ const seedVehiclePricing = async () => {
     await mongoose.connect(env.MONGODB_URI);
     logger.info("Connected to MongoDB for vehicle pricing seeding");
 
+    const deletedPricing = await VehiclePricing.deleteMany({});
+    logger.info(`Cleared existing pricing data (${deletedPricing.deletedCount ?? 0} slabs)`);
+
     const categories = await VehicleCategory.find().lean();
     const categoryIdBySlug = new Map(
       categories.map((category) => [category.slug, category._id.toString()])
     );
 
-    const skippedCategories = new Set<string>();
-    const checkedCategories = new Set<string>();
+    let created = 0;
 
     for (const slab of sampleVehiclePricing) {
       const categoryId = categoryIdBySlug.get(slab.categorySlug);
@@ -26,21 +28,6 @@ const seedVehiclePricing = async () => {
         continue;
       }
 
-      if (skippedCategories.has(slab.categorySlug)) {
-        continue;
-      }
-
-      if (!checkedCategories.has(slab.categorySlug)) {
-        checkedCategories.add(slab.categorySlug);
-        const existingCount = await VehiclePricing.countDocuments({ categoryId });
-
-        if (existingCount > 0) {
-          skippedCategories.add(slab.categorySlug);
-          logger.info(`Pricing already exists for category: ${slab.categorySlug}`);
-          continue;
-        }
-      }
-
       const { categorySlug: _categorySlug, ...slabData } = slab;
 
       await VehiclePricing.create({
@@ -48,12 +35,10 @@ const seedVehiclePricing = async () => {
         categoryId,
       });
 
-      logger.info(
-        `Pricing slab created: ${slab.categorySlug} (${slab.minDistance}–${slab.maxDistance ?? "∞"} km)`
-      );
+      created += 1;
     }
 
-    logger.info("Vehicle pricing seeding completed");
+    logger.info(`Vehicle pricing seeding completed — ${created} slabs created`);
     process.exit(0);
   } catch (error) {
     logger.error("Error seeding vehicle pricing:", error);

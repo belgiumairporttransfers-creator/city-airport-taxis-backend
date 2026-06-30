@@ -1,18 +1,17 @@
 import mongoose from "mongoose";
 import { Admin } from "@/infrastructure/database/models/Admin";
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import { Notification } from "@/infrastructure/database/models/Notification";
 import { User } from "@/infrastructure/database/models/User";
 import { env } from "@/config/env";
 import notificationService from "@/modules/notifications/services/notification.service";
 import logger from "@/shared/utils/logger";
 import {
-  DRIVER_SEED_COUNT,
-  sampleDriverApplications,
-  type SampleDriverApplication,
+  sampleDrivers,
+  type SampleDriver,
 } from "@/scripts/data/driver-applications.samples";
 
-const buildDriverSeedNotification = (application: SampleDriverApplication, entityId: string) => {
+const buildDriverSeedNotification = (application: SampleDriver, entityId: string) => {
   const name = `${application.firstName} ${application.lastName}`;
 
   return {
@@ -29,9 +28,9 @@ const buildDriverSeedNotification = (application: SampleDriverApplication, entit
 const seedDriverApplications = async () => {
   try {
     await mongoose.connect(env.MONGODB_URI);
-    logger.info("Connected to MongoDB for driver application seeding");
+    logger.info("Connected to MongoDB for driver seeding");
 
-    const deletedDrivers = await DriverApplication.deleteMany({});
+    const deletedDrivers = await Driver.deleteMany({});
     const deletedDriverUsers = await User.deleteMany({ role: "driver" });
     const deletedDriverNotifications = await Notification.deleteMany({ entityType: "driver" });
 
@@ -51,7 +50,7 @@ const seedDriverApplications = async () => {
     let created = 0;
     let notificationsCreated = 0;
 
-    for (const application of sampleDriverApplications) {
+    for (const application of sampleDrivers) {
       const needsReviewMeta = [
         "under_review",
         "changes_requested",
@@ -60,7 +59,7 @@ const seedDriverApplications = async () => {
         "suspended",
       ].includes(application.status);
 
-      const record = await DriverApplication.create({
+      const record = await Driver.create({
         ...application,
         licensePlate: application.licensePlate.toUpperCase().replace(/\s+/g, ""),
         ...(needsReviewMeta && reviewedBy ? { reviewedBy } : {}),
@@ -73,13 +72,13 @@ const seedDriverApplications = async () => {
       );
       notificationsCreated += 1;
 
-      if (created % 25 === 0 || created === sampleDriverApplications.length) {
-        logger.info(`Seeded ${created}/${sampleDriverApplications.length} driver applications`);
+      if (created % 25 === 0 || created === sampleDrivers.length) {
+        logger.info(`Seeded ${created}/${sampleDrivers.length} drivers`);
       }
     }
 
     logger.info(
-      `Driver application seeding completed — ${created} created (${DRIVER_SEED_COUNT} target), ${notificationsCreated} new driver application notifications`
+      `Driver seeding completed — ${created} driver(s) created, ${notificationsCreated} notification(s)`
     );
     process.exit(0);
   } catch (error) {

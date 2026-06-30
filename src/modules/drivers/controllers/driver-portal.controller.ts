@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import driverService from "../services/driver.service";
-import { toDriverApplicationResponse } from "../dto";
+import { toDriverResponse } from "../dto";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
@@ -14,7 +14,7 @@ class DriverPortalController {
 
     const application = await driverService.getApplicationForUser(req.user!._id.toString());
 
-    return sendSuccess(res, toDriverApplicationResponse(application));
+    return sendSuccess(res, toDriverResponse(application));
   });
 
   updateMyApplication = asyncHandler(async (req: Request, res: Response) => {
@@ -27,7 +27,7 @@ class DriverPortalController {
       req.body
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Profile updated successfully",
     });
   });

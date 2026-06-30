@@ -17,6 +17,7 @@ export interface ISettings extends Document {
   returnMeetAndGreet: number;
   waitingTimePricePerMinute: number;
   waitingTimePricePerHour: number;
+  driverCommissionPercent: number;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;

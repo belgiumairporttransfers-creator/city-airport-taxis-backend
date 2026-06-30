@@ -20,7 +20,7 @@ const auditLogSchema = new Schema<IAuditLog>(
   {
     event: { type: String, required: true, index: true },
     actorId: { type: String, index: true },
-    actorType: { type: String, enum: ["admin", "user", "system"], required: true },
+    actorType: { type: String, enum: ["admin", "user", "system", "driver"], required: true },
     entityType: { type: String },
     entityId: { type: String },
     status: { type: String, enum: ["success", "failed"], default: "success" },

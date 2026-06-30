@@ -70,6 +70,12 @@ const settingsSchema = new Schema<ISettings>(
       default: 0,
       min: 0,
     },
+    driverCommissionPercent: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100,
+    },
     updatedBy: {
       type: Schema.Types.ObjectId,
       ref: "Admin",

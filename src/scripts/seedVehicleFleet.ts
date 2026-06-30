@@ -14,17 +14,20 @@ const seedVehicleFleet = async () => {
     await mongoose.connect(env.MONGODB_URI);
     logger.info("Connected to MongoDB for vehicle fleet seeding");
 
+    const deletedPricing = await VehiclePricing.deleteMany({});
+    const deletedVehicles = await Vehicle.deleteMany({});
+    const deletedCategories = await VehicleCategory.deleteMany({});
+
+    logger.info("Cleared existing vehicle fleet data", {
+      pricing: deletedPricing.deletedCount ?? 0,
+      vehicles: deletedVehicles.deletedCount ?? 0,
+      categories: deletedCategories.deletedCount ?? 0,
+    });
+
     const categoryIdBySlug = new Map<string, string>();
 
     for (const category of sampleVehicleCategories) {
       const slug = category.slug || generateCategorySlug(category.name);
-      const existing = await VehicleCategory.findOne({ slug });
-
-      if (existing) {
-        categoryIdBySlug.set(slug, existing._id.toString());
-        logger.info(`Category already exists: ${category.name}`);
-        continue;
-      }
 
       if (category.isDefault) {
         await VehicleCategory.updateMany({ isDefault: true }, { isDefault: false });
@@ -48,13 +51,6 @@ const seedVehicleFleet = async () => {
       }
 
       const registrationNumber = normalizeRegistrationNumber(vehicle.registrationNumber);
-      const existing = await Vehicle.findOne({ registrationNumber });
-
-      if (existing) {
-        logger.info(`Vehicle already exists: ${registrationNumber}`);
-        continue;
-      }
-
       const { categorySlug: _categorySlug, ...vehicleData } = vehicle;
 
       await Vehicle.create({
@@ -67,9 +63,6 @@ const seedVehicleFleet = async () => {
       logger.info(`Vehicle created: ${registrationNumber}`);
     }
 
-    const skippedPricingCategories = new Set<string>();
-    const checkedPricingCategories = new Set<string>();
-
     for (const slab of sampleVehiclePricing) {
       const categoryId = categoryIdBySlug.get(slab.categorySlug);
 
@@ -78,34 +71,17 @@ const seedVehicleFleet = async () => {
         continue;
       }
 
-      if (skippedPricingCategories.has(slab.categorySlug)) {
-        continue;
-      }
-
-      if (!checkedPricingCategories.has(slab.categorySlug)) {
-        checkedPricingCategories.add(slab.categorySlug);
-        const existingCount = await VehiclePricing.countDocuments({ categoryId });
-
-        if (existingCount > 0) {
-          skippedPricingCategories.add(slab.categorySlug);
-          logger.info(`Pricing already exists for category: ${slab.categorySlug}`);
-          continue;
-        }
-      }
-
       const { categorySlug: _categorySlug, ...slabData } = slab;
 
       await VehiclePricing.create({
         ...slabData,
         categoryId,
       });
-
-      logger.info(
-        `Pricing slab created: ${slab.categorySlug} (${slab.minDistance}–${slab.maxDistance ?? "∞"} km)`
-      );
     }
 
-    logger.info("Vehicle fleet seeding completed");
+    logger.info(
+      `Vehicle fleet seeding completed — ${sampleVehicleCategories.length} categories, ${sampleVehicles.length} vehicles, ${sampleVehiclePricing.length} pricing slabs`
+    );
     process.exit(0);
   } catch (error) {
     logger.error("Error seeding vehicle fleet:", error);

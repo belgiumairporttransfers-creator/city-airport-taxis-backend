@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import driverService from "../services/driver.service";
-import { toDriverApplicationStatusResponse } from "../dto";
+import { toDriverStatusResponse } from "../dto";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
@@ -28,7 +28,7 @@ class DriverPublicController {
       req.body
     );
 
-    return sendSuccess(res, toDriverApplicationStatusResponse(application), {
+    return sendSuccess(res, toDriverStatusResponse(application), {
       message: "Driver application resubmitted successfully",
     });
   });
@@ -36,7 +36,7 @@ class DriverPublicController {
   getStatus = asyncHandler(async (req: Request, res: Response) => {
     const application = await driverService.getApplicationStatus(req.params.applicationNumber);
 
-    return sendSuccess(res, toDriverApplicationStatusResponse(application));
+    return sendSuccess(res, toDriverStatusResponse(application));
   });
 
   uploadDocument = asyncHandler(async (req: Request, res: Response) => {

@@ -24,6 +24,10 @@ import {
   initCommunicationInfrastructure,
   shutdownCommunicationInfrastructure,
 } from "@/modules/communication";
+import {
+  startAssignmentScheduler,
+  stopAssignmentScheduler,
+} from "@/modules/assignments";
 
 const PORT = env.PORT || 5000;
 
@@ -45,6 +49,7 @@ const bootstrap = async (): Promise<void> => {
 
   httpServer.listen(PORT, () => {
     startNewsletterScheduler();
+    startAssignmentScheduler();
     void startNewsletterDeliveryWorker();
     logger.info(`Server running on port ${PORT} in ${env.NODE_ENV} mode`, {
       redisEnabled: env.REDIS_ENABLED,
@@ -68,6 +73,7 @@ const shutdown = async (signal: string): Promise<void> => {
 
   try {
     stopNewsletterScheduler();
+    stopAssignmentScheduler();
     await stopNewsletterDeliveryWorker();
     await shutdownNotificationInfrastructure();
     await shutdownCommunicationInfrastructure();

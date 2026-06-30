@@ -65,6 +65,13 @@ interface EnvConfig {
   NEWSLETTER_BATCH_SIZE: number;
   NEWSLETTER_BATCH_DELAY_MS: number;
   NEWSLETTER_PROGRESS_UPDATE_EVERY: number;
+  MOLLIE_TEST_API_KEY: string;
+  MOLLIE_LIVE_API_KEY: string;
+  API_PUBLIC_URL: string;
+  ASSIGNMENT_TIMEOUT_SECONDS: number;
+  ASSIGNMENT_CRON_ENABLED: boolean;
+  ASSIGNMENT_CRON_EXPRESSION: string;
+  ASSIGNMENT_CRON_TIMEZONE: string;
 }
 
 const buildCorsOrigins = (
@@ -167,6 +174,7 @@ const getEnvConfig = (): EnvConfig => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
   const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || "http://localhost:3001";
   const driverPortalUrl = process.env.DRIVER_PORTAL_URL || frontendUrl;
+  const apiPublicUrl = process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || "5000"}`;
   const sentryEnabled = sentryExplicitlyEnabled && Boolean(sentryDsn);
 
   const tracesSampleRate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.2");
@@ -243,6 +251,13 @@ const getEnvConfig = (): EnvConfig => {
       process.env.NEWSLETTER_PROGRESS_UPDATE_EVERY || "25",
       10
     ),
+    MOLLIE_TEST_API_KEY: process.env.MOLLIE_TEST_API_KEY || "",
+    MOLLIE_LIVE_API_KEY: process.env.MOLLIE_LIVE_API_KEY || "",
+    API_PUBLIC_URL: apiPublicUrl,
+    ASSIGNMENT_TIMEOUT_SECONDS: parseInt(process.env.ASSIGNMENT_TIMEOUT_SECONDS || "90", 10),
+    ASSIGNMENT_CRON_ENABLED: process.env.ASSIGNMENT_CRON_ENABLED !== "false",
+    ASSIGNMENT_CRON_EXPRESSION: process.env.ASSIGNMENT_CRON_EXPRESSION || "*/1 * * * *",
+    ASSIGNMENT_CRON_TIMEZONE: process.env.ASSIGNMENT_CRON_TIMEZONE || "Europe/London",
   };
 };
 

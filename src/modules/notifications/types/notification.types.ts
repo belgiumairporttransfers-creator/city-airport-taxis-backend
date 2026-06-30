@@ -82,14 +82,27 @@ export type NotificationSocketEvent =
   | "notification:read"
   | "notification:all-read";
 
-/** Admin bell / notification center surfaces driver application lifecycle alerts. */
-export const ADMIN_DRIVER_NOTIFICATION_TYPES = [
+/** Notification types surfaced in the admin bell and notification center. */
+export const ADMIN_INBOX_NOTIFICATION_TYPES = [
   "driver.application.submitted",
   "driver.application.documents_updated",
   "driver.application.vehicle_updated",
+  "booking.created",
+  "booking.cancelled",
+  "assignment.created",
+  "assignment.accepted",
+  "trip.driver_arrived",
+  "trip.passenger_onboard",
+  "trip.completed",
+  "communication.message.received",
+  "communication.call.incoming",
+  "communication.call.missed",
 ] as const;
 
-export type AdminDriverNotificationType = (typeof ADMIN_DRIVER_NOTIFICATION_TYPES)[number];
+export type AdminInboxNotificationType = (typeof ADMIN_INBOX_NOTIFICATION_TYPES)[number];
+
+/** @deprecated Use ADMIN_INBOX_NOTIFICATION_TYPES */
+export const ADMIN_DRIVER_NOTIFICATION_TYPES = ADMIN_INBOX_NOTIFICATION_TYPES;
 
 /** @deprecated Use ADMIN_DRIVER_NOTIFICATION_TYPES */
 export const ADMIN_DRIVER_APPLICATION_NOTIFICATION_TYPE = ADMIN_DRIVER_NOTIFICATION_TYPES[0];

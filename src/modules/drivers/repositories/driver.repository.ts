@@ -1,10 +1,10 @@
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import { AppError } from "@/shared/errors/AppError";
 import type {
-  DriverApplicationStatus,
-  GetDriverApplicationsQuery,
-  SubmitDriverApplicationData,
-  UpdateDriverApplicationData,
+  DriverStatus,
+  GetDriversQuery,
+  SubmitDriverData,
+  UpdateDriverData,
 } from "@/modules/drivers/types/driver.types";
 import APIFeature from "@/shared/utils/APIFeature";
 
@@ -16,19 +16,19 @@ const isDuplicateKeyError = (error: unknown): error is { code: number } =>
 
 class DriverRepository {
   async create(
-    data: SubmitDriverApplicationData & {
+    data: SubmitDriverData & {
       applicationNumber: string;
-      status?: DriverApplicationStatus;
+      status?: DriverStatus;
       about?: string;
       skills?: string[];
       profilePhoto?: string;
     }
   ) {
     try {
-      return await DriverApplication.create(data);
+      return await Driver.create(data);
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new AppError("An active driver application already exists for this email", 409);
+        throw new AppError("An active driver already exists for this email", 409);
       }
 
       throw error;
@@ -36,17 +36,17 @@ class DriverRepository {
   }
 
   findById(id: string) {
-    return DriverApplication.findById(id);
+    return Driver.findById(id);
   }
 
   findByApplicationNumber(applicationNumber: string) {
-    return DriverApplication.findOne({
+    return Driver.findOne({
       applicationNumber: applicationNumber.trim().toUpperCase(),
     });
   }
 
   async findMaxApplicationSequence() {
-    const [latest] = await DriverApplication.aggregate<{ sequence: number }>([
+    const [latest] = await Driver.aggregate<{ sequence: number }>([
       {
         $match: {
           applicationNumber: { $regex: /^DRV-\d{4}$/i },
@@ -69,22 +69,32 @@ class DriverRepository {
   }
 
   findByEmail(email: string) {
-    return DriverApplication.findOne({ email: email.trim().toLowerCase() }).sort({ createdAt: -1 });
+    return Driver.findOne({ email: email.trim().toLowerCase() }).sort({ createdAt: -1 });
   }
 
   findActiveByEmail(email: string) {
-    return DriverApplication.findOne({
+    return Driver.findOne({
       email: email.trim().toLowerCase(),
       status: { $in: ["pending", "under_review", "changes_requested", "approved", "suspended"] },
     });
   }
 
   findByUserId(userId: string) {
-    return DriverApplication.findOne({ userId }).sort({ updatedAt: -1 });
+    return Driver.findOne({ userId }).sort({ updatedAt: -1 });
   }
 
-  findWithPagination(query: GetDriverApplicationsQuery) {
-    return new APIFeature(DriverApplication, query, {
+  findApprovedWithPortalAccess() {
+    return Driver.find({
+      status: "approved",
+      userId: { $exists: true, $ne: null },
+      email: { $exists: true, $ne: "" },
+    })
+      .select("firstName lastName email userId")
+      .lean();
+  }
+
+  findWithPagination(query: GetDriversQuery) {
+    return new APIFeature(Driver, query, {
       pagination: { defaultLimit: 20 },
       sort: {
         defaultSort: "-createdAt",
@@ -115,13 +125,13 @@ class DriverRepository {
     }).execute();
   }
 
-  updateById(id: string, data: UpdateDriverApplicationData & Record<string, unknown>) {
-    return DriverApplication.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  updateById(id: string, data: UpdateDriverData & Record<string, unknown>) {
+    return Driver.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   }
 
   async countByStatus() {
-    const results = await DriverApplication.aggregate<{
-      _id: DriverApplicationStatus;
+    const results = await Driver.aggregate<{
+      _id: DriverStatus;
       count: number;
     }>([
       {

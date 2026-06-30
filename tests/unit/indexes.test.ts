@@ -4,7 +4,7 @@ import { ensureDatabaseIndexes } from "@/infrastructure/database/indexes/indexes
 const syncIndexes = vi.fn().mockResolvedValue(undefined);
 const dropIndex = vi.fn().mockResolvedValue(undefined);
 
-const mockModel = () => ({ syncIndexes });
+const mockModel = () => ({ syncIndexes, collection: { dropIndex } });
 
 const mockMessageModel = () => ({
   syncIndexes,
@@ -35,8 +35,8 @@ vi.mock("@/infrastructure/database/models/Vehicle", () => ({ Vehicle: mockModel(
 vi.mock("@/infrastructure/database/models/VehiclePricing", () => ({
   VehiclePricing: mockModel(),
 }));
-vi.mock("@/infrastructure/database/models/DriverApplication", () => ({
-  DriverApplication: mockModel(),
+vi.mock("@/infrastructure/database/models/Driver", () => ({
+  Driver: mockModel(),
 }));
 vi.mock("@/infrastructure/database/models/Conversation", () => ({
   Conversation: mockModel(),
@@ -53,15 +53,20 @@ vi.mock("@/infrastructure/database/models/CallSession", () => ({
 vi.mock("@/infrastructure/database/models/Notification", () => ({
   Notification: mockModel(),
 }));
+vi.mock("@/infrastructure/database/models/Booking", () => ({ Booking: mockModel() }));
+vi.mock("@/infrastructure/database/models/Payment", () => ({ Payment: mockModel() }));
+vi.mock("@/infrastructure/database/models/Assignment", () => ({ Assignment: mockModel() }));
 
 describe("ensureDatabaseIndexes", () => {
-  it("syncs indexes for all models", async () => {
+  it("syncs indexes for all models and drops legacy booking indexes", async () => {
     syncIndexes.mockClear();
     dropIndex.mockClear();
 
     await ensureDatabaseIndexes();
 
     expect(dropIndex).toHaveBeenCalledWith("clientMessageId_1");
-    expect(syncIndexes).toHaveBeenCalledTimes(20);
+    expect(dropIndex).toHaveBeenCalledWith("orderNumber_1");
+    expect(dropIndex).toHaveBeenCalledWith("driver_application_active_email_unique");
+    expect(syncIndexes).toHaveBeenCalledTimes(23);
   });
 });

@@ -56,6 +56,7 @@ class SettingsService {
         returnMeetAndGreet: 0,
         waitingTimePricePerMinute: 0,
         waitingTimePricePerHour: 0,
+        driverCommissionPercent: 10,
       });
     }
 

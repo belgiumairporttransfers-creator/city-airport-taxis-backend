@@ -64,4 +64,10 @@ export const updateSettingsSchema = Joi.object({
     "number.base": "Driver waiting time price per hour must be a number",
     "number.min": "Driver waiting time price per hour cannot be negative",
   }),
+  driverCommissionPercent: Joi.number().min(0).max(100).required().messages({
+    "any.required": "Driver commission is required",
+    "number.base": "Driver commission must be a number",
+    "number.min": "Driver commission cannot be negative",
+    "number.max": "Driver commission cannot exceed 100%",
+  }),
 });

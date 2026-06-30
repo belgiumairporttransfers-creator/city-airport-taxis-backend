@@ -3,7 +3,7 @@ import request from "supertest";
 import app from "@/app";
 import { Admin } from "@/infrastructure/database/models/Admin";
 import { User } from "@/infrastructure/database/models/User";
-import { DriverApplication } from "@/infrastructure/database/models/DriverApplication";
+import { Driver } from "@/infrastructure/database/models/Driver";
 import { AuditLog } from "@/infrastructure/database/models/AuditLog";
 import { Conversation } from "@/infrastructure/database/models/Conversation";
 import { Message } from "@/infrastructure/database/models/Message";
@@ -84,7 +84,7 @@ const createApprovedDriver = async () => {
   });
 
   const applicationNumber = applyResponse.body.data.applicationNumber as string;
-  const application = await DriverApplication.findOne({ applicationNumber });
+  const application = await Driver.findOne({ applicationNumber });
   const applicationId = application!._id.toString();
 
   await adminAgent.post(`/api/admin/drivers/${applicationId}/start-review`).set(csrf);

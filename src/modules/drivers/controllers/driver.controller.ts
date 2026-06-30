@@ -1,20 +1,20 @@
 import { Request, Response } from "express";
 import driverService from "../services/driver.service";
-import { toDriverApplicationResponse } from "../dto";
+import { toDriverResponse } from "../dto";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
-import type { GetDriverApplicationsQuery } from "../types/driver.types";
+import type { GetDriversQuery } from "../types/driver.types";
 
 class DriverController {
   getAll = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
-    const result = await driverService.getApplications(req.query as GetDriverApplicationsQuery);
+    const result = await driverService.getApplications(req.query as GetDriversQuery);
 
     return sendSuccess(res, {
       items: result.items.map((item) =>
-        toDriverApplicationResponse(item, { includeReviews: false })
+        toDriverResponse(item, { includeReviews: false })
       ),
       meta: {
         page: result.page,
@@ -33,7 +33,7 @@ class DriverController {
       req.admin._id.toString()
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver application created successfully",
       statusCode: 201,
     });
@@ -52,7 +52,7 @@ class DriverController {
 
     const application = await driverService.getApplication(req.params.id);
 
-    return sendSuccess(res, toDriverApplicationResponse(application));
+    return sendSuccess(res, toDriverResponse(application));
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
@@ -64,7 +64,7 @@ class DriverController {
       req.admin._id.toString()
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver application updated successfully",
     });
   });
@@ -74,7 +74,7 @@ class DriverController {
 
     const application = await driverService.startReview(req.params.id, req.admin._id.toString());
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver application moved to under review",
     });
   });
@@ -88,7 +88,7 @@ class DriverController {
       req.admin._id.toString()
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Changes requested from driver",
     });
   });
@@ -101,7 +101,7 @@ class DriverController {
       req.admin._id.toString()
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver application approved successfully",
     });
   });
@@ -115,7 +115,7 @@ class DriverController {
       req.admin._id.toString()
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver application rejected",
     });
   });
@@ -129,7 +129,7 @@ class DriverController {
       req.body.reviewNotes
     );
 
-    return sendSuccess(res, toDriverApplicationResponse(application), {
+    return sendSuccess(res, toDriverResponse(application), {
       message: "Driver suspended successfully",
     });
   });

@@ -15,6 +15,21 @@ import {
   getDriverChangesRequestedTemplate,
   getDriverSuspendedTemplate,
 } from "@/infrastructure/email/templates/driver-onboarding.template";
+import {
+  getBookingConfirmedTemplate,
+  getAdminBookingConfirmedTemplate,
+  getBookingReceivedTemplate,
+  getBookingCancelledTemplate,
+  getTripCompletedTemplate,
+} from "@/infrastructure/email/templates/booking.template";
+import type { BookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
+import {
+  getAssignmentCancelledTemplate,
+  getDriverAssignedTemplate,
+  getDriverNewBookingAvailableTemplate,
+  getDriverTripEarningTemplate,
+} from "@/infrastructure/email/templates/assignment.template";
+import type { IBooking } from "@/modules/bookings/types/booking.types";
 import { SendEmailOptions } from "@/modules/auth/types/email.types";
 import type { IUser } from "@/modules/auth/types/user.types";
 import type { IAdmin } from "@/modules/auth/types/admin.types";
@@ -157,6 +172,132 @@ class EmailService {
       to: driver.email,
       subject: "Driver Account Suspended - City Airport Taxis",
       html: getDriverSuspendedTemplate(driver, driver.applicationNumber, reviewNotes),
+    });
+  }
+
+  async sendBookingConfirmedEmail(
+    customer: { firstName: string; email: string },
+    booking: BookingEmailDetails
+  ) {
+    await this.sendEmail({
+      to: customer.email,
+      subject: `Booking Confirmed - ${booking.bookingNumber}`,
+      html: getBookingConfirmedTemplate(customer, booking),
+    });
+  }
+
+  async sendAdminBookingConfirmedEmail(
+    admin: { firstName: string; email: string },
+    booking: BookingEmailDetails
+  ) {
+    return this.sendEmail({
+      to: admin.email,
+      subject: `New Paid Booking - ${booking.bookingNumber}`,
+      html: getAdminBookingConfirmedTemplate(admin, booking),
+    });
+  }
+
+  async sendBookingReceivedEmail(
+    customer: { firstName: string; email: string },
+    bookingNumber: string,
+    total: number,
+    currency: string
+  ) {
+    await this.sendEmail({
+      to: customer.email,
+      subject: "Booking Received - City Airport Taxis",
+      html: getBookingReceivedTemplate(customer, bookingNumber, total, currency),
+    });
+  }
+
+  async sendBookingCancelledEmail(
+    customer: { firstName: string; email: string },
+    bookingNumber: string
+  ) {
+    await this.sendEmail({
+      to: customer.email,
+      subject: "Booking Cancelled - City Airport Taxis",
+      html: getBookingCancelledTemplate(customer, bookingNumber),
+    });
+  }
+
+  async sendDriverNewBookingEmail(
+    driver: { firstName: string; email: string },
+    booking: IBooking,
+    pricing: {
+      commissionPercent: number;
+      driverEarning: number;
+    }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `New Booking Available - ${booking.bookingNumber}`,
+      html: getDriverNewBookingAvailableTemplate(driver, {
+        id: booking._id.toString(),
+        bookingNumber: booking.bookingNumber,
+        route: {
+          pickupAddress: booking.route.pickupAddress,
+          dropoffAddress: booking.route.dropoffAddress,
+          pickupDate: booking.route.pickupDate,
+          pickupTime: booking.route.pickupTime,
+        },
+        vehicle: {
+          categoryName: booking.vehicle.categoryName,
+        },
+        pricing: {
+          driverEarning: pricing.driverEarning,
+        },
+      }),
+    });
+  }
+
+  async sendDriverTripEarningEmail(
+    driver: { firstName: string; email: string },
+    bookingNumber: string,
+    pricing: {
+      total: number;
+      driverEarning: number;
+    }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `Earning Added - ${bookingNumber}`,
+      html: getDriverTripEarningTemplate(driver, bookingNumber, pricing),
+    });
+  }
+
+  async sendDriverAssignedEmail(
+    driver: { firstName: string; email: string },
+    bookingNumber: string,
+    assignmentNumber: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "New Trip Assigned - City Airport Taxis",
+      html: getDriverAssignedTemplate(driver, bookingNumber, assignmentNumber),
+    });
+  }
+
+  async sendAssignmentCancelledEmail(
+    driver: { firstName: string; email: string },
+    bookingNumber: string,
+    assignmentNumber: string
+  ) {
+    await this.sendEmail({
+      to: driver.email,
+      subject: "Assignment Cancelled - City Airport Taxis",
+      html: getAssignmentCancelledTemplate(driver, bookingNumber, assignmentNumber),
+    });
+  }
+
+  async sendTripCompletedEmail(
+    customer: { firstName: string; email: string },
+    bookingNumber: string
+  ) {
+    await this.sendEmail({
+      to: customer.email,
+      subject: "Trip Completed - City Airport Taxis",
+      html: getTripCompletedTemplate(customer, bookingNumber),
     });
   }
 

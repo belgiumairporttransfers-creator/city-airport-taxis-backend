@@ -11,7 +11,7 @@ import type {
   GetNotificationsQuery,
   NotificationRecipientType,
 } from "@/modules/notifications/types/notification.types";
-import { ADMIN_DRIVER_NOTIFICATION_TYPES } from "@/modules/notifications/types/notification.types";
+import { ADMIN_INBOX_NOTIFICATION_TYPES } from "@/modules/notifications/types/notification.types";
 
 const NOTIFICATION_RETENTION_DAYS = 90;
 
@@ -93,7 +93,7 @@ class NotificationService {
 
   async getNotifications(adminId: string, query: GetNotificationsQuery) {
     const result = await notificationRepository.findByRecipient(adminId, query, [
-      ...ADMIN_DRIVER_NOTIFICATION_TYPES,
+      ...ADMIN_INBOX_NOTIFICATION_TYPES,
     ]);
 
     return {
@@ -108,7 +108,7 @@ class NotificationService {
   }
 
   async getUnreadCount(adminId: string) {
-    return notificationRepository.countUnread(adminId, [...ADMIN_DRIVER_NOTIFICATION_TYPES]);
+    return notificationRepository.countUnread(adminId, [...ADMIN_INBOX_NOTIFICATION_TYPES]);
   }
 
   async markAsRead(id: string, adminId: string) {
@@ -144,9 +144,9 @@ class NotificationService {
   }
 
   async markAllAsRead(adminId: string) {
-    await notificationRepository.markAllAsRead(adminId, [...ADMIN_DRIVER_NOTIFICATION_TYPES]);
+    await notificationRepository.markAllAsRead(adminId, [...ADMIN_INBOX_NOTIFICATION_TYPES]);
     const unreadCount = await notificationRepository.countUnread(adminId, [
-      ...ADMIN_DRIVER_NOTIFICATION_TYPES,
+      ...ADMIN_INBOX_NOTIFICATION_TYPES,
     ]);
 
     await notificationPubSub.publish({

@@ -82,6 +82,7 @@ class APIFeature<T extends Document> {
 
     if (this.options.initialFilter) {
       Object.assign(this.filterQuery, this.options.initialFilter);
+      this.query = this.query.find(this.filterQuery);
     }
 
     // Apply filter fields

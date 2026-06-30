@@ -7,7 +7,7 @@ const MAX_ATTEMPTS = 10;
 export const formatApplicationNumber = (sequence: number): string =>
   `${APPLICATION_PREFIX}-${sequence.toString().padStart(4, "0")}`;
 
-export const generateApplicationNumber = async (): Promise<string> => {
+export const generateApplicationNumber = async () => {
   let sequence = await driverRepository.findMaxApplicationSequence();
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {

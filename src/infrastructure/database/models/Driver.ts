@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
-import type { IDriverApplication } from "@/modules/drivers/types/driver.types";
+import type { IDriver } from "@/modules/drivers/types/driver.types";
 import {
-  DRIVER_APPLICATION_STATUSES,
+  DRIVER_STATUSES,
   DRIVER_ACTIVE_STATUSES,
   DRIVER_DOCUMENT_FIELDS,
   DRIVER_SHIFT_TYPES,
@@ -40,7 +40,7 @@ const driverReviewSchema = new Schema(
   { _id: true }
 );
 
-const driverApplicationSchema = new Schema<IDriverApplication>(
+const driverSchema = new Schema<IDriver>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -56,7 +56,7 @@ const driverApplicationSchema = new Schema<IDriverApplication>(
     },
     status: {
       type: String,
-      enum: DRIVER_APPLICATION_STATUSES,
+      enum: DRIVER_STATUSES,
       default: "pending",
     },
     operatingCountry: {
@@ -183,20 +183,20 @@ const driverApplicationSchema = new Schema<IDriverApplication>(
   }
 );
 
-driverApplicationSchema.index({ status: 1 });
-driverApplicationSchema.index({ email: 1 });
-driverApplicationSchema.index({ licensePlate: 1 });
-driverApplicationSchema.index(
+driverSchema.index({ status: 1 });
+driverSchema.index({ email: 1 });
+driverSchema.index({ licensePlate: 1 });
+driverSchema.index(
   { email: 1 },
   {
     unique: true,
     partialFilterExpression: {
       status: { $in: DRIVER_ACTIVE_STATUSES },
     },
-    name: "driver_application_active_email_unique",
+    name: "driver_active_email_unique",
   }
 );
-driverApplicationSchema.index(
+driverSchema.index(
   {
     firstName: "text",
     lastName: "text",
@@ -204,10 +204,7 @@ driverApplicationSchema.index(
     applicationNumber: "text",
     licensePlate: "text",
   },
-  { name: "driver_application_text_search" }
+  { name: "driver_text_search" }
 );
 
-export const DriverApplication = model<IDriverApplication>(
-  "DriverApplication",
-  driverApplicationSchema
-);
+export const Driver = model<IDriver>("Driver", driverSchema);

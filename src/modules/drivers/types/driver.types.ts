@@ -1,6 +1,6 @@
 import type { Document, Types } from "mongoose";
 
-export const DRIVER_APPLICATION_STATUSES = [
+export const DRIVER_STATUSES = [
   "pending",
   "under_review",
   "changes_requested",
@@ -9,7 +9,7 @@ export const DRIVER_APPLICATION_STATUSES = [
   "suspended",
 ] as const;
 
-export type DriverApplicationStatus = (typeof DRIVER_APPLICATION_STATUSES)[number];
+export type DriverStatus = (typeof DRIVER_STATUSES)[number];
 
 export const DRIVER_EDITABLE_STATUSES = ["pending", "under_review", "changes_requested"] as const;
 
@@ -67,10 +67,10 @@ export interface DriverReview {
   createdAt: Date;
 }
 
-export interface IDriverApplication extends Document {
+export interface IDriver extends Document {
   userId?: Types.ObjectId;
   applicationNumber: string;
-  status: DriverApplicationStatus;
+  status: DriverStatus;
   operatingCountry: string;
   operatingCity: string;
   firstName: string;
@@ -100,7 +100,7 @@ export interface IDriverApplication extends Document {
   updatedAt: Date;
 }
 
-export interface SubmitDriverApplicationData {
+export interface SubmitDriverData {
   operatingCountry: string;
   operatingCity: string;
   firstName: string;
@@ -120,7 +120,7 @@ export interface SubmitDriverApplicationData {
   documents: DriverDocuments;
 }
 
-export interface CreateDriverApplicationData {
+export interface CreateDriverData {
   operatingCountry: string;
   operatingCity: string;
   firstName: string;
@@ -142,7 +142,7 @@ export interface CreateDriverApplicationData {
   documents: DriverDocuments;
 }
 
-export interface ResubmitDriverApplicationData {
+export interface ResubmitDriverData {
   email: string;
   documents?: Partial<DriverDocuments>;
   operatingCountry?: string;
@@ -162,7 +162,7 @@ export interface ResubmitDriverApplicationData {
   profilePhoto?: string;
 }
 
-export interface UpdateDriverApplicationData {
+export interface UpdateDriverData {
   operatingCountry?: string;
   operatingCity?: string;
   firstName?: string;
@@ -184,19 +184,19 @@ export interface UpdateDriverApplicationData {
   reviewNotes?: string;
 }
 
-export interface GetDriverApplicationsQuery {
+export interface GetDriversQuery {
   page?: number;
   limit?: number;
   search?: string;
-  status?: DriverApplicationStatus;
+  status?: DriverStatus;
   sort?: string;
 }
 
-export interface DriverApplicationResponse {
+export interface DriverResponse {
   id: string;
   userId?: string;
   applicationNumber: string;
-  status: DriverApplicationStatus;
+  status: DriverStatus;
   operatingCountry: string;
   operatingCity: string;
   firstName: string;
@@ -234,15 +234,15 @@ export interface DriverReviewResponse {
   createdAt: string;
 }
 
-export interface DriverApplicationStatusResponse {
+export interface DriverStatusResponse {
   applicationNumber: string;
-  status: DriverApplicationStatus;
+  status: DriverStatus;
   reviewNotes?: string;
   updatedAt: string;
 }
 
-export interface DriverApplicationListResponse {
-  items: DriverApplicationResponse[];
+export interface DriverListResponse {
+  items: DriverResponse[];
   meta: {
     page: number;
     limit: number;
@@ -251,7 +251,7 @@ export interface DriverApplicationListResponse {
   };
 }
 
-export interface DriverApplicationStatsResponse {
+export interface DriverStatsResponse {
   pending: number;
   underReview: number;
   changesRequested: number;
