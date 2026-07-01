@@ -74,11 +74,36 @@ interface EnvConfig {
   ASSIGNMENT_CRON_TIMEZONE: string;
 }
 
+const withOriginVariants = (url: string): string[] => {
+  try {
+    const parsed = new URL(url);
+    const normalized = url.replace(/\/$/, "");
+    const origins = new Set<string>([normalized]);
+    const { protocol, hostname, port } = parsed;
+
+    if (hostname.startsWith("www.")) {
+      const apexHost = hostname.slice(4);
+      origins.add(`${protocol}//${apexHost}${port ? `:${port}` : ""}`);
+    } else {
+      origins.add(`${protocol}//www.${hostname}${port ? `:${port}` : ""}`);
+    }
+
+    return [...origins];
+  } catch {
+    return [url];
+  }
+};
+
 const buildCorsOrigins = (
   frontendUrl: string,
   adminFrontendUrl: string,
   driverPortalUrl: string
-): string[] => [...new Set([frontendUrl, adminFrontendUrl, driverPortalUrl].filter(Boolean))];
+): string[] =>
+  [...new Set(
+    [frontendUrl, adminFrontendUrl, driverPortalUrl]
+      .filter(Boolean)
+      .flatMap(withOriginVariants)
+  )];
 
 const getEnvConfig = (): EnvConfig => {
   const isProduction = nodeEnv === "production";
