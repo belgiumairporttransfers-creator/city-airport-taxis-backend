@@ -5,6 +5,7 @@ export { Activity } from "./Activity";
 export { AuditLog } from "./AuditLog";
 export { Settings } from "./Settings";
 export { Newsletter } from "./Newsletter";
+export { Contact } from "./Contact";
 export { NewsletterDraft } from "./NewsletterDraft";
 export { NewsletterCampaign } from "./NewsletterCampaign";
 export { NewsletterCampaignRecipient } from "./NewsletterCampaignRecipient";

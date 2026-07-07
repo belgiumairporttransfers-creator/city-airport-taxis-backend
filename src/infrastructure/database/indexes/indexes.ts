@@ -4,6 +4,7 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
   const { Session } = await import("@/infrastructure/database/models/Session");
   const { Activity } = await import("@/infrastructure/database/models/Activity");
   const { Newsletter } = await import("@/infrastructure/database/models/Newsletter");
+  const { Contact } = await import("@/infrastructure/database/models/Contact");
   const { NewsletterDraft } = await import("@/infrastructure/database/models/NewsletterDraft");
   const { NewsletterCampaign } =
     await import("@/infrastructure/database/models/NewsletterCampaign");
@@ -74,6 +75,7 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
     Session.syncIndexes(),
     Activity.syncIndexes(),
     Newsletter.syncIndexes(),
+    Contact.syncIndexes(),
     NewsletterDraft.syncIndexes(),
     NewsletterCampaign.syncIndexes(),
     NewsletterCampaignRecipient.syncIndexes(),

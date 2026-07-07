@@ -75,6 +75,17 @@ export const newsletterLimiter: RequestHandler = createLimiter("newsletter", {
   },
 });
 
+export const contactLimiter: RequestHandler = createLimiter("contact", {
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many contact form submissions, please try again later",
+  },
+});
+
 export const quoteRateLimiter: RequestHandler = createLimiter("vehicle-quote", {
   windowMs: 15 * 60 * 1000,
   max: 60,

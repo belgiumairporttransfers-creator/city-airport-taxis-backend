@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { userAuthRoutes } from "../modules/auth";
 import { publicNewsletterRoutes } from "../modules/newsletter";
+import { publicContactRoutes } from "../modules/contact";
 import { publicSettingsRoutes } from "../modules/settings";
 import { uploadRoutes } from "../modules/upload";
 import { publicVehicleCategoryRoutes } from "../modules/vehicle-categories";
@@ -17,6 +18,7 @@ const publicRoutes: IRouter = Router();
 
 publicRoutes.use("/settings/public", publicSettingsRoutes);
 publicRoutes.use("/newsletter", publicNewsletterRoutes);
+publicRoutes.use("/contact", publicContactRoutes);
 publicRoutes.use("/vehicle-categories", publicVehicleCategoryRoutes);
 publicRoutes.use("/vehicle-pricing", publicVehiclePricingRoutes);
 publicRoutes.use("/bookings", publicBookingRoutes);

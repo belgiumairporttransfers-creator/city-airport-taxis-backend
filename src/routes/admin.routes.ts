@@ -12,6 +12,7 @@ import {
   adminNewsletterCampaignRoutes,
   adminNewsletterCampaignRecipientRoutes,
 } from "../modules/newsletter";
+import { adminContactRoutes } from "../modules/contact";
 import { adminSettingsRoutes } from "../modules/settings";
 import { adminDriverRoutes } from "../modules/drivers";
 import { adminNotificationRoutes } from "../modules/notifications";
@@ -42,6 +43,7 @@ adminRoutes.use("/payments", adminPaymentRoutes);
 adminRoutes.use("/notifications", adminNotificationRoutes);
 adminRoutes.use("/communication", adminCommunicationRoutes);
 adminRoutes.use("/newsletters", adminNewsletterRoutes);
+adminRoutes.use("/contact-messages", adminContactRoutes);
 adminRoutes.use("/newsletter-drafts", adminNewsletterDraftRoutes);
 adminRoutes.use("/newsletter-campaigns", adminNewsletterCampaignRoutes);
 adminRoutes.use("/newsletter-campaign-recipients", adminNewsletterCampaignRecipientRoutes);

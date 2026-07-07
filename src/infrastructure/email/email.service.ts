@@ -29,6 +29,10 @@ import {
   getDriverNewBookingAvailableTemplate,
   getDriverTripEarningTemplate,
 } from "@/infrastructure/email/templates/assignment.template";
+import {
+  getContactFormAdminTemplate,
+  getContactFormConfirmationTemplate,
+} from "@/infrastructure/email/templates/contact.template";
 import type { IBooking } from "@/modules/bookings/types/booking.types";
 import { SendEmailOptions } from "@/modules/auth/types/email.types";
 import type { IUser } from "@/modules/auth/types/user.types";
@@ -298,6 +302,30 @@ class EmailService {
       to: customer.email,
       subject: "Trip Completed - City Airport Taxis",
       html: getTripCompletedTemplate(customer, bookingNumber),
+    });
+  }
+
+  async sendContactFormAdminNotification(contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+  }) {
+    await this.sendEmail({
+      to: env.DEFAULT_ADMIN_EMAIL,
+      replyTo: contact.email,
+      subject: `New Contact Form: ${contact.subject}`,
+      html: getContactFormAdminTemplate(contact),
+    });
+  }
+
+  async sendContactFormConfirmationEmail(contact: { firstName: string; email: string }) {
+    await this.sendEmail({
+      to: contact.email,
+      subject: "We received your message - City Airport Taxis",
+      html: getContactFormConfirmationTemplate(contact),
     });
   }
 
