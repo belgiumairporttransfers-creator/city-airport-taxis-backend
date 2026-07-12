@@ -13,6 +13,7 @@ import { portalCommunicationRoutes } from "../modules/communication";
 import { publicBookingRoutes, portalBookingRoutes } from "../modules/bookings";
 import { publicPaymentRoutes } from "../modules/payments";
 import { portalWalletRoutes } from "../modules/wallet";
+import { portalDashboardRoutes } from "../modules/dashboard";
 
 const publicRoutes: IRouter = Router();
 
@@ -29,6 +30,7 @@ publicRoutes.use("/drivers", portalAssignmentRoutes);
 publicRoutes.use("/drivers", portalBookingRoutes);
 publicRoutes.use("/drivers", portalTripRoutes);
 publicRoutes.use("/drivers", portalWalletRoutes);
+publicRoutes.use("/drivers", portalDashboardRoutes);
 publicRoutes.use("/communication", portalCommunicationRoutes);
 publicRoutes.use("/auth", userAuthRoutes);
 publicRoutes.use("/upload", uploadRoutes);

@@ -21,6 +21,7 @@ import { adminBookingRoutes } from "../modules/bookings";
 import { adminAssignmentRoutes } from "../modules/assignments";
 import { adminTripRoutes } from "../modules/trips";
 import { adminPaymentRoutes } from "../modules/payments";
+import { adminDashboardRoutes } from "../modules/dashboard";
 
 const adminRoutes: IRouter = Router();
 
@@ -29,6 +30,7 @@ adminRoutes.use("/auth", adminAuthRoutes);
 adminRoutes.use(protectAdmin);
 adminRoutes.use(csrfProtection);
 
+adminRoutes.use("/dashboard", adminDashboardRoutes);
 adminRoutes.use("/settings", adminSettingsRoutes);
 adminRoutes.use("/customers", adminCustomerRoutes);
 adminRoutes.use("/vehicle-categories", adminVehicleCategoryRoutes);
