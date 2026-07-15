@@ -24,6 +24,7 @@ export const createVehicleCategorySchema = Joi.object({
     .valid(...VEHICLE_CATEGORY_STATUSES)
     .default("active"),
   isDefault: Joi.boolean().default(false),
+  requestForQuote: Joi.boolean().default(false),
 });
 
 export const updateVehicleCategorySchema = Joi.object({
@@ -38,6 +39,7 @@ export const updateVehicleCategorySchema = Joi.object({
     .valid(...VEHICLE_CATEGORY_STATUSES)
     .optional(),
   isDefault: Joi.boolean().optional(),
+  requestForQuote: Joi.boolean().optional(),
 })
   .min(1)
   .messages({

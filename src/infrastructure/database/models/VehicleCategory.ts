@@ -49,6 +49,10 @@ const vehicleCategorySchema = new Schema<IVehicleCategory>(
       type: Boolean,
       default: false,
     },
+    requestForQuote: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "Admin",

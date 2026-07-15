@@ -13,6 +13,7 @@ export interface IVehicleCategory extends Document {
   sortOrder: number;
   status: VehicleCategoryStatus;
   isDefault: boolean;
+  requestForQuote: boolean;
   createdBy?: Types.ObjectId;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
@@ -29,6 +30,7 @@ export interface CreateVehicleCategoryData {
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
+  requestForQuote?: boolean;
 }
 
 export interface UpdateVehicleCategoryData {
@@ -41,6 +43,7 @@ export interface UpdateVehicleCategoryData {
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
+  requestForQuote?: boolean;
 }
 
 export interface GetVehicleCategoriesQuery {
@@ -62,6 +65,7 @@ export interface VehicleCategoryResponse {
   sortOrder: number;
   status: VehicleCategoryStatus;
   isDefault: boolean;
+  requestForQuote: boolean;
   createdBy?: string;
   updatedBy?: string;
   createdAt: string;

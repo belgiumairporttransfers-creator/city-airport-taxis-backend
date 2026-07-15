@@ -147,6 +147,7 @@ export interface VehiclePricingPublicQuoteCategory {
   name: string;
   image?: string;
   vehicles: string[];
+  requestForQuote: boolean;
 }
 
 export interface VehiclePricingPublicQuote {

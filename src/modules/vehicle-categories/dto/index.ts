@@ -42,6 +42,7 @@ export const toVehicleCategoryResponse = (
     sortOrder: Number(record.sortOrder ?? 0),
     status: record.status as VehicleCategoryResponse["status"],
     isDefault: Boolean(record.isDefault),
+    requestForQuote: Boolean(record.requestForQuote),
     createdBy: toIdString(record.createdBy),
     updatedBy: toIdString(record.updatedBy),
     createdAt: toIsoString(record.createdAt) ?? "",

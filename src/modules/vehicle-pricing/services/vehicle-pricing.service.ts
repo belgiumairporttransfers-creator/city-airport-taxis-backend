@@ -275,7 +275,9 @@ class VehiclePricingService {
     const tripCategory = query.category ?? "one-way";
 
     return result.items.flatMap((item) => {
-      if (item.fare === null) {
+      const requestForQuote = Boolean(item.category.requestForQuote);
+
+      if (item.fare === null && !requestForQuote) {
         return [];
       }
 
@@ -286,7 +288,10 @@ class VehiclePricingService {
       }
 
       const priceBreakdown = {
-        totalPrice: resolvePublicQuoteTotalPrice(item.fare.amount, tripCategory),
+        totalPrice:
+          item.fare === null
+            ? 0
+            : resolvePublicQuoteTotalPrice(item.fare.amount, tripCategory),
       };
 
       return [
@@ -298,6 +303,7 @@ class VehiclePricingService {
             vehicles: item.vehicles.map((vehicle) =>
               [vehicle.make, vehicle.model].filter(Boolean).join(" ")
             ),
+            requestForQuote,
           },
           priceBreakdown,
           passengers: capacities.passengerCapacity,
