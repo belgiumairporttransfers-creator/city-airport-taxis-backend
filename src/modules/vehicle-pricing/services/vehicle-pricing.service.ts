@@ -3,6 +3,7 @@ import auditService from "@/shared/audit/audit.service";
 import { AuditEvents } from "@/shared/audit/audit.events";
 import vehicleCategoryRepository from "@/modules/vehicle-categories/repositories/vehicle-category.repository";
 import vehiclePricingRepository from "@/modules/vehicle-pricing/repositories/vehicle-pricing.repository";
+import hourlyPricingRepository from "@/modules/vehicle-pricing/repositories/hourly-pricing.repository";
 import vehicleRepository from "@/modules/vehicles/repositories/vehicle.repository";
 import {
   toVehicleCategoryResponse,
@@ -228,20 +229,7 @@ class VehiclePricingService {
       throw new AppError("Distance must be a non-negative number", 400);
     }
 
-    const [categories, vehicles] = await Promise.all([
-      vehicleCategoryRepository.findActive(),
-      vehicleRepository.findActive(),
-    ]);
-
-    const vehiclesByCategory = new Map<string, ReturnType<typeof toVehicleResponse>[]>();
-
-    for (const vehicle of vehicles) {
-      const categoryId = vehicle.categoryId.toString();
-      const mappedVehicle = toVehicleResponse(vehicle);
-      const existing = vehiclesByCategory.get(categoryId) ?? [];
-      existing.push(mappedVehicle);
-      vehiclesByCategory.set(categoryId, existing);
-    }
+    const { categories, vehiclesByCategory } = await this.loadActiveCategoriesWithVehicles();
 
     const items = await Promise.all(
       categories.map(async (category) => {
@@ -270,8 +258,92 @@ class VehiclePricingService {
     };
   }
 
+  private async loadActiveCategoriesWithVehicles() {
+    const [categories, vehicles] = await Promise.all([
+      vehicleCategoryRepository.findActive(),
+      vehicleRepository.findActive(),
+    ]);
+
+    const vehiclesByCategory = new Map<string, ReturnType<typeof toVehicleResponse>[]>();
+
+    for (const vehicle of vehicles) {
+      const categoryId = vehicle.categoryId.toString();
+      const mappedVehicle = toVehicleResponse(vehicle);
+      const existing = vehiclesByCategory.get(categoryId) ?? [];
+      existing.push(mappedVehicle);
+      vehiclesByCategory.set(categoryId, existing);
+    }
+
+    return { categories, vehiclesByCategory };
+  }
+
+  async getPublicQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+    const tripCategory = query.category ?? "one-way";
+
+    if (tripCategory === "hourly") {
+      return this.getPublicHourlyQuotes(query);
+    }
+
+    return this.getPublicDistanceQuotes(query);
+  }
+
+  async getPublicHourlyQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+    const duration = Number(query.duration);
+
+    if (!Number.isFinite(duration) || duration < 1) {
+      throw new AppError("Duration is required for hourly bookings", 400);
+    }
+
+    const { categories, vehiclesByCategory } = await this.loadActiveCategoriesWithVehicles();
+
+    const items = await Promise.all(
+      categories.map(async (category) => {
+        const categoryId = category._id.toString();
+        const pricing = await hourlyPricingRepository.findActiveByCategoryAndDuration(
+          categoryId,
+          duration
+        );
+        const categoryResponse = toVehicleCategoryResponse(category);
+        const vehicles = vehiclesByCategory.get(categoryId) ?? [];
+        const requestForQuote = Boolean(categoryResponse.requestForQuote);
+
+        if (!pricing && !requestForQuote) {
+          return null;
+        }
+
+        const capacities = resolveCategoryCapacities(categoryResponse, vehicles);
+
+        if (capacities.passengerCapacity < query.passengers) {
+          return null;
+        }
+
+        return {
+          categoryId,
+          category: {
+            name: categoryResponse.name,
+            image: categoryResponse.image,
+            vehicles: vehicles.map((vehicle) =>
+              [vehicle.make, vehicle.model].filter(Boolean).join(" ")
+            ),
+            requestForQuote,
+          },
+          priceBreakdown: {
+            totalPrice: pricing ? pricing.price : 0,
+            includedDistance: pricing?.includedDistance,
+            extraDistancePrice: pricing?.extraDistancePrice,
+          },
+          passengers: capacities.passengerCapacity,
+          luggage: capacities.luggageCapacity,
+        };
+      })
+    );
+
+    return items.filter((item): item is NonNullable<typeof item> => item !== null);
+  }
+
   async getPublicDistanceQuotes(query: GetPublicVehiclePricingQuotesQuery) {
-    const result = await this.getDistanceQuotes(query.distance);
+    const distance = Number(query.distance ?? 0);
+    const result = await this.getDistanceQuotes(distance);
     const tripCategory = query.category ?? "one-way";
 
     return result.items.flatMap((item) => {

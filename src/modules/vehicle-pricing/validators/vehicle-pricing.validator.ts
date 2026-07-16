@@ -139,19 +139,37 @@ export const getPricingQuotesQuerySchema = Joi.object({
 });
 
 export const getPublicPricingQuotesQuerySchema = Joi.object({
-  distance: Joi.number().min(0).required().messages({
-    "any.required": "Distance is required",
-    "number.base": "Distance must be a number",
-    "number.min": "Distance must be at least 0",
-  }),
+  category: Joi.string()
+    .valid(...BOOKING_TRIP_CATEGORIES)
+    .default("one-way"),
   passengers: Joi.number().integer().min(1).required().messages({
     "any.required": "Passengers is required",
     "number.base": "Passengers must be a number",
     "number.min": "Passengers must be at least 1",
   }),
-  category: Joi.string()
-    .valid(...BOOKING_TRIP_CATEGORIES)
-    .default("one-way"),
+  distance: Joi.number()
+    .min(0)
+    .when("category", {
+      is: "hourly",
+      then: Joi.optional().default(0),
+      otherwise: Joi.required().messages({
+        "any.required": "Distance is required",
+        "number.base": "Distance must be a number",
+        "number.min": "Distance must be at least 0",
+      }),
+    }),
+  duration: Joi.number()
+    .integer()
+    .min(1)
+    .when("category", {
+      is: "hourly",
+      then: Joi.required().messages({
+        "any.required": "Duration is required for hourly bookings",
+        "number.base": "Duration must be a number",
+        "number.min": "Duration must be at least 1",
+      }),
+      otherwise: Joi.forbidden(),
+    }),
 });
 
 export const validatePricingStructureSchema = Joi.object({}).default({});

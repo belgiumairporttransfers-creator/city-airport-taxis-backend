@@ -19,10 +19,11 @@ const customerSchema = new Schema(
 const routeSchema = new Schema(
   {
     pickupAddress: { type: String, required: true, trim: true },
-    dropoffAddress: { type: String, required: true, trim: true },
+    // Hourly bookings may have no dropoff address.
+    dropoffAddress: { type: String, trim: true, default: "" },
     pickupDate: { type: String, required: true, trim: true },
     pickupTime: { type: String, required: true, trim: true },
-    distance: { type: Number, required: true, min: 0 },
+    distance: { type: Number, required: true, min: 0, default: 0 },
     durationMinutes: { type: Number, min: 0 },
     estimatedArrival: { type: String, trim: true },
     airportPickup: { type: Boolean, default: false },

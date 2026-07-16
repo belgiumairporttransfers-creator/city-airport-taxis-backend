@@ -40,6 +40,11 @@ export const AuditEvents = {
   VEHICLE_PRICING_DELETED: "vehicle-pricing.deleted",
   VEHICLE_PRICING_VALIDATED: "vehicle-pricing.validated",
 
+  // Hourly pricing
+  HOURLY_PRICING_CREATED: "hourly-pricing.created",
+  HOURLY_PRICING_UPDATED: "hourly-pricing.updated",
+  HOURLY_PRICING_DELETED: "hourly-pricing.deleted",
+
   // Driver applications
   DRIVER_APPLICATION_CREATED: "driver.application.created",
   DRIVER_APPLICATION_UPDATED: "driver.application.updated",

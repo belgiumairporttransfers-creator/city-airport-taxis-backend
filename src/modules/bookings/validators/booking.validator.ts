@@ -27,7 +27,11 @@ const createBookingBodySchema = {
     .required(),
   step1: Joi.object({
     pickupAddress: Joi.string().trim().min(3).max(500).required(),
-    deliveryAddress: Joi.string().trim().min(3).max(500).required(),
+    deliveryAddress: Joi.when(Joi.ref("/category"), {
+      is: "hourly",
+      then: Joi.string().trim().allow("").max(500).optional().default(""),
+      otherwise: Joi.string().trim().min(3).max(500).required(),
+    }),
     pickupDate: dateSchema.required(),
     pickupTime: timeSchema.required(),
     passengers: Joi.number().integer().min(1).max(20).required(),
@@ -35,10 +39,22 @@ const createBookingBodySchema = {
     returnTime: timeSchema.optional(),
   }).required(),
   routeData: Joi.object({
-    distance: Joi.number().min(0).required(),
+    distance: Joi.when(Joi.ref("/category"), {
+      is: "hourly",
+      then: Joi.number().min(0).optional().default(0),
+      otherwise: Joi.number().min(0).required(),
+    }),
     durationMinutes: Joi.number().min(0).optional(),
     estTime: Joi.string().trim().allow("", null).optional(),
     isAirportSelected: Joi.boolean().optional(),
+    duration: Joi.alternatives()
+      .try(
+        Joi.object({
+          duration: Joi.number().integer().min(1).required(),
+        }).unknown(true),
+        Joi.number().integer().min(1)
+      )
+      .optional(),
   })
     .allow(null)
     .optional(),

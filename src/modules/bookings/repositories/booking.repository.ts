@@ -35,7 +35,23 @@ class BookingRepository {
     try {
       return await Booking.create(data);
     } catch (error) {
-      throw new AppError("Unable to create booking. Please try again.", 409);
+      const mongoError = error as { code?: number; name?: string; message?: string };
+
+      if (mongoError.code === 11000) {
+        throw new AppError("Unable to create booking. Please try again.", 409);
+      }
+
+      if (mongoError.name === "ValidationError") {
+        throw new AppError(
+          mongoError.message || "Booking validation failed",
+          422
+        );
+      }
+
+      throw new AppError(
+        mongoError.message || "Unable to create booking. Please try again.",
+        500
+      );
     }
   }
 

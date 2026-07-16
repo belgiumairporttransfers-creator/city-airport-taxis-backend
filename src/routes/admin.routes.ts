@@ -5,7 +5,12 @@ import { adminAuthRoutes } from "../modules/auth";
 import { adminCustomerRoutes } from "../modules/customers";
 import { adminVehicleCategoryRoutes } from "../modules/vehicle-categories";
 import { adminVehicleRoutes } from "../modules/vehicles";
-import { adminCategoryPricingRoutes, adminVehiclePricingRoutes } from "../modules/vehicle-pricing";
+import {
+  adminCategoryHourlyPricingRoutes,
+  adminCategoryPricingRoutes,
+  adminHourlyPricingRoutes,
+  adminVehiclePricingRoutes,
+} from "../modules/vehicle-pricing";
 import {
   adminNewsletterRoutes,
   adminNewsletterDraftRoutes,
@@ -35,7 +40,12 @@ adminRoutes.use("/settings", adminSettingsRoutes);
 adminRoutes.use("/customers", adminCustomerRoutes);
 adminRoutes.use("/vehicle-categories", adminVehicleCategoryRoutes);
 adminRoutes.use("/vehicle-categories/:categoryId/pricing", adminCategoryPricingRoutes);
+adminRoutes.use(
+  "/vehicle-categories/:categoryId/hourly-pricing",
+  adminCategoryHourlyPricingRoutes
+);
 adminRoutes.use("/vehicle-pricing", adminVehiclePricingRoutes);
+adminRoutes.use("/hourly-pricing", adminHourlyPricingRoutes);
 adminRoutes.use("/vehicles", adminVehicleRoutes);
 adminRoutes.use("/drivers", adminDriverRoutes);
 adminRoutes.use("/bookings", adminBookingRoutes);

@@ -100,9 +100,10 @@ export const BOOKING_TRIP_CATEGORIES = ["one-way", "hourly", "return-trip"] as c
 export type BookingTripCategory = (typeof BOOKING_TRIP_CATEGORIES)[number];
 
 export interface GetPublicVehiclePricingQuotesQuery {
-  distance: number;
+  distance?: number;
   passengers: number;
   category?: BookingTripCategory;
+  duration?: number;
 }
 
 export interface VehiclePricingQuoteItem {
@@ -141,6 +142,8 @@ export interface VehiclePricingQuotesResult {
 
 export interface VehiclePricingPublicQuotePriceBreakdown {
   totalPrice: number;
+  includedDistance?: number;
+  extraDistancePrice?: number;
 }
 
 export interface VehiclePricingPublicQuoteCategory {

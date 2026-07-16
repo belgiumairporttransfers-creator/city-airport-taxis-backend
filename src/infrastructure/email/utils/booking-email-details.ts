@@ -12,10 +12,10 @@ export type BookingEmailDetails = {
   };
   route: {
     pickupAddress: string;
-    dropoffAddress: string;
+    dropoffAddress?: string;
     pickupDate: string;
     pickupTime: string;
-    distance: number;
+    distance?: number;
     durationMinutes?: number;
     estimatedArrival?: string;
     airportPickup: boolean;
@@ -68,12 +68,15 @@ export const toBookingEmailDetails = (
   },
   route: {
     pickupAddress: booking.route.pickupAddress,
-    dropoffAddress: booking.route.dropoffAddress,
+    dropoffAddress: booking.route.dropoffAddress?.trim() || undefined,
     pickupDate: booking.route.pickupDate,
     pickupTime: booking.route.pickupTime,
-    distance: booking.route.distance,
+    distance:
+      typeof booking.route.distance === "number" && booking.route.distance > 0
+        ? booking.route.distance
+        : undefined,
     durationMinutes: booking.route.durationMinutes,
-    estimatedArrival: booking.route.estimatedArrival,
+    estimatedArrival: booking.route.estimatedArrival?.trim() || undefined,
     airportPickup: booking.route.airportPickup,
   },
   vehicle: {

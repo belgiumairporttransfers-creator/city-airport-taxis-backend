@@ -8,7 +8,7 @@ import type { GetPublicVehiclePricingQuotesQuery } from "../types/vehicle-pricin
 class VehiclePricingPublicController {
   getQuotes = asyncHandler(async (req: Request, res: Response) => {
     const query = req.query as unknown as GetPublicVehiclePricingQuotesQuery;
-    const quotes = await vehiclePricingService.getPublicDistanceQuotes(query);
+    const quotes = await vehiclePricingService.getPublicQuotes(query);
     return sendSuccess(res, quotes);
   });
 }

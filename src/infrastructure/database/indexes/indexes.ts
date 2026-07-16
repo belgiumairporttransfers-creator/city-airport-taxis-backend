@@ -16,6 +16,7 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
   const { VehicleCategory } = await import("@/infrastructure/database/models/VehicleCategory");
   const { Vehicle } = await import("@/infrastructure/database/models/Vehicle");
   const { VehiclePricing } = await import("@/infrastructure/database/models/VehiclePricing");
+  const { HourlyPricing } = await import("@/infrastructure/database/models/HourlyPricing");
   const { Driver } = await import("@/infrastructure/database/models/Driver");
   const { Conversation } = await import("@/infrastructure/database/models/Conversation");
   const { Message } = await import("@/infrastructure/database/models/Message");
@@ -85,6 +86,7 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
     VehicleCategory.syncIndexes(),
     Vehicle.syncIndexes(),
     VehiclePricing.syncIndexes(),
+    HourlyPricing.syncIndexes(),
     syncDriverIndexes(),
     Conversation.syncIndexes(),
     syncMessageIndexes(),

@@ -59,6 +59,21 @@ const layout = (title: string, subtitle: string, body: string) => `
 const formatAmount = (amount: number, currency: string) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(amount);
 
+const formatDurationLabel = (durationMinutes: number) => {
+  if (durationMinutes >= 60 && durationMinutes % 60 === 0) {
+    const hours = durationMinutes / 60;
+    return `${hours} Hour${hours > 1 ? "s" : ""}`;
+  }
+
+  if (durationMinutes >= 60) {
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours} h ${minutes} min`;
+  }
+
+  return `${durationMinutes} min`;
+};
+
 const detailRow = (label: string, value: string, options?: { total?: boolean }) => `
   <div class="details-row${options?.total ? " total-row" : ""}">
     <div class="details-label">${escapeHtml(label)}</div>
@@ -85,12 +100,20 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
     detailRow("Pickup date", escapeHtml(booking.route.pickupDate)),
     detailRow("Pickup time", escapeHtml(booking.route.pickupTime)),
     detailRow("Pickup address", escapeHtml(booking.route.pickupAddress)),
-    detailRow("Dropoff address", escapeHtml(booking.route.dropoffAddress)),
-    detailRow("Distance", `${escapeHtml(String(booking.route.distance))} km`),
   ];
 
+  if (booking.route.dropoffAddress) {
+    rows.push(detailRow("Dropoff address", escapeHtml(booking.route.dropoffAddress)));
+  }
+
+  if (typeof booking.route.distance === "number" && booking.route.distance > 0) {
+    rows.push(detailRow("Distance", `${escapeHtml(String(booking.route.distance))} km`));
+  }
+
   if (booking.route.durationMinutes) {
-    rows.push(detailRow("Duration", `${escapeHtml(String(booking.route.durationMinutes))} min`));
+    rows.push(
+      detailRow("Duration", escapeHtml(formatDurationLabel(booking.route.durationMinutes)))
+    );
   }
 
   if (booking.route.estimatedArrival) {

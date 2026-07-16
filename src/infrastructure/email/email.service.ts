@@ -22,7 +22,10 @@ import {
   getBookingCancelledTemplate,
   getTripCompletedTemplate,
 } from "@/infrastructure/email/templates/booking.template";
-import type { BookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
+import {
+  toBookingEmailDetails,
+  type BookingEmailDetails,
+} from "@/infrastructure/email/utils/booking-email-details";
 import {
   getAssignmentCancelledTemplate,
   getDriverAssignedTemplate,
@@ -239,11 +242,13 @@ class EmailService {
       html: getDriverNewBookingAvailableTemplate(driver, {
         id: booking._id.toString(),
         bookingNumber: booking.bookingNumber,
+        category: toBookingEmailDetails(booking).category,
         route: {
           pickupAddress: booking.route.pickupAddress,
-          dropoffAddress: booking.route.dropoffAddress,
+          dropoffAddress: booking.route.dropoffAddress?.trim() || undefined,
           pickupDate: booking.route.pickupDate,
           pickupTime: booking.route.pickupTime,
+          durationMinutes: booking.route.durationMinutes,
         },
         vehicle: {
           categoryName: booking.vehicle.categoryName,

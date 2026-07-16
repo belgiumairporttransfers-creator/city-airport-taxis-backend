@@ -136,7 +136,7 @@ export interface CreateBookingPayload {
   category: BookingTripCategory;
   step1: {
     pickupAddress: string;
-    deliveryAddress: string;
+    deliveryAddress?: string;
     pickupDate: string;
     pickupTime: string;
     passengers: number;
@@ -148,6 +148,7 @@ export interface CreateBookingPayload {
     durationMinutes?: number;
     estTime?: string;
     isAirportSelected?: boolean;
+    duration?: number | { duration: number };
   } | null;
   step2: {
     categoryId: string;

@@ -3,6 +3,7 @@ import auditService from "@/shared/audit/audit.service";
 import { AuditEvents } from "@/shared/audit/audit.events";
 import vehicleRepository from "@/modules/vehicles/repositories/vehicle.repository";
 import vehiclePricingRepository from "@/modules/vehicle-pricing/repositories/vehicle-pricing.repository";
+import hourlyPricingRepository from "@/modules/vehicle-pricing/repositories/hourly-pricing.repository";
 import vehicleCategoryRepository from "@/modules/vehicle-categories/repositories/vehicle-category.repository";
 import { generateCategorySlug } from "@/modules/vehicle-categories/dto";
 import type {
@@ -155,8 +156,9 @@ class VehicleCategoryService {
       throw new AppError("Vehicle category not found", 404);
     }
 
-    const [pricingResult, vehiclesResult] = await Promise.all([
+    const [pricingResult, hourlyPricingResult, vehiclesResult] = await Promise.all([
       vehiclePricingRepository.deleteByCategoryId(id),
+      hourlyPricingRepository.deleteByCategoryId(id),
       vehicleRepository.deleteByCategoryId(id),
     ]);
 
@@ -170,6 +172,7 @@ class VehicleCategoryService {
       name: existing.name,
       slug: existing.slug,
       deletedPricingSlabCount: pricingResult.deletedCount ?? 0,
+      deletedHourlyPricingCount: hourlyPricingResult.deletedCount ?? 0,
       deletedVehicleCount: vehiclesResult.deletedCount ?? 0,
     });
 

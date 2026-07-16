@@ -5,7 +5,10 @@ import { publicContactRoutes } from "../modules/contact";
 import { publicSettingsRoutes } from "../modules/settings";
 import { uploadRoutes } from "../modules/upload";
 import { publicVehicleCategoryRoutes } from "../modules/vehicle-categories";
-import { publicVehiclePricingRoutes } from "../modules/vehicle-pricing";
+import {
+  publicHourlyPricingRoutes,
+  publicVehiclePricingRoutes,
+} from "../modules/vehicle-pricing";
 import { publicDriverRoutes, portalDriverRoutes } from "../modules/drivers";
 import { portalAssignmentRoutes } from "../modules/assignments";
 import { portalTripRoutes } from "../modules/trips";
@@ -22,6 +25,7 @@ publicRoutes.use("/newsletter", publicNewsletterRoutes);
 publicRoutes.use("/contact", publicContactRoutes);
 publicRoutes.use("/vehicle-categories", publicVehicleCategoryRoutes);
 publicRoutes.use("/vehicle-pricing", publicVehiclePricingRoutes);
+publicRoutes.use("/hourly-pricing", publicHourlyPricingRoutes);
 publicRoutes.use("/bookings", publicBookingRoutes);
 publicRoutes.use("/payments", publicPaymentRoutes);
 publicRoutes.use("/drivers", publicDriverRoutes);

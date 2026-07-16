@@ -13,6 +13,7 @@ export { Customer } from "./Customer";
 export { VehicleCategory } from "./VehicleCategory";
 export { Vehicle } from "./Vehicle";
 export { VehiclePricing } from "./VehiclePricing";
+export { HourlyPricing } from "./HourlyPricing";
 export { Driver } from "./Driver";
 export { Conversation } from "./Conversation";
 export { Message } from "./Message";

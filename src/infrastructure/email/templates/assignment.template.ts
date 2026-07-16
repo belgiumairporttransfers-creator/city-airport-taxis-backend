@@ -60,11 +60,13 @@ export const getDriverAssignedTemplate = (
 type DriverNewBookingDetails = {
   id: string;
   bookingNumber: string;
+  category?: string;
   route: {
     pickupAddress: string;
-    dropoffAddress: string;
+    dropoffAddress?: string;
     pickupDate: string;
     pickupTime: string;
+    durationMinutes?: number;
   };
   vehicle: {
     categoryName: string;
@@ -77,11 +79,43 @@ type DriverNewBookingDetails = {
 const formatAmount = (amount: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" }).format(amount);
 
+const formatDurationLabel = (durationMinutes: number) => {
+  if (durationMinutes >= 60 && durationMinutes % 60 === 0) {
+    const hours = durationMinutes / 60;
+    return `${hours} Hour${hours > 1 ? "s" : ""}`;
+  }
+
+  if (durationMinutes >= 60) {
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours} h ${minutes} min`;
+  }
+
+  return `${durationMinutes} min`;
+};
+
 export const getDriverNewBookingAvailableTemplate = (
   driver: { firstName: string },
   booking: DriverNewBookingDetails
 ) => {
   const bookingUrl = `${DRIVER_PORTAL_URL}/bookings/${booking.id}`;
+  const dropoffAddress = booking.route.dropoffAddress?.trim();
+  const durationMinutes = booking.route.durationMinutes;
+
+  const detailLines = [
+    `Booking: <span class="highlight">${escapeHtml(booking.bookingNumber)}</span>`,
+    booking.category ? `Trip type: ${escapeHtml(booking.category)}` : null,
+    `Pickup: <strong>${escapeHtml(booking.route.pickupDate)} ${escapeHtml(booking.route.pickupTime)}</strong>`,
+    `From: ${escapeHtml(booking.route.pickupAddress)}`,
+    dropoffAddress ? `To: ${escapeHtml(dropoffAddress)}` : null,
+    durationMinutes
+      ? `Duration: ${escapeHtml(formatDurationLabel(durationMinutes))}`
+      : null,
+    `Vehicle: ${escapeHtml(booking.vehicle.categoryName)}`,
+    `Your earning: <span class="highlight">${escapeHtml(formatAmount(booking.pricing.driverEarning))}</span>`,
+  ]
+    .filter(Boolean)
+    .join("<br />");
 
   return layout(
     "New Booking Available",
@@ -90,12 +124,7 @@ export const getDriverNewBookingAvailableTemplate = (
       <p class="greeting">Hi ${escapeHtml(driver.firstName)},</p>
       <p class="text">A new paid booking is available. Review the details below and accept it from your driver portal.</p>
       <p class="text">
-        Booking: <span class="highlight">${escapeHtml(booking.bookingNumber)}</span><br />
-        Pickup: <strong>${escapeHtml(booking.route.pickupDate)} ${escapeHtml(booking.route.pickupTime)}</strong><br />
-        From: ${escapeHtml(booking.route.pickupAddress)}<br />
-        To: ${escapeHtml(booking.route.dropoffAddress)}<br />
-        Vehicle: ${escapeHtml(booking.vehicle.categoryName)}<br />
-        Your earning: <span class="highlight">${escapeHtml(formatAmount(booking.pricing.driverEarning))}</span>
+        ${detailLines}
       </p>
       <p class="text">
         <a href="${bookingUrl}" style="display:inline-block;background:#7D3C1F;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">

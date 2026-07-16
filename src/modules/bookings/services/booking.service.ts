@@ -34,7 +34,20 @@ class BookingService {
     const settings = await settingsService.getSettings();
     const mollieApiKey = resolveMollieApiKey(settings.paymentMode);
 
+    const isHourly = payload.category === "hourly";
     const distance = payload.routeData?.distance ?? 0;
+    const selectedDurationHours =
+      typeof payload.routeData?.duration === "number"
+        ? payload.routeData.duration
+        : typeof payload.routeData?.duration === "object" &&
+            payload.routeData.duration !== null
+          ? Number(payload.routeData.duration.duration)
+          : undefined;
+    const durationMinutes =
+      payload.routeData?.durationMinutes ??
+      (isHourly && Number.isFinite(selectedDurationHours) && selectedDurationHours! > 0
+        ? selectedDurationHours! * 60
+        : undefined);
     const isAirportPickup = payload.step3.isAirportPickup;
 
     const booking = await bookingRepository.create({
@@ -48,11 +61,11 @@ class BookingService {
       },
       route: {
         pickupAddress: payload.step1.pickupAddress.trim(),
-        dropoffAddress: payload.step1.deliveryAddress.trim(),
+        dropoffAddress: (payload.step1.deliveryAddress ?? "").trim(),
         pickupDate: payload.step1.pickupDate,
         pickupTime: payload.step1.pickupTime,
         distance,
-        durationMinutes: payload.routeData?.durationMinutes,
+        durationMinutes,
         estimatedArrival: payload.routeData?.estTime ?? undefined,
         airportPickup: isAirportPickup,
       },
