@@ -165,3 +165,65 @@ export const resolvePublicQuoteTotalPrice = (
 
   return outwardPrice;
 };
+
+const timeToMinutes = (value: string): number | null => {
+  const match = value.trim().match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!match) {
+    return null;
+  }
+
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+/** True when pickup time falls in [start, end), including windows that cross midnight. */
+export const isWithinNightPricingWindow = (
+  pickupTime: string,
+  startTime: string,
+  endTime: string
+): boolean => {
+  const pickup = timeToMinutes(pickupTime);
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+
+  if (pickup === null || start === null || end === null || start === end) {
+    return false;
+  }
+
+  if (start < end) {
+    return pickup >= start && pickup < end;
+  }
+
+  return pickup >= start || pickup < end;
+};
+
+export const applyNightPricing = (amount: number, percent: number): number => {
+  if (!Number.isFinite(amount) || !Number.isFinite(percent) || percent <= 0) {
+    return roundMoney(amount);
+  }
+
+  return roundMoney(amount * (1 + percent / 100));
+};
+
+export const applyNightPricingIfNeeded = (
+  amount: number,
+  pickupTime: string | undefined,
+  nightPricing: {
+    startTime?: string;
+    endTime?: string;
+    percent?: number;
+  }
+): number => {
+  const percent = nightPricing.percent ?? 0;
+  const startTime = nightPricing.startTime;
+  const endTime = nightPricing.endTime;
+
+  if (!pickupTime || !startTime || !endTime || percent <= 0) {
+    return roundMoney(amount);
+  }
+
+  if (!isWithinNightPricingWindow(pickupTime, startTime, endTime)) {
+    return roundMoney(amount);
+  }
+
+  return applyNightPricing(amount, percent);
+};

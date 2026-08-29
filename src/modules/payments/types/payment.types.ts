@@ -12,11 +12,15 @@ export const PAYMENT_STATUSES = [
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+export const PAYMENT_RECORD_METHODS = ["mollie", "pay_onboard"] as const;
+export type PaymentRecordMethod = (typeof PAYMENT_RECORD_METHODS)[number];
+
 export interface IPayment extends Document {
   bookingId: Types.ObjectId;
   status: PaymentStatus;
   amount: number;
   currency: string;
+  paymentMethod?: PaymentRecordMethod;
   transactionId?: string;
   providerPaymentId?: string;
   providerResponse?: Record<string, unknown>;
@@ -32,6 +36,8 @@ export interface CreatePaymentData {
   status: PaymentStatus;
   amount: number;
   currency: string;
+  paymentMethod?: PaymentRecordMethod;
+  providerResponse?: Record<string, unknown>;
 }
 
 export interface GetPaymentsQuery {

@@ -1,9 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   analyzePricingStructure,
+  applyNightPricingIfNeeded,
   calculateFareAmount,
   countOpenEndedSlabs,
   distanceMatchesSlab,
+  isWithinNightPricingWindow,
   slabsOverlap,
 } from "@/modules/vehicle-pricing/utils/pricing.utils";
 
@@ -123,6 +125,39 @@ describe("vehicle pricing utils", () => {
     expect(complete.isComplete).toBe(true);
     expect(complete.gaps).toHaveLength(0);
     expect(complete.overlaps).toHaveLength(0);
+  });
+
+  it("detects night pricing windows including midnight wrap", () => {
+    expect(isWithinNightPricingWindow("23:00", "22:00", "06:00")).toBe(true);
+    expect(isWithinNightPricingWindow("05:59", "22:00", "06:00")).toBe(true);
+    expect(isWithinNightPricingWindow("06:00", "22:00", "06:00")).toBe(false);
+    expect(isWithinNightPricingWindow("12:00", "22:00", "06:00")).toBe(false);
+    expect(isWithinNightPricingWindow("02:00", "01:00", "05:00")).toBe(true);
+    expect(isWithinNightPricingWindow("00:30", "01:00", "05:00")).toBe(false);
+  });
+
+  it("applies night pricing percent only inside the window", () => {
+    expect(
+      applyNightPricingIfNeeded(100, "23:30", {
+        startTime: "22:00",
+        endTime: "06:00",
+        percent: 20,
+      })
+    ).toBe(120);
+    expect(
+      applyNightPricingIfNeeded(100, "10:00", {
+        startTime: "22:00",
+        endTime: "06:00",
+        percent: 20,
+      })
+    ).toBe(100);
+    expect(
+      applyNightPricingIfNeeded(100, "23:30", {
+        startTime: "22:00",
+        endTime: "06:00",
+        percent: 0,
+      })
+    ).toBe(100);
   });
 });
 

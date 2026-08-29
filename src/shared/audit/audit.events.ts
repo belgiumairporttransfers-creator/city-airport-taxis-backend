@@ -53,6 +53,8 @@ export const AuditEvents = {
   DRIVER_APPLICATION_APPROVED: "driver.application.approved",
   DRIVER_APPLICATION_REJECTED: "driver.application.rejected",
   DRIVER_APPLICATION_SUSPENDED: "driver.application.suspended",
+  DRIVER_APPLICATION_REACTIVATED: "driver.application.reactivated",
+  DRIVER_APPLICATION_DELETED: "driver.application.deleted",
 
   // Notifications
   NOTIFICATION_CREATED: "notification.created",

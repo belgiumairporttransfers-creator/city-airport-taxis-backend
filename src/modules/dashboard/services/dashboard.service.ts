@@ -132,7 +132,8 @@ class DashboardService {
         const total = Number(booking.pricing?.total ?? 0);
         const driverEarning = calculateDriverEarning(
           total,
-          walletSummary.wallet.commissionPercent
+          walletSummary.wallet.commissionPercent,
+          booking.payment?.paymentMethod
         );
 
         return {

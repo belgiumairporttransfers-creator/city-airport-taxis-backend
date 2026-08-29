@@ -13,10 +13,12 @@ import { toVehicleResponse } from "@/modules/vehicles/dto";
 import { toVehiclePricingResponse } from "@/modules/vehicle-pricing/dto";
 import {
   analyzePricingStructure,
+  applyNightPricingIfNeeded,
   buildResolvedFareResult,
   countOpenEndedSlabs,
   resolvePublicQuoteTotalPrice,
 } from "@/modules/vehicle-pricing/utils/pricing.utils";
+import settingsService from "@/modules/settings/services/settings.service";
 import type {
   CreateVehiclePricingData,
   GetPublicVehiclePricingQuotesQuery,
@@ -277,17 +279,31 @@ class VehiclePricingService {
     return { categories, vehiclesByCategory };
   }
 
-  async getPublicQuotes(query: GetPublicVehiclePricingQuotesQuery) {
-    const tripCategory = query.category ?? "one-way";
+  private async getNightPricingConfig() {
+    const settings = await settingsService.getSettings();
 
-    if (tripCategory === "hourly") {
-      return this.getPublicHourlyQuotes(query);
-    }
-
-    return this.getPublicDistanceQuotes(query);
+    return {
+      startTime: settings.nightPricingStartTime ?? "22:00",
+      endTime: settings.nightPricingEndTime ?? "06:00",
+      percent: settings.nightPricingPercent ?? 0,
+    };
   }
 
-  async getPublicHourlyQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+  async getPublicQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+    const tripCategory = query.category ?? "one-way";
+    const nightPricing = await this.getNightPricingConfig();
+
+    if (tripCategory === "hourly") {
+      return this.getPublicHourlyQuotes(query, nightPricing);
+    }
+
+    return this.getPublicDistanceQuotes(query, nightPricing);
+  }
+
+  async getPublicHourlyQuotes(
+    query: GetPublicVehiclePricingQuotesQuery,
+    nightPricing: { startTime: string; endTime: string; percent: number }
+  ) {
     const duration = Number(query.duration);
 
     if (!Number.isFinite(duration) || duration < 1) {
@@ -317,6 +333,8 @@ class VehiclePricingService {
           return null;
         }
 
+        const basePrice = pricing ? pricing.price : 0;
+
         return {
           categoryId,
           category: {
@@ -328,7 +346,7 @@ class VehiclePricingService {
             requestForQuote,
           },
           priceBreakdown: {
-            totalPrice: pricing ? pricing.price : 0,
+            totalPrice: applyNightPricingIfNeeded(basePrice, query.pickupTime, nightPricing),
             includedDistance: pricing?.includedDistance,
             extraDistancePrice: pricing?.extraDistancePrice,
           },
@@ -341,7 +359,10 @@ class VehiclePricingService {
     return items.filter((item): item is NonNullable<typeof item> => item !== null);
   }
 
-  async getPublicDistanceQuotes(query: GetPublicVehiclePricingQuotesQuery) {
+  async getPublicDistanceQuotes(
+    query: GetPublicVehiclePricingQuotesQuery,
+    nightPricing: { startTime: string; endTime: string; percent: number }
+  ) {
     const distance = Number(query.distance ?? 0);
     const result = await this.getDistanceQuotes(distance);
     const tripCategory = query.category ?? "one-way";
@@ -359,11 +380,13 @@ class VehiclePricingService {
         return [];
       }
 
+      const baseTotal =
+        item.fare === null
+          ? 0
+          : resolvePublicQuoteTotalPrice(item.fare.amount, tripCategory);
+
       const priceBreakdown = {
-        totalPrice:
-          item.fare === null
-            ? 0
-            : resolvePublicQuoteTotalPrice(item.fare.amount, tripCategory),
+        totalPrice: applyNightPricingIfNeeded(baseTotal, query.pickupTime, nightPricing),
       };
 
       return [

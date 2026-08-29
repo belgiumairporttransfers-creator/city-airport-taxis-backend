@@ -35,8 +35,20 @@ const createBookingBodySchema = {
     pickupDate: dateSchema.required(),
     pickupTime: timeSchema.required(),
     passengers: Joi.number().integer().min(1).max(20).required(),
-    returnDate: dateSchema.optional(),
-    returnTime: timeSchema.optional(),
+    returnDate: Joi.when(Joi.ref("/category"), {
+      is: "return-trip",
+      then: dateSchema.required().messages({
+        "any.required": "Return date is required for return trips",
+      }),
+      otherwise: dateSchema.optional(),
+    }),
+    returnTime: Joi.when(Joi.ref("/category"), {
+      is: "return-trip",
+      then: timeSchema.required().messages({
+        "any.required": "Return time is required for return trips",
+      }),
+      otherwise: timeSchema.optional(),
+    }),
   }).required(),
   routeData: Joi.object({
     distance: Joi.when(Joi.ref("/category"), {
@@ -86,6 +98,9 @@ const createBookingBodySchema = {
     handLuggage: Joi.number().integer().min(0).max(20).required(),
     smallCheckedCase: Joi.number().integer().min(0).max(20).required(),
     largeCheckedCase: Joi.number().integer().min(0).max(20).required(),
+    paymentMethod: Joi.string()
+      .valid(...BOOKING_PAYMENT_METHODS)
+      .default("mollie"),
   }).required(),
   pricing: Joi.object({
     total: Joi.number().min(0).required(),

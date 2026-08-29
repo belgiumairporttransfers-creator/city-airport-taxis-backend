@@ -47,6 +47,8 @@ export interface BookingResponse {
     dropoffAddress: string;
     pickupDate: string;
     pickupTime: string;
+    returnDate?: string;
+    returnTime?: string;
     distance: number;
     durationMinutes?: number;
     estimatedArrival?: string;
@@ -157,7 +159,7 @@ export const toDriverBookingResponse = (
     route: dto.route,
     vehicle: dto.vehicle,
     flight: dto.flight,
-    pricing: toDriverPricing(dto.pricing.total, commissionPercent),
+    pricing: toDriverPricing(dto.pricing.total, commissionPercent, dto.payment.paymentMethod),
     driver: dto.driver,
     timeline: dto.timeline,
     notes: dto.notes,
@@ -184,7 +186,7 @@ export const toDriverOpenBookingDetailResponse = (
     route: dto.route,
     vehicle: dto.vehicle,
     flight: dto.flight,
-    pricing: toDriverPricing(dto.pricing.total, commissionPercent),
+    pricing: toDriverPricing(dto.pricing.total, commissionPercent, dto.payment.paymentMethod),
     notes: dto.notes,
     canAccept,
     assignmentId,
@@ -220,6 +222,8 @@ export const toBookingResponse = (booking: BookingLike): BookingResponse => {
       dropoffAddress: route.dropoffAddress as string,
       pickupDate: route.pickupDate as string,
       pickupTime: route.pickupTime as string,
+      returnDate: route.returnDate as string | undefined,
+      returnTime: route.returnTime as string | undefined,
       distance: Number(route.distance ?? 0),
       durationMinutes: route.durationMinutes as number | undefined,
       estimatedArrival: route.estimatedArrival as string | undefined,
@@ -339,6 +343,8 @@ export const toPublicBookingStatusResponse = (
       deliveryAddress: dto.route.dropoffAddress,
       pickupDate: dto.route.pickupDate,
       pickupTime: dto.route.pickupTime,
+      returnDate: dto.route.returnDate,
+      returnTime: dto.route.returnTime,
       distance: dto.route.distance,
       durationMinutes: dto.route.durationMinutes,
       estTime: dto.route.estimatedArrival,

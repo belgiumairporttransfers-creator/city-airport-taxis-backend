@@ -12,7 +12,12 @@ import mollieClient from "@/modules/payments/utils/mollie.client";
 import { resolveMollieApiKey } from "@/modules/payments/utils/mollie-api-key";
 import { toProviderResponseRecord } from "@/modules/payments/utils/mollie.helpers";
 import { buildMollieWebhookUrl } from "@/modules/payments/utils/mollie-webhook-url";
+import bookingConfirmationNotificationService from "@/modules/bookings/services/booking-confirmation-notification.service";
+import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
+import notificationService from "@/modules/notifications/services/notification.service";
+import logger from "@/shared/utils/logger";
 import type {
+  BookingPaymentMethod,
   CreateBookingPayload,
   CreateBookingResult,
   GetBookingsQuery,
@@ -20,20 +25,15 @@ import type {
 } from "@/modules/bookings/types/booking.types";
 
 class BookingService {
-  async createBooking(payload: CreateBookingPayload): Promise<CreateBookingResult> {
-    const category = await vehicleCategoryRepository.findById(payload.step2.categoryId);
-
-    if (!category) {
-      throw new AppError("Vehicle category not found", 404);
+  private buildBookingCreateData(
+    payload: CreateBookingPayload,
+    category: { image?: string },
+    options: {
+      status: "pending" | "confirmed";
+      paymentMethod: BookingPaymentMethod;
+      paymentStatus: string;
     }
-
-    if (category.status !== "active") {
-      throw new AppError("Vehicle category is not active", 400);
-    }
-
-    const settings = await settingsService.getSettings();
-    const mollieApiKey = resolveMollieApiKey(settings.paymentMode);
-
+  ) {
     const isHourly = payload.category === "hourly";
     const distance = payload.routeData?.distance ?? 0;
     const selectedDurationHours =
@@ -49,9 +49,10 @@ class BookingService {
         ? selectedDurationHours! * 60
         : undefined);
     const isAirportPickup = payload.step3.isAirportPickup;
+    const now = new Date();
 
-    const booking = await bookingRepository.create({
-      status: "pending",
+    return {
+      status: options.status,
       category: payload.category,
       customer: {
         firstName: payload.step3.firstName.trim(),
@@ -64,6 +65,10 @@ class BookingService {
         dropoffAddress: (payload.step1.deliveryAddress ?? "").trim(),
         pickupDate: payload.step1.pickupDate,
         pickupTime: payload.step1.pickupTime,
+        returnDate:
+          payload.category === "return-trip" ? payload.step1.returnDate : undefined,
+        returnTime:
+          payload.category === "return-trip" ? payload.step1.returnTime : undefined,
         distance,
         durationMinutes,
         estimatedArrival: payload.routeData?.estTime ?? undefined,
@@ -89,24 +94,76 @@ class BookingService {
         total: payload.pricing.total,
       },
       payment: {
-        paymentMethod: "mollie",
-        paymentStatus: "pending",
+        paymentMethod: options.paymentMethod,
+        paymentStatus: options.paymentStatus,
       },
       driver: {},
       timeline: [
         {
           event: "BOOKING_CREATED",
-          at: new Date(),
+          at: now,
         },
+        ...(options.status === "confirmed"
+          ? [
+              {
+                event: "BOOKING_CONFIRMED" as const,
+                at: now,
+              },
+            ]
+          : []),
       ],
       notes: payload.step3.notes?.trim() || undefined,
-    });
+    };
+  }
+
+  private async notifyOnboardBookingConfirmed(booking: IBooking) {
+    try {
+      await bookingConfirmationNotificationService.notifyBookingConfirmed(booking);
+    } catch (error) {
+      logger.error("Failed to send onboard booking confirmation emails", { error });
+    }
+
+    try {
+      await notificationService.notifyAdmins({
+        title: "New Booking",
+        message: `Pay onboard booking ${booking.bookingNumber} confirmed.`,
+        type: "booking.created",
+        severity: "success",
+        entityType: "booking",
+        entityId: booking._id.toString(),
+        actionUrl: `/bookings/${booking._id.toString()}`,
+      });
+    } catch (error) {
+      logger.error("Failed to create onboard booking admin notification", { error });
+    }
+
+    try {
+      await bookingDriverNotificationService.notifyAllDriversOfConfirmedBooking(booking);
+    } catch (error) {
+      logger.error("Failed to send driver emails for onboard booking", { error });
+    }
+  }
+
+  private async createMollieBooking(
+    payload: CreateBookingPayload,
+    category: { image?: string },
+    paymentMode: "test" | "live"
+  ): Promise<CreateBookingResult> {
+    const mollieApiKey = resolveMollieApiKey(paymentMode);
+    const booking = await bookingRepository.create(
+      this.buildBookingCreateData(payload, category, {
+        status: "pending",
+        paymentMethod: "mollie",
+        paymentStatus: "pending",
+      })
+    );
 
     const payment = await paymentService.createPayment({
       bookingId: booking._id.toString(),
       status: "pending",
       amount: payload.pricing.total,
       currency: "EUR",
+      paymentMethod: "mollie",
     });
 
     const saved = await bookingRepository.updateById(booking._id.toString(), {
@@ -177,11 +234,90 @@ class BookingService {
         bookingNumber: saved.bookingNumber,
         paymentMethod: "mollie",
         status: "pending",
-        paymentMode: settings.paymentMode,
+        paymentMode,
       },
     });
 
     return { booking: saved, checkoutUrl };
+  }
+
+  private async createPayOnboardBooking(
+    payload: CreateBookingPayload,
+    category: { image?: string }
+  ): Promise<CreateBookingResult> {
+    const booking = await bookingRepository.create(
+      this.buildBookingCreateData(payload, category, {
+        status: "confirmed",
+        paymentMethod: "pay_onboard",
+        paymentStatus: "pending",
+      })
+    );
+
+    const payment = await paymentService.createPayment({
+      bookingId: booking._id.toString(),
+      status: "pending",
+      amount: payload.pricing.total,
+      currency: "EUR",
+      paymentMethod: "pay_onboard",
+      providerResponse: { method: "pay_onboard" },
+    });
+
+    const saved = await bookingRepository.updateById(booking._id.toString(), {
+      "payment.paymentId": payment._id,
+    });
+
+    if (!saved) {
+      throw new AppError("Unable to create booking. Please try again.", 500);
+    }
+
+    auditService.log({
+      event: AuditEvents.BOOKING_CREATED,
+      actorType: "system",
+      entityType: "booking",
+      entityId: saved._id.toString(),
+      metadata: {
+        bookingNumber: saved.bookingNumber,
+        paymentMethod: "pay_onboard",
+        status: "confirmed",
+        paymentId: payment._id.toString(),
+      },
+    });
+
+    auditService.log({
+      event: AuditEvents.BOOKING_CONFIRMED,
+      actorType: "system",
+      entityType: "booking",
+      entityId: saved._id.toString(),
+      metadata: {
+        bookingNumber: saved.bookingNumber,
+        paymentMethod: "pay_onboard",
+      },
+    });
+
+    await this.notifyOnboardBookingConfirmed(saved);
+
+    return { booking: saved };
+  }
+
+  async createBooking(payload: CreateBookingPayload): Promise<CreateBookingResult> {
+    const category = await vehicleCategoryRepository.findById(payload.step2.categoryId);
+
+    if (!category) {
+      throw new AppError("Vehicle category not found", 404);
+    }
+
+    if (category.status !== "active") {
+      throw new AppError("Vehicle category is not active", 400);
+    }
+
+    const settings = await settingsService.getSettings();
+    const paymentMethod = payload.step3.paymentMethod ?? "mollie";
+
+    if (paymentMethod === "pay_onboard") {
+      return this.createPayOnboardBooking(payload, category);
+    }
+
+    return this.createMollieBooking(payload, category, settings.paymentMode);
   }
 
   async getBooking(id: string) {

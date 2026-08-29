@@ -23,36 +23,10 @@ export const updateSettingsSchema = Joi.object({
     "number.integer": "Minimum booking time must be a whole number of minutes",
     "number.min": "Minimum booking time cannot be negative",
   }),
-  stopFee: Joi.number().min(0).required().messages({
-    "any.required": "Stops fee is required",
-    "number.base": "Stops fee must be a number",
-    "number.min": "Stops fee cannot be negative",
-  }),
-  cardProcessingFee: Joi.number().min(0).max(100).required().messages({
-    "any.required": "Card processing fee is required",
-    "number.base": "Card processing fee must be a number",
-    "number.min": "Card processing fee cannot be negative",
-    "number.max": "Card processing fee cannot exceed 100%",
-  }),
   airportPickup: Joi.number().min(0).required().messages({
     "any.required": "Airport pickup price is required",
     "number.base": "Airport pickup price must be a number",
     "number.min": "Airport pickup price cannot be negative",
-  }),
-  trainPickup: Joi.number().min(0).required().messages({
-    "any.required": "Train pickup price is required",
-    "number.base": "Train pickup price must be a number",
-    "number.min": "Train pickup price cannot be negative",
-  }),
-  meetAndGreet: Joi.number().min(0).required().messages({
-    "any.required": "Meet and greet price is required",
-    "number.base": "Meet and greet price must be a number",
-    "number.min": "Meet and greet price cannot be negative",
-  }),
-  returnMeetAndGreet: Joi.number().min(0).required().messages({
-    "any.required": "Return meet and greet price is required",
-    "number.base": "Return meet and greet price must be a number",
-    "number.min": "Return meet and greet price cannot be negative",
   }),
   waitingTimePricePerMinute: Joi.number().min(0).required().messages({
     "any.required": "Driver waiting time price per minute is required",
@@ -69,5 +43,25 @@ export const updateSettingsSchema = Joi.object({
     "number.base": "Driver commission must be a number",
     "number.min": "Driver commission cannot be negative",
     "number.max": "Driver commission cannot exceed 100%",
+  }),
+  nightPricingStartTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Night pricing start time is required",
+      "string.pattern.base": "Night pricing start time must be in HH:mm format",
+    }),
+  nightPricingEndTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Night pricing end time is required",
+      "string.pattern.base": "Night pricing end time must be in HH:mm format",
+    }),
+  nightPricingPercent: Joi.number().min(0).max(100).required().messages({
+    "any.required": "Night pricing percent is required",
+    "number.base": "Night pricing percent must be a number",
+    "number.min": "Night pricing percent cannot be negative",
+    "number.max": "Night pricing percent cannot exceed 100%",
   }),
 });

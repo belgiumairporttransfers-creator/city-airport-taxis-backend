@@ -23,6 +23,8 @@ const routeSchema = new Schema(
     dropoffAddress: { type: String, trim: true, default: "" },
     pickupDate: { type: String, required: true, trim: true },
     pickupTime: { type: String, required: true, trim: true },
+    returnDate: { type: String, trim: true },
+    returnTime: { type: String, trim: true },
     distance: { type: Number, required: true, min: 0, default: 0 },
     durationMinutes: { type: Number, min: 0 },
     estimatedArrival: { type: String, trim: true },

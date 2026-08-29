@@ -43,6 +43,10 @@ class UserRepository {
   updatePasswordChangedAt(id: string) {
     return User.findByIdAndUpdate(id, { passwordChangedAt: new Date() });
   }
+
+  deleteById(id: string) {
+    return User.findByIdAndDelete(id);
+  }
 }
 
 export default new UserRepository();

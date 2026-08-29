@@ -60,8 +60,14 @@ class WalletService {
     }
 
     const commissionPercent = await this.getCommissionPercentPrivate();
+    const effectiveCommissionPercent =
+      booking.payment?.paymentMethod === "pay_onboard" ? 0 : commissionPercent;
     const grossAmount = Number(booking.pricing?.total ?? 0);
-    const amount = calculateDriverEarning(grossAmount, commissionPercent);
+    const amount = calculateDriverEarning(
+      grossAmount,
+      commissionPercent,
+      booking.payment?.paymentMethod
+    );
 
     if (amount <= 0) {
       return null;
@@ -74,7 +80,7 @@ class WalletService {
         bookingId: booking._id.toString(),
         bookingNumber: booking.bookingNumber,
         grossAmount,
-        commissionPercent,
+        commissionPercent: effectiveCommissionPercent,
         amount,
         description: `Trip completed · ${booking.bookingNumber}`,
       });

@@ -64,4 +64,16 @@ adminDriverRoutes.post(
   driverController.suspend
 );
 
+adminDriverRoutes.post(
+  "/:id/reactivate",
+  validateParams(idParamSchema),
+  driverController.reactivate
+);
+
+adminDriverRoutes.delete(
+  "/:id",
+  validateParams(idParamSchema),
+  driverController.deletePermanently
+);
+
 export default adminDriverRoutes;

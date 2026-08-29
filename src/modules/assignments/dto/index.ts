@@ -240,6 +240,7 @@ export const toDriverAssignmentDetailResponse = (
   commissionPercent: number
 ): DriverAssignmentDetailResponse => {
   const summary = mapBookingSummary(booking);
+  const payment = toRecord(booking).payment as Record<string, unknown> | undefined;
 
   return {
     ...toAssignmentResponse(assignment),
@@ -248,6 +249,10 @@ export const toDriverAssignmentDetailResponse = (
     vehicle: summary.vehicle,
     flight: summary.flight,
     notes: summary.notes,
-    pricing: toDriverPricing(summary.pricing.total, commissionPercent),
+    pricing: toDriverPricing(
+      summary.pricing.total,
+      commissionPercent,
+      payment?.paymentMethod as string | undefined
+    ),
   };
 };

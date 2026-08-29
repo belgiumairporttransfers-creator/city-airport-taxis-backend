@@ -97,12 +97,7 @@ const seedSettings = async (airportPickup = 15) => {
     comingSoonMode: false,
     paymentMode: "test",
     minBookingMinutes: 120,
-    stopFee: 0,
-    cardProcessingFee: 0,
     airportPickup,
-    trainPickup: 0,
-    meetAndGreet: 0,
-    returnMeetAndGreet: 0,
     waitingTimePricePerMinute: 0,
     waitingTimePricePerHour: 0,
   });

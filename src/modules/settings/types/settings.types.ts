@@ -9,15 +9,13 @@ export interface ISettings extends Document {
   comingSoonMode: boolean;
   paymentMode: PaymentMode;
   minBookingMinutes: number;
-  stopFee: number;
-  cardProcessingFee: number;
   airportPickup: number;
-  trainPickup: number;
-  meetAndGreet: number;
-  returnMeetAndGreet: number;
   waitingTimePricePerMinute: number;
   waitingTimePricePerHour: number;
   driverCommissionPercent: number;
+  nightPricingStartTime: string;
+  nightPricingEndTime: string;
+  nightPricingPercent: number;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;

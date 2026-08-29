@@ -1,5 +1,9 @@
 import { Schema, model } from "mongoose";
-import { PAYMENT_STATUSES, type IPayment } from "@/modules/payments/types/payment.types";
+import {
+  PAYMENT_RECORD_METHODS,
+  PAYMENT_STATUSES,
+  type IPayment,
+} from "@/modules/payments/types/payment.types";
 
 const paymentSchema = new Schema<IPayment>(
   {
@@ -12,6 +16,11 @@ const paymentSchema = new Schema<IPayment>(
     status: { type: String, enum: PAYMENT_STATUSES, required: true, index: true },
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, required: true, default: "EUR", uppercase: true, trim: true },
+    paymentMethod: {
+      type: String,
+      enum: PAYMENT_RECORD_METHODS,
+      index: true,
+    },
     transactionId: { type: String, trim: true, index: true },
     providerPaymentId: { type: String, trim: true, index: true },
     providerResponse: { type: Schema.Types.Mixed },

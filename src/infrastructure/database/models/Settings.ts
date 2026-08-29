@@ -29,33 +29,7 @@ const settingsSchema = new Schema<ISettings>(
       default: 120,
       min: 0,
     },
-    stopFee: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    cardProcessingFee: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
     airportPickup: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    trainPickup: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    meetAndGreet: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    returnMeetAndGreet: {
       type: Number,
       default: 0,
       min: 0,
@@ -73,6 +47,22 @@ const settingsSchema = new Schema<ISettings>(
     driverCommissionPercent: {
       type: Number,
       default: 10,
+      min: 0,
+      max: 100,
+    },
+    nightPricingStartTime: {
+      type: String,
+      default: "22:00",
+      match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+    },
+    nightPricingEndTime: {
+      type: String,
+      default: "06:00",
+      match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+    },
+    nightPricingPercent: {
+      type: Number,
+      default: 0,
       min: 0,
       max: 100,
     },

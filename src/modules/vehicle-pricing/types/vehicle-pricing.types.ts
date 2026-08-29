@@ -104,6 +104,8 @@ export interface GetPublicVehiclePricingQuotesQuery {
   passengers: number;
   category?: BookingTripCategory;
   duration?: number;
+  pickupDate?: string;
+  pickupTime?: string;
 }
 
 export interface VehiclePricingQuoteItem {

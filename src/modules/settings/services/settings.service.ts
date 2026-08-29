@@ -12,12 +12,7 @@ export type PublicSettingsPayload = {
   maintenanceMode: boolean;
   comingSoonMode: boolean;
   minBookingMinutes: number;
-  stopFee: number;
-  cardProcessingFee: number;
   airportPickup: number;
-  trainPickup: number;
-  meetAndGreet: number;
-  returnMeetAndGreet: number;
   waitingTimePricePerMinute: number;
   waitingTimePricePerHour: number;
 };
@@ -28,12 +23,7 @@ class SettingsService {
       maintenanceMode: settings.maintenanceMode,
       comingSoonMode: settings.comingSoonMode ?? false,
       minBookingMinutes: settings.minBookingMinutes ?? 120,
-      stopFee: settings.stopFee ?? 0,
-      cardProcessingFee: settings.cardProcessingFee ?? 0,
       airportPickup: settings.airportPickup ?? 0,
-      trainPickup: settings.trainPickup ?? 0,
-      meetAndGreet: settings.meetAndGreet ?? 0,
-      returnMeetAndGreet: settings.returnMeetAndGreet ?? 0,
       waitingTimePricePerMinute: settings.waitingTimePricePerMinute ?? 0,
       waitingTimePricePerHour: settings.waitingTimePricePerHour ?? 0,
     };
@@ -48,15 +38,13 @@ class SettingsService {
         comingSoonMode: false,
         paymentMode: "test",
         minBookingMinutes: 0,
-        stopFee: 0,
-        cardProcessingFee: 0,
         airportPickup: 0,
-        trainPickup: 0,
-        meetAndGreet: 0,
-        returnMeetAndGreet: 0,
         waitingTimePricePerMinute: 0,
         waitingTimePricePerHour: 0,
         driverCommissionPercent: 10,
+        nightPricingStartTime: "22:00",
+        nightPricingEndTime: "06:00",
+        nightPricingPercent: 0,
       });
     }
 

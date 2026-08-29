@@ -12,9 +12,8 @@ export const BOOKING_STATUSES = [
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 export type BookingLifecycleStatus = BookingStatus;
 
-export const BOOKING_PAYMENT_METHOD = "mollie" as const;
-export const BOOKING_PAYMENT_METHODS = [BOOKING_PAYMENT_METHOD] as const;
-export type BookingPaymentMethod = typeof BOOKING_PAYMENT_METHOD;
+export const BOOKING_PAYMENT_METHODS = ["mollie", "pay_onboard"] as const;
+export type BookingPaymentMethod = (typeof BOOKING_PAYMENT_METHODS)[number];
 
 export const BOOKING_TIMELINE_EVENTS = [
   "BOOKING_CREATED",
@@ -47,6 +46,8 @@ export interface BookingRoute {
   dropoffAddress: string;
   pickupDate: string;
   pickupTime: string;
+  returnDate?: string;
+  returnTime?: string;
   distance: number;
   durationMinutes?: number;
   estimatedArrival?: string;
@@ -174,6 +175,7 @@ export interface CreateBookingPayload {
     handLuggage: number;
     smallCheckedCase: number;
     largeCheckedCase: number;
+    paymentMethod?: BookingPaymentMethod;
   };
   pricing: {
     total: number;

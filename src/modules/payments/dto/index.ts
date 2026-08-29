@@ -36,6 +36,7 @@ export interface PaymentResponse {
   status: string;
   amount: number;
   currency: string;
+  paymentMethod?: string;
   transactionId?: string;
   providerPaymentId?: string;
   cardLastDigits?: string;
@@ -64,6 +65,7 @@ export const toPaymentResponse = (payment: PaymentLike): PaymentResponse => {
     status: record.status as string,
     amount: Number(record.amount ?? 0),
     currency: (record.currency as string) ?? "EUR",
+    paymentMethod: record.paymentMethod as string | undefined,
     transactionId: record.transactionId as string | undefined,
     providerPaymentId: record.providerPaymentId as string | undefined,
     cardLastDigits: record.cardLastDigits as string | undefined,
@@ -74,17 +76,31 @@ export const toPaymentResponse = (payment: PaymentLike): PaymentResponse => {
   };
 };
 
-const formatPaymentMethod = (providerResponse?: Record<string, unknown>): string => {
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  mollie: "Online (Card)",
+  pay_onboard: "Pay onboard",
+  ideal: "iDEAL",
+  creditcard: "Card",
+  paypal: "PayPal",
+  bancontact: "Bancontact",
+};
+
+const formatPaymentMethod = (
+  paymentMethod?: string,
+  providerResponse?: Record<string, unknown>
+): string => {
+  const storedMethod = paymentMethod?.trim();
+  if (storedMethod) {
+    return PAYMENT_METHOD_LABELS[storedMethod] ?? storedMethod;
+  }
+
   const method = providerResponse?.method;
   if (typeof method !== "string" || !method.trim()) {
     return "N/A";
   }
 
-  if (method.toLowerCase() === "ideal") {
-    return "iDEAL";
-  }
-
-  return method.charAt(0).toUpperCase() + method.slice(1);
+  const normalized = method.toLowerCase();
+  return PAYMENT_METHOD_LABELS[normalized] ?? method.charAt(0).toUpperCase() + method.slice(1);
 };
 
 export const toAdminPaymentListItemResponse = (
@@ -104,6 +120,6 @@ export const toAdminPaymentListItemResponse = (
       lastName: (customer.lastName as string) ?? "",
       email: (customer.email as string) ?? "",
     },
-    method: formatPaymentMethod(providerResponse),
+    method: formatPaymentMethod(dto.paymentMethod, providerResponse),
   };
 };

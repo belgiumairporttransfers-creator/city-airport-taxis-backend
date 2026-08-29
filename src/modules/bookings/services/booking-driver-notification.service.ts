@@ -13,7 +13,11 @@ class BookingDriverNotificationService {
     const settings = await settingsService.getSettings();
     const commissionPercent = Number(settings.driverCommissionPercent ?? 10);
     const total = Number(booking.pricing?.total ?? 0);
-    const driverEarning = calculateDriverEarning(total, commissionPercent);
+    const driverEarning = calculateDriverEarning(
+      total,
+      commissionPercent,
+      booking.payment?.paymentMethod
+    );
 
     return {
       commissionPercent,

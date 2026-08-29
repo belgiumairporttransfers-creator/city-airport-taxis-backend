@@ -26,6 +26,8 @@ import {
 } from "@/modules/drivers/types/driver.types";
 import uploadService from "@/modules/upload/services/upload.service";
 import notificationService from "@/modules/notifications/services/notification.service";
+import { DriverWallet } from "@/infrastructure/database/models/DriverWallet";
+import { WalletTransaction } from "@/infrastructure/database/models/WalletTransaction";
 
 class DriverService {
   private readonly passwordSetupExpiryMs = 24 * 60 * 60 * 1000;
@@ -699,6 +701,71 @@ class DriverService {
     await emailService.sendDriverSuspendedEmail(application, reviewNotes);
 
     return application;
+  }
+
+  async reactivateDriver(id: string, adminId: string) {
+    const existing = await this.getApplicationOrThrow(id);
+
+    this.assertStatus(existing, ["suspended"], "Only suspended drivers can be reactivated");
+
+    const application = await driverRepository.updateById(id, {
+      status: "approved",
+      reviewedBy: adminId,
+      reviewedAt: new Date(),
+      $unset: { reviewNotes: 1 },
+    });
+
+    if (!application) {
+      throw new AppError("Driver application not found", 404);
+    }
+
+    if (application.userId) {
+      const user = await userRepository.findById(application.userId.toString());
+      if (user) {
+        user.status = "active";
+        user.statusReason = undefined;
+        await userRepository.save(user);
+      }
+    }
+
+    this.logDriverAudit(AuditEvents.DRIVER_APPLICATION_REACTIVATED, adminId, "admin", id, {
+      applicationNumber: application.applicationNumber,
+    });
+
+    return application;
+  }
+
+  async deleteDriverPermanently(id: string, adminId: string) {
+    const existing = await this.getApplicationOrThrow(id);
+
+    this.assertStatus(
+      existing,
+      ["pending", "suspended"],
+      "Only pending or suspended drivers can be permanently deleted"
+    );
+
+    const applicationNumber = existing.applicationNumber;
+    const userId = existing.userId?.toString();
+
+    await WalletTransaction.deleteMany({ driverId: existing._id });
+    await DriverWallet.deleteOne({ driverId: existing._id });
+
+    if (userId) {
+      await userRepository.deleteById(userId);
+    }
+
+    const deleted = await driverRepository.deleteById(id);
+
+    if (!deleted) {
+      throw new AppError("Driver application not found", 404);
+    }
+
+    this.logDriverAudit(AuditEvents.DRIVER_APPLICATION_DELETED, adminId, "admin", id, {
+      applicationNumber,
+      userId,
+    });
+
+    return { id, applicationNumber };
   }
 
   async getApplicationStats() {

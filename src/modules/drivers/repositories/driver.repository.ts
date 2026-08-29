@@ -129,6 +129,10 @@ class DriverRepository {
     return Driver.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   }
 
+  deleteById(id: string) {
+    return Driver.findByIdAndDelete(id);
+  }
+
   async countByStatus() {
     const results = await Driver.aggregate<{
       _id: DriverStatus;

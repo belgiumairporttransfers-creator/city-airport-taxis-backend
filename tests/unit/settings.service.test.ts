@@ -23,12 +23,7 @@ const mockSettings = {
   maintenanceMode: false,
   comingSoonMode: true,
   minBookingMinutes: 120,
-  stopFee: 5,
-  cardProcessingFee: 2,
   airportPickup: 10,
-  trainPickup: 8,
-  meetAndGreet: 15,
-  returnMeetAndGreet: 12,
   waitingTimePricePerMinute: 1,
   waitingTimePricePerHour: 50,
   toObject: () => ({}),
@@ -44,12 +39,7 @@ describe("SettingsService caching", () => {
       maintenanceMode: true,
       comingSoonMode: false,
       minBookingMinutes: 60,
-      stopFee: 0,
-      cardProcessingFee: 0,
       airportPickup: 0,
-      trainPickup: 0,
-      meetAndGreet: 0,
-      returnMeetAndGreet: 0,
       waitingTimePricePerMinute: 0,
       waitingTimePricePerHour: 0,
     };
@@ -82,7 +72,7 @@ describe("SettingsService caching", () => {
   it("invalidates public settings cache on update", async () => {
     vi.mocked(settingsRepository.findOneAndUpdate).mockResolvedValue(mockSettings as never);
 
-    await settingsService.updateSettings({ stopFee: 10 }, "admin-id");
+    await settingsService.updateSettings({ airportPickup: 10 }, "admin-id");
 
     expect(cacheDel).toHaveBeenCalledWith("settings:public:global");
   });

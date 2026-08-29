@@ -133,6 +133,32 @@ class DriverController {
       message: "Driver suspended successfully",
     });
   });
+
+  reactivate = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.admin) throw new AppError("Unauthorized", 401);
+
+    const application = await driverService.reactivateDriver(
+      req.params.id,
+      req.admin._id.toString()
+    );
+
+    return sendSuccess(res, toDriverResponse(application), {
+      message: "Driver reactivated successfully",
+    });
+  });
+
+  deletePermanently = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.admin) throw new AppError("Unauthorized", 401);
+
+    const result = await driverService.deleteDriverPermanently(
+      req.params.id,
+      req.admin._id.toString()
+    );
+
+    return sendSuccess(res, result, {
+      message: "Driver deleted permanently",
+    });
+  });
 }
 
 export default new DriverController();
