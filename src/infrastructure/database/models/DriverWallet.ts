@@ -31,6 +31,11 @@ const driverWalletSchema = new Schema<IDriverWallet>(
       default: 0,
       min: 0,
     },
+    totalPaidOut: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalTrips: {
       type: Number,
       default: 0,

@@ -26,6 +26,9 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
   const { Booking } = await import("@/infrastructure/database/models/Booking");
   const { Payment } = await import("@/infrastructure/database/models/Payment");
   const { Assignment } = await import("@/infrastructure/database/models/Assignment");
+  const { WalletTransaction } =
+    await import("@/infrastructure/database/models/WalletTransaction");
+  const { DriverWallet } = await import("@/infrastructure/database/models/DriverWallet");
 
   const dropLegacyIndex = async (model: { collection: { dropIndex: (name: string) => Promise<unknown> } }, name: string) => {
     try {
@@ -70,6 +73,12 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
     await Driver.syncIndexes();
   };
 
+  const syncWalletIndexes = async (): Promise<void> => {
+    // Old sparse unique index treated all withdrawals (no bookingId) as duplicates.
+    await dropLegacyIndex(WalletTransaction, "driverId_1_bookingId_1_type_1");
+    await Promise.all([DriverWallet.syncIndexes(), WalletTransaction.syncIndexes()]);
+  };
+
   await Promise.all([
     User.syncIndexes(),
     Admin.syncIndexes(),
@@ -96,5 +105,6 @@ export const ensureDatabaseIndexes = async (): Promise<void> => {
     syncBookingIndexes(),
     Payment.syncIndexes(),
     Assignment.syncIndexes(),
+    syncWalletIndexes(),
   ]);
 };

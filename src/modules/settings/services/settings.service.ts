@@ -45,6 +45,7 @@ class SettingsService {
         nightPricingStartTime: "22:00",
         nightPricingEndTime: "06:00",
         nightPricingPercent: 0,
+        driverNotificationDelayMinutes: 10,
       });
     }
 

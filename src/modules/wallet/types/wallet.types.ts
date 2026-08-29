@@ -20,6 +20,7 @@ export interface IDriverWallet extends Document {
   currency: string;
   availableBalance: number;
   totalEarned: number;
+  totalPaidOut: number;
   totalTrips: number;
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +40,10 @@ export interface IWalletTransaction extends Document {
   amount: number;
   currency: string;
   description: string;
+  requestNote?: string;
+  adminNotes?: string;
+  processedAt?: Date;
+  processedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,5 +52,11 @@ export interface GetWalletTransactionsQuery {
   page?: number;
   limit?: number;
   type?: WalletTransactionType;
+  status?: WalletTransactionStatus;
   sort?: string;
+}
+
+export interface RequestPayoutData {
+  amount: number;
+  note?: string;
 }

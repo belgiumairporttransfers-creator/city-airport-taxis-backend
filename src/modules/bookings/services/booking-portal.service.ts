@@ -13,7 +13,9 @@ import {
   syncBookingOnAssign,
 } from "@/modules/assignments/utils/booking-sync";
 import bookingRepository from "@/modules/bookings/repositories/booking.repository";
+import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
+import tripStatusNotificationService from "@/modules/trips/services/trip-status-notification.service";
 import type { IAssignment } from "@/modules/assignments/types/assignment.types";
 import type { GetDriverBookingsQuery, IBooking } from "@/modules/bookings/types/booking.types";
 
@@ -194,6 +196,8 @@ class BookingPortalService {
       throw new AppError(BOOKING_ALREADY_ACCEPTED_MESSAGE, 409);
     }
 
+    await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(bookingId);
+
     await assertDriverAssignable(driver._id.toString(), claimed);
 
     const assignedBy = await this.getSystemAdminId();
@@ -272,8 +276,11 @@ class BookingPortalService {
       logger.error("Failed to create driver pool accept admin notification", { error });
     }
 
+    const acceptedBooking = updatedBooking ?? afterAssign;
+    await tripStatusNotificationService.notifyTripStatus(acceptedBooking, "accepted");
+
     return {
-      booking: updatedBooking ?? afterAssign,
+      booking: acceptedBooking,
       assignment: assignment as IAssignment,
     };
   }

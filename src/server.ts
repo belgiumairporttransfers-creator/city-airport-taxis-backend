@@ -17,6 +17,10 @@ import {
   stopNewsletterDeliveryWorker,
 } from "@/modules/newsletter";
 import {
+  startDriverPoolNotifyWorker,
+  stopDriverPoolNotifyWorker,
+} from "@/modules/bookings/queues/driver-pool-notify.queue";
+import {
   initNotificationInfrastructure,
   shutdownNotificationInfrastructure,
 } from "@/modules/notifications";
@@ -51,6 +55,7 @@ const bootstrap = async (): Promise<void> => {
     startNewsletterScheduler();
     startAssignmentScheduler();
     void startNewsletterDeliveryWorker();
+    void startDriverPoolNotifyWorker();
     logger.info(`Server running on port ${PORT} in ${env.NODE_ENV} mode`, {
       redisEnabled: env.REDIS_ENABLED,
       redisConnected: RedisClient.isConnected(),
@@ -75,6 +80,7 @@ const shutdown = async (signal: string): Promise<void> => {
     stopNewsletterScheduler();
     stopAssignmentScheduler();
     await stopNewsletterDeliveryWorker();
+    await stopDriverPoolNotifyWorker();
     await shutdownNotificationInfrastructure();
     await shutdownCommunicationInfrastructure();
     await shutdownSocketServer();

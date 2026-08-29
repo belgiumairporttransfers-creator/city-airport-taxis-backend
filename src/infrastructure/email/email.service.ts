@@ -20,7 +20,11 @@ import {
   getAdminBookingConfirmedTemplate,
   getBookingReceivedTemplate,
   getBookingCancelledTemplate,
+  getBookingUpdatedTemplate,
   getTripCompletedTemplate,
+  getCustomerTripStatusTemplate,
+  getAdminTripStatusTemplate,
+  type TripStatusEmailStep,
 } from "@/infrastructure/email/templates/booking.template";
 import {
   toBookingEmailDetails,
@@ -29,9 +33,15 @@ import {
 import {
   getAssignmentCancelledTemplate,
   getDriverAssignedTemplate,
+  getDriverBookingUpdatedTemplate,
   getDriverNewBookingAvailableTemplate,
   getDriverTripEarningTemplate,
 } from "@/infrastructure/email/templates/assignment.template";
+import {
+  getDriverPayoutApprovedTemplate,
+  getDriverPayoutRejectedTemplate,
+  getDriverPayoutRequestedTemplate,
+} from "@/infrastructure/email/templates/wallet.template";
 import {
   getContactFormAdminTemplate,
   getContactFormConfirmationTemplate,
@@ -228,6 +238,17 @@ class EmailService {
     });
   }
 
+  async sendBookingUpdatedEmail(
+    customer: { firstName: string; email: string },
+    booking: BookingEmailDetails
+  ) {
+    await this.sendEmail({
+      to: customer.email,
+      subject: `Booking Updated - ${booking.bookingNumber}`,
+      html: getBookingUpdatedTemplate(customer, booking),
+    });
+  }
+
   async sendDriverNewBookingEmail(
     driver: { firstName: string; email: string },
     booking: IBooking,
@@ -277,13 +298,54 @@ class EmailService {
 
   async sendDriverAssignedEmail(
     driver: { firstName: string; email: string },
-    bookingNumber: string,
-    assignmentNumber: string
+    details: {
+      assignmentId: string;
+      assignmentNumber: string;
+      bookingNumber: string;
+      category?: string;
+      route?: {
+        pickupAddress: string;
+        dropoffAddress?: string;
+        pickupDate: string;
+        pickupTime: string;
+        durationMinutes?: number;
+      };
+      vehicle?: {
+        categoryName: string;
+      };
+      pricing?: {
+        driverEarning: number;
+      };
+    }
   ) {
     await this.sendEmail({
       to: driver.email,
-      subject: "New Trip Assigned - City Airport Taxis",
-      html: getDriverAssignedTemplate(driver, bookingNumber, assignmentNumber),
+      subject: `New Trip Assigned - ${details.bookingNumber}`,
+      html: getDriverAssignedTemplate(driver, details),
+    });
+  }
+
+  async sendDriverBookingUpdatedEmail(
+    driver: { firstName: string; email: string },
+    booking: {
+      bookingNumber: string;
+      route: {
+        pickupAddress: string;
+        dropoffAddress?: string;
+        pickupDate: string;
+        pickupTime: string;
+      };
+      vehicle: {
+        categoryName: string;
+        passengers: number;
+      };
+      notes?: string;
+    }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `Booking Updated - ${booking.bookingNumber}`,
+      html: getDriverBookingUpdatedTemplate(driver, booking),
     });
   }
 
@@ -299,14 +361,96 @@ class EmailService {
     });
   }
 
+  async sendDriverPayoutRequestedEmail(
+    driver: { firstName: string; email: string },
+    details: { amount: number; note?: string }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `Payout Request Received - ${details.amount.toFixed(2)} EUR`,
+      html: getDriverPayoutRequestedTemplate(driver, details),
+    });
+  }
+
+  async sendDriverPayoutApprovedEmail(
+    driver: { firstName: string; email: string },
+    details: { amount: number }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `Payout Approved - ${details.amount.toFixed(2)} EUR`,
+      html: getDriverPayoutApprovedTemplate(driver, details),
+    });
+  }
+
+  async sendDriverPayoutRejectedEmail(
+    driver: { firstName: string; email: string },
+    details: { amount: number; adminNotes?: string }
+  ) {
+    return this.sendEmail({
+      to: driver.email,
+      subject: `Payout Rejected - ${details.amount.toFixed(2)} EUR`,
+      html: getDriverPayoutRejectedTemplate(driver, details),
+    });
+  }
+
   async sendTripCompletedEmail(
     customer: { firstName: string; email: string },
-    bookingNumber: string
+    booking: IBooking | BookingEmailDetails
   ) {
+    const details =
+      "_id" in booking ? toBookingEmailDetails(booking) : (booking as BookingEmailDetails);
+
     await this.sendEmail({
       to: customer.email,
-      subject: "Trip Completed - City Airport Taxis",
-      html: getTripCompletedTemplate(customer, bookingNumber),
+      subject: `Trip Completed - ${details.bookingNumber}`,
+      html: getTripCompletedTemplate(customer, details),
+    });
+  }
+
+  async sendCustomerTripStatusEmail(
+    customer: { firstName: string; email: string },
+    booking: IBooking | BookingEmailDetails,
+    step: TripStatusEmailStep
+  ) {
+    const details =
+      "_id" in booking ? toBookingEmailDetails(booking) : (booking as BookingEmailDetails);
+
+    const subjectByStep: Record<TripStatusEmailStep, string> = {
+      accepted: `Driver Accepted - ${details.bookingNumber}`,
+      arrived: `Driver Arrived - ${details.bookingNumber}`,
+      passenger_onboard: `Passenger Onboard - ${details.bookingNumber}`,
+      started: `Trip Started - ${details.bookingNumber}`,
+      completed: `Trip Completed - ${details.bookingNumber}`,
+    };
+
+    await this.sendEmail({
+      to: customer.email,
+      subject: subjectByStep[step],
+      html: getCustomerTripStatusTemplate(customer, details, step),
+    });
+  }
+
+  async sendAdminTripStatusEmail(
+    admin: { firstName: string; email: string },
+    booking: IBooking | BookingEmailDetails,
+    step: TripStatusEmailStep
+  ) {
+    const details =
+      "_id" in booking ? toBookingEmailDetails(booking) : (booking as BookingEmailDetails);
+
+    const subjectByStep: Record<TripStatusEmailStep, string> = {
+      accepted: `Driver Accepted - ${details.bookingNumber}`,
+      arrived: `Driver Arrived - ${details.bookingNumber}`,
+      passenger_onboard: `Passenger Onboard - ${details.bookingNumber}`,
+      started: `Trip Started - ${details.bookingNumber}`,
+      completed: `Trip Completed - ${details.bookingNumber}`,
+    };
+
+    await this.sendEmail({
+      to: admin.email,
+      subject: subjectByStep[step],
+      html: getAdminTripStatusTemplate(admin, details, step),
     });
   }
 

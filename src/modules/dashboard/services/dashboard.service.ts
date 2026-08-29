@@ -108,7 +108,9 @@ class DashboardService {
       totals: {
         totalEarned: walletSummary.wallet.totalEarned,
         availableBalance: walletSummary.wallet.availableBalance,
+        todayEarned: walletSummary.wallet.todayEarned,
         thisMonthEarned: walletSummary.wallet.thisMonthEarned,
+        totalPaidOut: walletSummary.wallet.totalPaidOut,
         activeBookings,
         completedBookings,
         totalTrips: walletSummary.wallet.totalTrips,

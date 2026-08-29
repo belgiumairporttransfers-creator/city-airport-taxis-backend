@@ -66,6 +66,11 @@ const settingsSchema = new Schema<ISettings>(
       min: 0,
       max: 100,
     },
+    driverNotificationDelayMinutes: {
+      type: Number,
+      default: 10,
+      min: 0,
+    },
     updatedBy: {
       type: Schema.Types.ObjectId,
       ref: "Admin",

@@ -8,7 +8,9 @@ export interface AdminDashboardTotals {
 export interface DriverDashboardTotals {
   totalEarned: number;
   availableBalance: number;
+  todayEarned: number;
   thisMonthEarned: number;
+  totalPaidOut: number;
   activeBookings: number;
   completedBookings: number;
   totalTrips: number;

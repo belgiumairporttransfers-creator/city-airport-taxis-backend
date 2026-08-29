@@ -17,11 +17,33 @@ import {
   assertCanMarkNoShow,
   assertValidPatchStatusTransition,
 } from "@/modules/bookings/utils/booking-status.transitions";
+import { toBookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
 import type {
   GetBookingsQuery,
   IBooking,
   UpdateBookingData,
 } from "@/modules/bookings/types/booking.types";
+
+const CUSTOMER_VISIBLE_UPDATE_KEYS: Array<keyof UpdateBookingData> = [
+  "pickupDate",
+  "pickupTime",
+  "returnDate",
+  "returnTime",
+  "pickupAddress",
+  "dropoffAddress",
+  "notes",
+  "flightNumber",
+  "terminal",
+  "passengers",
+  "luggage",
+  "handLuggage",
+  "smallCheckedCase",
+  "largeCheckedCase",
+  "customerFirstName",
+  "customerLastName",
+  "customerPhone",
+  "customerEmail",
+];
 
 class BookingAdminService {
   private logBookingAudit(
@@ -93,12 +115,32 @@ class BookingAdminService {
       updates["route.pickupTime"] = data.pickupTime;
     }
 
+    if (data.returnDate !== undefined) {
+      updates["route.returnDate"] = data.returnDate || null;
+    }
+
+    if (data.returnTime !== undefined) {
+      updates["route.returnTime"] = data.returnTime || null;
+    }
+
+    if (data.pickupAddress !== undefined) {
+      updates["route.pickupAddress"] = data.pickupAddress.trim();
+    }
+
+    if (data.dropoffAddress !== undefined) {
+      updates["route.dropoffAddress"] = data.dropoffAddress.trim();
+    }
+
     if (data.notes !== undefined) {
       updates.notes = data.notes;
     }
 
     if (data.flightNumber !== undefined) {
-      updates["flight.flightNumber"] = data.flightNumber;
+      updates["flight.flightNumber"] = data.flightNumber || undefined;
+    }
+
+    if (data.terminal !== undefined) {
+      updates["flight.terminal"] = data.terminal || undefined;
     }
 
     if (data.passengers !== undefined) {
@@ -119,6 +161,22 @@ class BookingAdminService {
 
     if (data.largeCheckedCase !== undefined) {
       updates["vehicle.largeCheckedCase"] = data.largeCheckedCase;
+    }
+
+    if (data.customerFirstName !== undefined) {
+      updates["customer.firstName"] = data.customerFirstName.trim();
+    }
+
+    if (data.customerLastName !== undefined) {
+      updates["customer.lastName"] = data.customerLastName.trim();
+    }
+
+    if (data.customerPhone !== undefined) {
+      updates["customer.phone"] = data.customerPhone.trim();
+    }
+
+    if (data.customerEmail !== undefined) {
+      updates["customer.email"] = data.customerEmail.trim().toLowerCase();
     }
 
     if (data.paymentStatus !== undefined) {
@@ -153,13 +211,22 @@ class BookingAdminService {
     const hasFieldUpdates =
       data.pickupDate !== undefined ||
       data.pickupTime !== undefined ||
+      data.returnDate !== undefined ||
+      data.returnTime !== undefined ||
+      data.pickupAddress !== undefined ||
+      data.dropoffAddress !== undefined ||
       data.notes !== undefined ||
       data.flightNumber !== undefined ||
+      data.terminal !== undefined ||
       data.passengers !== undefined ||
       data.luggage !== undefined ||
       data.handLuggage !== undefined ||
       data.smallCheckedCase !== undefined ||
       data.largeCheckedCase !== undefined ||
+      data.customerFirstName !== undefined ||
+      data.customerLastName !== undefined ||
+      data.customerPhone !== undefined ||
+      data.customerEmail !== undefined ||
       data.paymentStatus !== undefined ||
       statusChanged ||
       Boolean(data.adminNote?.trim());
@@ -167,6 +234,10 @@ class BookingAdminService {
     if (!hasFieldUpdates) {
       throw new AppError("No valid fields provided for update", 400);
     }
+
+    const customerVisibleChanges = CUSTOMER_VISIBLE_UPDATE_KEYS.filter(
+      (key) => data[key] !== undefined
+    );
 
     if (statusChanged && data.status === "confirmed") {
       timeline = appendTimelineEntry(timeline, "BOOKING_CONFIRMED", { adminId });
@@ -197,6 +268,11 @@ class BookingAdminService {
     if (statusChanged && data.status === "confirmed") {
       await this.sendBookingConfirmedEmail(updated);
       await this.notifyDriversOfConfirmedBooking(updated);
+    } else if (statusChanged && data.status === "cancelled") {
+      await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(bookingId);
+    } else if (customerVisibleChanges.length > 0) {
+      await this.sendBookingUpdatedEmail(updated);
+      await this.notifyAssignedDriverOfBookingUpdate(updated);
     }
 
     const payment = await this.getPaymentForBooking(updated);
@@ -270,6 +346,7 @@ class BookingAdminService {
       ...(reason ? { reason } : {}),
     });
 
+    await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(bookingId);
     await this.sendBookingCancelledEmail(updated);
     await this.notifyAdminsAboutCancellation(updated);
 
@@ -365,9 +442,18 @@ class BookingAdminService {
     const route = this.toPlainSubdocument(booking.route);
     const flight = this.toPlainSubdocument(booking.flight);
     const vehicle = this.toPlainSubdocument(booking.vehicle);
+    const customer = this.toPlainSubdocument(booking.customer);
     const payment = this.toPlainSubdocument(booking.payment);
 
-    if (updates["route.pickupDate"] !== undefined || updates["route.pickupTime"] !== undefined) {
+    const hasRoutePatch =
+      updates["route.pickupDate"] !== undefined ||
+      updates["route.pickupTime"] !== undefined ||
+      updates["route.returnDate"] !== undefined ||
+      updates["route.returnTime"] !== undefined ||
+      updates["route.pickupAddress"] !== undefined ||
+      updates["route.dropoffAddress"] !== undefined;
+
+    if (hasRoutePatch) {
       flattened.route = {
         ...route,
         ...(updates["route.pickupDate"] !== undefined
@@ -376,17 +462,39 @@ class BookingAdminService {
         ...(updates["route.pickupTime"] !== undefined
           ? { pickupTime: updates["route.pickupTime"] }
           : {}),
+        ...(updates["route.returnDate"] !== undefined
+          ? { returnDate: updates["route.returnDate"] || undefined }
+          : {}),
+        ...(updates["route.returnTime"] !== undefined
+          ? { returnTime: updates["route.returnTime"] || undefined }
+          : {}),
+        ...(updates["route.pickupAddress"] !== undefined
+          ? { pickupAddress: updates["route.pickupAddress"] }
+          : {}),
+        ...(updates["route.dropoffAddress"] !== undefined
+          ? { dropoffAddress: updates["route.dropoffAddress"] }
+          : {}),
       };
       delete flattened["route.pickupDate"];
       delete flattened["route.pickupTime"];
+      delete flattened["route.returnDate"];
+      delete flattened["route.returnTime"];
+      delete flattened["route.pickupAddress"];
+      delete flattened["route.dropoffAddress"];
     }
 
-    if (updates["flight.flightNumber"] !== undefined) {
+    if (updates["flight.flightNumber"] !== undefined || updates["flight.terminal"] !== undefined) {
       flattened.flight = {
         ...flight,
-        flightNumber: updates["flight.flightNumber"],
+        ...(updates["flight.flightNumber"] !== undefined
+          ? { flightNumber: updates["flight.flightNumber"] }
+          : {}),
+        ...(updates["flight.terminal"] !== undefined
+          ? { terminal: updates["flight.terminal"] }
+          : {}),
       };
       delete flattened["flight.flightNumber"];
+      delete flattened["flight.terminal"];
     }
 
     const vehiclePatch: Record<string, unknown> = {};
@@ -408,6 +516,19 @@ class BookingAdminService {
       flattened.vehicle = { ...vehicle, ...vehiclePatch };
     }
 
+    const customerPatch: Record<string, unknown> = {};
+    for (const key of ["firstName", "lastName", "phone", "email"] as const) {
+      const updateKey = `customer.${key}`;
+      if (updates[updateKey] !== undefined) {
+        customerPatch[key] = updates[updateKey];
+        delete flattened[updateKey];
+      }
+    }
+
+    if (Object.keys(customerPatch).length > 0) {
+      flattened.customer = { ...customer, ...customerPatch };
+    }
+
     if (updates["payment.paymentStatus"] !== undefined) {
       flattened.payment = {
         ...payment,
@@ -427,11 +548,33 @@ class BookingAdminService {
     }
   }
 
+  private async sendBookingUpdatedEmail(booking: IBooking) {
+    try {
+      await emailService.sendBookingUpdatedEmail(
+        {
+          firstName: booking.customer.firstName,
+          email: booking.customer.email,
+        },
+        toBookingEmailDetails(booking)
+      );
+    } catch (error) {
+      logger.error("Failed to send booking updated email", { error });
+    }
+  }
+
   private async notifyDriversOfConfirmedBooking(booking: IBooking) {
     try {
-      await bookingDriverNotificationService.notifyAllDriversOfConfirmedBooking(booking);
+      await bookingDriverNotificationService.scheduleNotifyAllDriversOfConfirmedBooking(booking);
     } catch (error) {
-      logger.error("Failed to send driver new booking emails", { error });
+      logger.error("Failed to schedule driver new booking emails", { error });
+    }
+  }
+
+  private async notifyAssignedDriverOfBookingUpdate(booking: IBooking) {
+    try {
+      await bookingDriverNotificationService.notifyAssignedDriverOfBookingUpdate(booking);
+    } catch (error) {
+      logger.error("Failed to send driver booking updated email", { error });
     }
   }
 

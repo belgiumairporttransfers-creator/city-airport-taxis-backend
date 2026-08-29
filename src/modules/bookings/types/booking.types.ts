@@ -128,6 +128,7 @@ export interface IBooking extends Document {
   currentAssignmentId?: Types.ObjectId;
   currentDriverId?: Types.ObjectId;
   assignmentStatus?: string;
+  driverPoolNotifiedAt?: Date;
   createdBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -213,13 +214,22 @@ export interface GetDriverBookingsQuery {
 export interface UpdateBookingData {
   pickupDate?: string;
   pickupTime?: string;
+  returnDate?: string;
+  returnTime?: string;
+  pickupAddress?: string;
+  dropoffAddress?: string;
   notes?: string;
   flightNumber?: string;
+  terminal?: string;
   passengers?: number;
   luggage?: number;
   handLuggage?: number;
   smallCheckedCase?: number;
   largeCheckedCase?: number;
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   paymentStatus?: string;
   status?: BookingLifecycleStatus;
   adminNote?: string;

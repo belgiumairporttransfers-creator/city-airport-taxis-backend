@@ -143,13 +143,22 @@ export const getBookingsQuerySchema = Joi.object({
 export const updateBookingSchema = Joi.object({
   pickupDate: dateSchema.optional(),
   pickupTime: timeSchema.optional(),
+  returnDate: dateSchema.allow("", null).optional(),
+  returnTime: timeSchema.allow("", null).optional(),
+  pickupAddress: Joi.string().trim().min(3).max(500).optional(),
+  dropoffAddress: Joi.string().trim().allow("").max(500).optional(),
   notes: Joi.string().trim().allow("", null).max(2000).optional(),
   flightNumber: Joi.string().trim().allow("", null).max(20).optional(),
+  terminal: Joi.string().trim().allow("", null).max(50).optional(),
   passengers: Joi.number().integer().min(1).max(20).optional(),
   luggage: Joi.number().integer().min(0).max(20).optional(),
   handLuggage: Joi.number().integer().min(0).max(20).optional(),
   smallCheckedCase: Joi.number().integer().min(0).max(20).optional(),
   largeCheckedCase: Joi.number().integer().min(0).max(20).optional(),
+  customerFirstName: Joi.string().trim().min(1).max(100).optional(),
+  customerLastName: Joi.string().trim().min(1).max(100).optional(),
+  customerPhone: Joi.string().trim().min(5).max(30).optional(),
+  customerEmail: Joi.string().trim().email().max(255).optional(),
   paymentStatus: Joi.string()
     .valid(...PAYMENT_STATUSES)
     .optional(),

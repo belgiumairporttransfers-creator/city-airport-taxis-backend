@@ -1,7 +1,6 @@
 import auditService from "@/shared/audit/audit.service";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
-import emailService from "@/infrastructure/email/email.service";
 import notificationService from "@/modules/notifications/services/notification.service";
 import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
 import walletService from "@/modules/wallet/services/wallet.service";
@@ -12,6 +11,7 @@ import type { IBooking } from "@/modules/bookings/types/booking.types";
 import tripRepository from "../repositories/trip.repository";
 import { assertTripTransition } from "../utils/trip-transitions";
 import type { GetAdminTripsQuery, TripTransitionAction } from "../types/trip.types";
+import tripStatusNotificationService from "./trip-status-notification.service";
 
 class TripService {
   private async getDriverOrThrow(driverUserId: string) {
@@ -221,6 +221,7 @@ class TripService {
         updated,
         "info"
       );
+      await tripStatusNotificationService.notifyTripStatus(updated, "arrived");
     }
 
     if (action === "passenger-onboard") {
@@ -231,6 +232,18 @@ class TripService {
         updated,
         "info"
       );
+      await tripStatusNotificationService.notifyTripStatus(updated, "passenger_onboard");
+    }
+
+    if (action === "start") {
+      await this.notifyAdmins(
+        "Trip Started",
+        `Trip started for booking ${updated.bookingNumber}.`,
+        "trip.started",
+        updated,
+        "info"
+      );
+      await tripStatusNotificationService.notifyTripStatus(updated, "started");
     }
 
     if (action === "complete") {
@@ -248,7 +261,7 @@ class TripService {
         "success"
       );
 
-      await emailService.sendTripCompletedEmail(updated.customer, updated.bookingNumber);
+      await tripStatusNotificationService.notifyTripStatus(updated, "completed");
       await walletService.creditTripEarning(updated, driverUserId);
       await bookingDriverNotificationService.notifyDriverOfTripEarning(updated);
     }

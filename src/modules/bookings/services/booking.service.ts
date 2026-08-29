@@ -138,7 +138,7 @@ class BookingService {
     }
 
     try {
-      await bookingDriverNotificationService.notifyAllDriversOfConfirmedBooking(booking);
+      await bookingDriverNotificationService.scheduleNotifyAllDriversOfConfirmedBooking(booking);
     } catch (error) {
       logger.error("Failed to send driver emails for onboard booking", { error });
     }

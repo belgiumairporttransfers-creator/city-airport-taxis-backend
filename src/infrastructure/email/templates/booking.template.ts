@@ -6,6 +6,9 @@ const BRAND = "City Airport Taxis";
 const YEAR = new Date().getFullYear();
 const SITE_URL = env.FRONTEND_URL;
 const ADMIN_URL = env.ADMIN_FRONTEND_URL;
+const REVIEW_URL =
+  process.env.TRUSTPILOT_REVIEW_URL ||
+  "https://www.trustpilot.com/review/cityairporttaxis.be";
 
 const styles = `
   body { background: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; margin: 0; color: #333; }
@@ -276,9 +279,32 @@ export const getBookingCancelledTemplate = (
     `
   );
 
+export const getBookingUpdatedTemplate = (
+  customer: { firstName: string },
+  booking: BookingEmailDetails
+) =>
+  layout(
+    "Booking Updated",
+    "Your booking details have changed",
+    `
+    <div class="content">
+      <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
+      <p class="text">
+        Your booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span> has been updated.
+        Please review the latest details below.
+      </p>
+      ${buildBookingDetailsSection(booking)}
+      <p class="text muted">
+        If anything looks incorrect, contact us or manage your booking at
+        <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a>.
+      </p>
+    </div>
+    `
+  );
+
 export const getTripCompletedTemplate = (
   customer: { firstName: string },
-  bookingNumber: string
+  booking: BookingEmailDetails
 ) =>
   layout(
     "Trip Completed",
@@ -287,14 +313,122 @@ export const getTripCompletedTemplate = (
     <div class="content">
       <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
       <p class="text">
-        Your trip for booking <span class="highlight">${escapeHtml(bookingNumber)}</span> has been completed.
+        Your trip for booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span> has been completed.
       </p>
       <p class="text">
         Thank you for choosing ${BRAND}. We hope you had a pleasant journey.
+        We would love to hear about your experience — your review helps other travellers and our drivers.
       </p>
+      <p class="text" style="text-align:center;margin:28px 0;">
+        <a href="${escapeHtml(REVIEW_URL)}" class="cta">Leave a review</a>
+      </p>
+      <p class="text muted" style="text-align:center;">
+        Or open: <a href="${escapeHtml(REVIEW_URL)}">${escapeHtml(REVIEW_URL)}</a>
+      </p>
+      ${buildBookingDetailsSection(booking)}
       <p class="text muted">
-        Visit <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a> to book your next ride.
+        Book again anytime at <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a>.
       </p>
     </div>
     `
   );
+
+export type TripStatusEmailStep =
+  | "accepted"
+  | "arrived"
+  | "passenger_onboard"
+  | "started"
+  | "completed";
+
+const TRIP_STATUS_COPY: Record<
+  TripStatusEmailStep,
+  { title: string; subtitle: string; customerMessage: string; adminMessage: string }
+> = {
+  accepted: {
+    title: "Driver Accepted",
+    subtitle: "Your driver has accepted the trip",
+    customerMessage:
+      "Your driver has accepted the booking and is preparing for your pickup. Full booking details are below.",
+    adminMessage: "A driver has accepted this booking. Full details are below.",
+  },
+  arrived: {
+    title: "Driver Arrived",
+    subtitle: "Your driver is at the pickup location",
+    customerMessage:
+      "Your driver has arrived at the pickup location. Please make your way to the vehicle when ready.",
+    adminMessage: "The driver has marked arrived for this booking.",
+  },
+  passenger_onboard: {
+    title: "Passenger Onboard",
+    subtitle: "You are onboard",
+    customerMessage: "You are onboard. We hope you have a comfortable journey.",
+    adminMessage: "The passenger has been marked onboard for this booking.",
+  },
+  started: {
+    title: "Trip Started",
+    subtitle: "Your journey is underway",
+    customerMessage: "Your trip has started. Sit back and enjoy the ride.",
+    adminMessage: "The driver has started the trip for this booking.",
+  },
+  completed: {
+    title: "Trip Completed",
+    subtitle: "Journey finished",
+    customerMessage: "Your trip has been completed. Thank you for travelling with us.",
+    adminMessage: "This trip has been marked complete. Full booking details are below.",
+  },
+};
+
+export const getCustomerTripStatusTemplate = (
+  customer: { firstName: string },
+  booking: BookingEmailDetails,
+  step: TripStatusEmailStep
+) => {
+  const copy = TRIP_STATUS_COPY[step];
+
+  return layout(
+    copy.title,
+    copy.subtitle,
+    `
+    <div class="content">
+      <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
+      <p class="text">
+        Update for booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span>:
+        ${escapeHtml(copy.customerMessage)}
+      </p>
+      ${buildBookingDetailsSection(booking)}
+      <p class="text muted">
+        Visit <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a> if you need help with your booking.
+      </p>
+    </div>
+    `
+  );
+};
+
+export const getAdminTripStatusTemplate = (
+  admin: { firstName: string },
+  booking: BookingEmailDetails,
+  step: TripStatusEmailStep
+) => {
+  const copy = TRIP_STATUS_COPY[step];
+  const adminBookingUrl = `${ADMIN_URL}/bookings/${booking.id}`;
+
+  return layout(
+    copy.title,
+    `${copy.title} · ${booking.bookingNumber}`,
+    `
+    <div class="content">
+      <p class="greeting">Hi ${escapeHtml(admin.firstName)},</p>
+      <p class="text">
+        ${escapeHtml(copy.adminMessage)}
+      </p>
+      ${buildBookingDetailsSection(booking)}
+      <p class="text">
+        <a href="${adminBookingUrl}" class="cta">View booking in admin</a>
+      </p>
+      <p class="text muted">
+        Or open: <a href="${adminBookingUrl}">${escapeHtml(adminBookingUrl)}</a>
+      </p>
+    </div>
+    `
+  );
+};

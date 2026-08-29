@@ -16,6 +16,7 @@ export interface ISettings extends Document {
   nightPricingStartTime: string;
   nightPricingEndTime: string;
   nightPricingPercent: number;
+  driverNotificationDelayMinutes: number;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;

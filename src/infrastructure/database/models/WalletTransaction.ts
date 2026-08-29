@@ -76,6 +76,23 @@ const walletTransactionSchema = new Schema<IWalletTransaction>(
       required: true,
       trim: true,
     },
+    requestNote: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    adminNotes: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    processedAt: {
+      type: Date,
+    },
+    processedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+    },
   },
   {
     timestamps: true,
@@ -84,7 +101,14 @@ const walletTransactionSchema = new Schema<IWalletTransaction>(
   }
 );
 
-walletTransactionSchema.index({ driverId: 1, bookingId: 1, type: 1 }, { unique: true, sparse: true });
+walletTransactionSchema.index(
+  { driverId: 1, bookingId: 1, type: 1 },
+  {
+    unique: true,
+    name: "wallet_tx_driver_booking_type_unique",
+    partialFilterExpression: { bookingId: { $type: "objectId" } },
+  }
+);
 
 export const WalletTransaction = model<IWalletTransaction>(
   "WalletTransaction",

@@ -8,7 +8,11 @@ import emailService from "@/infrastructure/email/email.service";
 import notificationService from "@/modules/notifications/services/notification.service";
 import assignmentRepository from "@/modules/assignments/repositories/assignment.repository";
 import bookingRepository from "@/modules/bookings/repositories/booking.repository";
+import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
+import settingsService from "@/modules/settings/services/settings.service";
+import { calculateDriverEarning } from "@/modules/wallet/utils/driver-earnings";
+import tripStatusNotificationService from "@/modules/trips/services/trip-status-notification.service";
 import { generateAssignmentNumber } from "@/modules/assignments/utils/assignment-number";
 import { assertDriverAssignable } from "@/modules/assignments/utils/driver-availability";
 import {
@@ -123,10 +127,42 @@ class AssignmentService {
         return;
       }
 
+      const booking = await bookingRepository.findById(assignment.bookingId.toString());
+      const settings = await settingsService.getSettings();
+      const commissionPercent = Number(settings.driverCommissionPercent ?? 10);
+      const driverEarning = booking
+        ? calculateDriverEarning(
+            Number(booking.pricing?.total ?? 0),
+            commissionPercent,
+            booking.payment?.paymentMethod
+          )
+        : undefined;
+
       await emailService.sendDriverAssignedEmail(
         { firstName: driver.firstName, email: driver.email },
-        assignment.bookingNumber,
-        assignment.assignmentNumber
+        {
+          assignmentId: assignment._id.toString(),
+          assignmentNumber: assignment.assignmentNumber,
+          bookingNumber: assignment.bookingNumber,
+          ...(booking
+            ? {
+                category: booking.category,
+                route: {
+                  pickupAddress: booking.route.pickupAddress,
+                  dropoffAddress: booking.route.dropoffAddress?.trim() || undefined,
+                  pickupDate: booking.route.pickupDate,
+                  pickupTime: booking.route.pickupTime,
+                  durationMinutes: booking.route.durationMinutes,
+                },
+                vehicle: {
+                  categoryName: booking.vehicle.categoryName,
+                },
+                ...(driverEarning !== undefined
+                  ? { pricing: { driverEarning } }
+                  : {}),
+              }
+            : {}),
+        }
       );
     } catch (error) {
       logger.error("Failed to send driver assigned email", { error });
@@ -208,6 +244,10 @@ class AssignmentService {
     });
 
     await syncBookingOnAssign(booking, assignment, driver._id);
+
+    await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(
+      booking._id.toString()
+    );
 
     this.logAssignmentAudit(
       AuditEvents.ASSIGNMENT_CREATED,
@@ -427,6 +467,11 @@ class AssignmentService {
       entityId: assignment.bookingId.toString(),
       actionUrl: `/bookings/${assignment.bookingId.toString()}`,
     });
+
+    const acceptedBooking = await bookingRepository.findById(assignment.bookingId.toString());
+    if (acceptedBooking) {
+      await tripStatusNotificationService.notifyTripStatus(acceptedBooking, "accepted");
+    }
 
     return updated;
   }

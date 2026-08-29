@@ -64,4 +64,10 @@ export const updateSettingsSchema = Joi.object({
     "number.min": "Night pricing percent cannot be negative",
     "number.max": "Night pricing percent cannot exceed 100%",
   }),
+  driverNotificationDelayMinutes: Joi.number().integer().min(0).required().messages({
+    "any.required": "Driver notification delay is required",
+    "number.base": "Driver notification delay must be a number",
+    "number.integer": "Driver notification delay must be a whole number of minutes",
+    "number.min": "Driver notification delay cannot be negative",
+  }),
 });

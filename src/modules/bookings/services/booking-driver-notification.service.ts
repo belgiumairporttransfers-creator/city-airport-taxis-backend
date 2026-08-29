@@ -26,6 +26,20 @@ class BookingDriverNotificationService {
     };
   }
 
+  async scheduleNotifyAllDriversOfConfirmedBooking(booking: IBooking) {
+    const { scheduleDriverPoolNotify } = await import(
+      "@/modules/bookings/queues/driver-pool-notify.queue"
+    );
+    await scheduleDriverPoolNotify(booking._id.toString());
+  }
+
+  async cancelScheduledDriverPoolNotify(bookingId: string) {
+    const { cancelDriverPoolNotify } = await import(
+      "@/modules/bookings/queues/driver-pool-notify.queue"
+    );
+    await cancelDriverPoolNotify(bookingId);
+  }
+
   async notifyAllDriversOfConfirmedBooking(booking: IBooking) {
     const drivers = await driverRepository.findApprovedWithPortalAccess();
     const pricing = await this.getDriverPricing(booking);
@@ -92,6 +106,39 @@ class BookingDriverNotificationService {
       { firstName: driver.firstName, email: driver.email },
       booking.bookingNumber,
       pricing
+    );
+  }
+
+  async notifyAssignedDriverOfBookingUpdate(booking: IBooking) {
+    const driverId =
+      booking.currentDriverId?.toString() ?? booking.driver?.driverId?.toString();
+
+    if (!driverId || booking.status !== "accepted") {
+      return false;
+    }
+
+    const driver = await driverRepository.findById(driverId);
+
+    if (!driver?.email) {
+      return false;
+    }
+
+    return emailService.sendDriverBookingUpdatedEmail(
+      { firstName: driver.firstName, email: driver.email },
+      {
+        bookingNumber: booking.bookingNumber,
+        route: {
+          pickupAddress: booking.route.pickupAddress,
+          dropoffAddress: booking.route.dropoffAddress?.trim() || undefined,
+          pickupDate: booking.route.pickupDate,
+          pickupTime: booking.route.pickupTime,
+        },
+        vehicle: {
+          categoryName: booking.vehicle.categoryName,
+          passengers: booking.vehicle.passengers,
+        },
+        notes: booking.notes,
+      }
     );
   }
 }

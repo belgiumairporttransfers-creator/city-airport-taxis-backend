@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import driverController from "../controllers/driver.controller";
+import walletAdminController from "@/modules/wallet/controllers/wallet-admin.controller";
 import { validateParams, validateQuery, validateRequest } from "@/middleware/validate";
 import {
   createDriverSchema,
@@ -8,7 +9,17 @@ import {
   reviewNotesSchema,
   updateDriverSchema,
 } from "../validators/driver.validator";
+import {
+  getWalletTransactionsQuerySchema,
+  rejectPayoutSchema,
+} from "@/modules/wallet/validators/wallet.validator";
 import { idParamSchema } from "@/shared/validators/object-id.schema";
+import Joi from "joi";
+
+const driverWalletPayoutParamsSchema = Joi.object({
+  id: Joi.string().hex().length(24).required(),
+  transactionId: Joi.string().hex().length(24).required(),
+});
 
 const adminDriverRoutes: IRouter = Router();
 
@@ -24,6 +35,45 @@ adminDriverRoutes.post(
   "/",
   validateRequest(createDriverSchema),
   driverController.create
+);
+
+adminDriverRoutes.get(
+  "/payouts",
+  validateQuery(getWalletTransactionsQuerySchema),
+  walletAdminController.getAllPayouts
+);
+
+adminDriverRoutes.get(
+  "/:id/wallet",
+  validateParams(idParamSchema),
+  walletAdminController.getSummary
+);
+
+adminDriverRoutes.get(
+  "/:id/wallet/transactions",
+  validateParams(idParamSchema),
+  validateQuery(getWalletTransactionsQuerySchema),
+  walletAdminController.getTransactions
+);
+
+adminDriverRoutes.get(
+  "/:id/wallet/payouts",
+  validateParams(idParamSchema),
+  validateQuery(getWalletTransactionsQuerySchema),
+  walletAdminController.getPayouts
+);
+
+adminDriverRoutes.post(
+  "/:id/wallet/payouts/:transactionId/approve",
+  validateParams(driverWalletPayoutParamsSchema),
+  walletAdminController.approvePayout
+);
+
+adminDriverRoutes.post(
+  "/:id/wallet/payouts/:transactionId/reject",
+  validateParams(driverWalletPayoutParamsSchema),
+  validateRequest(rejectPayoutSchema),
+  walletAdminController.rejectPayout
 );
 
 adminDriverRoutes.get("/:id", validateParams(idParamSchema), driverController.getOne);

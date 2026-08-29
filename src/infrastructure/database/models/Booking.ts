@@ -146,6 +146,7 @@ const bookingSchema = new Schema<IBooking>(
     currentAssignmentId: { type: Schema.Types.ObjectId, ref: "Assignment", index: true },
     currentDriverId: { type: Schema.Types.ObjectId, ref: "Driver", index: true },
     assignmentStatus: { type: String, trim: true, index: true },
+    driverPoolNotifiedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {
