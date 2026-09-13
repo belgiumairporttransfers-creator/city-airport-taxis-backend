@@ -10,8 +10,7 @@ const BATCH_SIZE = Math.max(1, env.NEWSLETTER_BATCH_SIZE);
 
 class BookingDriverNotificationService {
   private async getDriverPricing(booking: IBooking) {
-    const settings = await settingsService.getSettings();
-    const commissionPercent = Number(settings.driverCommissionPercent ?? 10);
+    const commissionPercent = await settingsService.getDriverCommissionPercent();
     const total = Number(booking.pricing?.total ?? 0);
     const driverEarning = calculateDriverEarning(
       total,

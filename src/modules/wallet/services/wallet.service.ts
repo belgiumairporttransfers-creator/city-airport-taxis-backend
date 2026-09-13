@@ -6,7 +6,7 @@ import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import settingsService from "@/modules/settings/services/settings.service";
 import type { IBooking } from "@/modules/bookings/types/booking.types";
 import walletRepository from "../repositories/wallet.repository";
-import { calculateDriverEarning } from "../utils/driver-earnings";
+import { calculateDriverEarning, getEffectiveCommissionPercent } from "../utils/driver-earnings";
 import type {
   GetWalletTransactionsQuery,
   IWalletTransaction,
@@ -44,8 +44,7 @@ class WalletService {
   }
 
   private async getCommissionPercentPrivate() {
-    const settings = await settingsService.getSettings();
-    return Number(settings.driverCommissionPercent ?? 10);
+    return settingsService.getDriverCommissionPercent();
   }
 
   async creditTripEarning(booking: IBooking, driverUserId: string) {
@@ -71,8 +70,10 @@ class WalletService {
     }
 
     const commissionPercent = await this.getCommissionPercentPrivate();
-    const effectiveCommissionPercent =
-      booking.payment?.paymentMethod === "pay_onboard" ? 0 : commissionPercent;
+    const effectiveCommissionPercent = getEffectiveCommissionPercent(
+      booking.payment?.paymentMethod,
+      commissionPercent
+    );
     const grossAmount = Number(booking.pricing?.total ?? 0);
     const amount = calculateDriverEarning(
       grossAmount,
@@ -213,6 +214,57 @@ class WalletService {
       totalPages: result.pages,
       hasNextPage: result.hasNextPage,
       hasPrevPage: result.hasPrevPage,
+    };
+  }
+
+  async getDriverEarningsReport(driverId?: string) {
+    if (driverId) {
+      const driver = await driverRepository.findById(driverId);
+      if (!driver) {
+        throw new AppError("Driver not found", 404);
+      }
+    }
+
+    const commissionPercent = await this.getCommissionPercentPrivate();
+    const bookings = await walletRepository.findCompletedBookingsForEarningsReport(driverId);
+
+    const items = bookings.map((booking) => {
+      const total = Number(booking.pricing?.total ?? 0);
+      const paymentMethod = booking.payment?.paymentMethod as string | undefined;
+      const effectivePercent = getEffectiveCommissionPercent(paymentMethod, commissionPercent);
+      const driverEarning = calculateDriverEarning(total, commissionPercent, paymentMethod);
+
+      return {
+        bookingId: booking._id.toString(),
+        bookingNumber: booking.bookingNumber as string,
+        driverId: booking.currentDriverId?.toString() ?? "",
+        total,
+        commissionPercent: effectivePercent,
+        driverEarning,
+        net: driverEarning,
+        paymentStatus: (booking.payment?.paymentStatus as string) ?? "unknown",
+        bookingStatus: booking.status as string,
+        pickupDate: (booking.route as { pickupDate?: string } | undefined)?.pickupDate ?? "",
+      };
+    });
+
+    const totals = items.reduce(
+      (acc, item) => {
+        acc.totalRevenue = roundMoney(acc.totalRevenue + item.total);
+        acc.totalDriverEarnings = roundMoney(acc.totalDriverEarnings + item.driverEarning);
+        acc.totalCommission = roundMoney(acc.totalCommission + (item.total - item.driverEarning));
+        return acc;
+      },
+      { totalRevenue: 0, totalDriverEarnings: 0, totalCommission: 0 }
+    );
+
+    return {
+      items,
+      summary: {
+        count: items.length,
+        commissionPercent,
+        ...totals,
+      },
     };
   }
 

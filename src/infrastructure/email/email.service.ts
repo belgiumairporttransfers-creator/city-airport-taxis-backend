@@ -24,6 +24,8 @@ import {
   getTripCompletedTemplate,
   getCustomerTripStatusTemplate,
   getAdminTripStatusTemplate,
+  getPaymentReceiptTemplate,
+  isUnpaidOrPayOnboard,
   type TripStatusEmailStep,
 } from "@/infrastructure/email/templates/booking.template";
 import {
@@ -196,9 +198,13 @@ class EmailService {
     customer: { firstName: string; email: string },
     booking: BookingEmailDetails
   ) {
+    const unpaidOrPayOnboard = isUnpaidOrPayOnboard(booking);
+
     await this.sendEmail({
       to: customer.email,
-      subject: `Booking Confirmed - ${booking.bookingNumber}`,
+      subject: unpaidOrPayOnboard
+        ? `Booking Confirmed - ${booking.bookingNumber}`
+        : `Booking Confirmed & Paid - ${booking.bookingNumber}`,
       html: getBookingConfirmedTemplate(customer, booking),
     });
   }
@@ -207,10 +213,28 @@ class EmailService {
     admin: { firstName: string; email: string },
     booking: BookingEmailDetails
   ) {
+    const unpaidOrPayOnboard = isUnpaidOrPayOnboard(booking);
+
     return this.sendEmail({
       to: admin.email,
-      subject: `New Paid Booking - ${booking.bookingNumber}`,
+      subject: unpaidOrPayOnboard
+        ? `New Booking (Pay onboard) - ${booking.bookingNumber}`
+        : `New Paid Booking - ${booking.bookingNumber}`,
       html: getAdminBookingConfirmedTemplate(admin, booking),
+    });
+  }
+
+  async sendPaymentReceiptEmail(
+    customer: { firstName: string; email: string },
+    booking: IBooking | BookingEmailDetails
+  ) {
+    const details =
+      "_id" in booking ? toBookingEmailDetails(booking) : (booking as BookingEmailDetails);
+
+    await this.sendEmail({
+      to: customer.email,
+      subject: `Payment Receipt - ${details.bookingNumber}`,
+      html: getPaymentReceiptTemplate(customer, details),
     });
   }
 

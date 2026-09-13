@@ -30,6 +30,33 @@ const buildDriverBookingsFilter = (
   return filter;
 };
 
+const buildAdminBookingsFilter = (query: GetBookingsQuery): Record<string, unknown> => {
+  const filter: Record<string, unknown> = {};
+
+  if (query.pickupDate) {
+    filter["route.pickupDate"] = query.pickupDate;
+  } else if (query.pickupDateFrom || query.pickupDateTo) {
+    const range: { $gte?: string; $lte?: string } = {};
+    if (query.pickupDateFrom) range.$gte = query.pickupDateFrom;
+    if (query.pickupDateTo) range.$lte = query.pickupDateTo;
+    filter["route.pickupDate"] = range;
+  }
+
+  if (query.paymentStatus) {
+    filter["payment.paymentStatus"] = query.paymentStatus;
+  }
+
+  if (query.paymentMethod) {
+    filter["payment.paymentMethod"] = query.paymentMethod;
+  }
+
+  if (query.vehicleCategory) {
+    filter["vehicle.categoryId"] = new Types.ObjectId(query.vehicleCategory);
+  }
+
+  return filter;
+};
+
 class BookingRepository {
   async create(data: CreateBookingData): Promise<IBooking> {
     try {
@@ -126,7 +153,10 @@ class BookingRepository {
   }
 
   findWithPagination(query: GetBookingsQuery) {
+    const initialFilter = buildAdminBookingsFilter(query);
+
     return new APIFeature(Booking, query, {
+      initialFilter: Object.keys(initialFilter).length > 0 ? initialFilter : undefined,
       pagination: { defaultLimit: 20 },
       sort: {
         defaultSort: "-createdAt",

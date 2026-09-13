@@ -1,8 +1,10 @@
 import auditService from "@/shared/audit/audit.service";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
+import emailService from "@/infrastructure/email/email.service";
 import notificationService from "@/modules/notifications/services/notification.service";
 import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
+import paymentRepository from "@/modules/payments/repositories/payment.repository";
 import walletService from "@/modules/wallet/services/wallet.service";
 import assignmentRepository from "@/modules/assignments/repositories/assignment.repository";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
@@ -253,17 +255,71 @@ class TripService {
         completedAt: now,
       });
 
+      let completedBooking = updated;
+      const paymentInfo = this.toPlainBooking(updated).payment;
+
+      if (
+        paymentInfo?.paymentMethod === "pay_onboard" &&
+        paymentInfo.paymentStatus === "pending"
+      ) {
+        const markedPaid = await tripRepository.updateById(updated._id.toString(), {
+          payment: {
+            ...paymentInfo,
+            paymentStatus: "paid",
+          },
+        });
+
+        if (markedPaid) {
+          completedBooking = markedPaid;
+
+          try {
+            const payment =
+              (paymentInfo.paymentId
+                ? await paymentRepository.findById(paymentInfo.paymentId.toString())
+                : null) ??
+              (await paymentRepository.findByBookingId(updated._id.toString()));
+
+            if (payment && payment.status === "pending") {
+              await paymentRepository.updateById(payment._id.toString(), {
+                status: "paid",
+                paidAt: now,
+              });
+            }
+          } catch (error) {
+            logger.error("Failed to mark pay_onboard payment as paid on trip complete", {
+              error,
+            });
+          }
+        }
+      }
+
       await this.notifyAdmins(
         "Trip Completed",
-        `Trip completed for booking ${updated.bookingNumber}.`,
+        `Trip completed for booking ${completedBooking.bookingNumber}.`,
         "trip.completed",
-        updated,
+        completedBooking,
         "success"
       );
 
-      await tripStatusNotificationService.notifyTripStatus(updated, "completed");
-      await walletService.creditTripEarning(updated, driverUserId);
-      await bookingDriverNotificationService.notifyDriverOfTripEarning(updated);
+      await tripStatusNotificationService.notifyTripStatus(completedBooking, "completed");
+      await walletService.creditTripEarning(completedBooking, driverUserId);
+      await bookingDriverNotificationService.notifyDriverOfTripEarning(completedBooking);
+
+      if (completedBooking.payment.paymentStatus === "paid") {
+        try {
+          await emailService.sendPaymentReceiptEmail(
+            {
+              firstName: completedBooking.customer.firstName,
+              email: completedBooking.customer.email,
+            },
+            completedBooking
+          );
+        } catch (error) {
+          logger.error("Failed to send payment receipt email", { error });
+        }
+      }
+
+      return completedBooking;
     }
 
     return updated;

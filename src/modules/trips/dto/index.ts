@@ -52,6 +52,8 @@ export interface TripSummaryResponse {
     dropoffAddress: string;
     pickupDate: string;
     pickupTime: string;
+    returnDate?: string;
+    returnTime?: string;
     distance: number;
     durationMinutes?: number;
     estimatedArrival?: string;
@@ -72,6 +74,7 @@ export interface TripSummaryResponse {
     actualDropoffTime?: string;
   };
   assignmentStatus?: string;
+  tripLeg?: "outbound" | "return";
   createdAt: string;
   updatedAt: string;
 }
@@ -183,6 +186,8 @@ export const toTripSummaryResponse = (booking: BookingLike): TripSummaryResponse
       dropoffAddress: route.dropoffAddress as string,
       pickupDate: route.pickupDate as string,
       pickupTime: route.pickupTime as string,
+      returnDate: (route.returnDate as string | undefined) || undefined,
+      returnTime: (route.returnTime as string | undefined) || undefined,
       distance: Number(route.distance ?? 0),
       durationMinutes: route.durationMinutes as number | undefined,
       estimatedArrival: route.estimatedArrival as string | undefined,
@@ -196,9 +201,42 @@ export const toTripSummaryResponse = (booking: BookingLike): TripSummaryResponse
     },
     trip: mapTrip(trip),
     assignmentStatus: record.assignmentStatus as string | undefined,
+    tripLeg: "outbound",
     createdAt: toIsoString(record.createdAt) ?? "",
     updatedAt: toIsoString(record.updatedAt) ?? "",
   };
+};
+
+const toReturnTripSummaryResponse = (booking: BookingLike): TripSummaryResponse | null => {
+  const record = toRecord(booking);
+  const route = record.route as Record<string, unknown>;
+  const returnDate = (route.returnDate as string | undefined)?.trim();
+  const returnTime = (route.returnTime as string | undefined)?.trim();
+
+  if (record.category !== "return-trip" || !returnDate || !returnTime) {
+    return null;
+  }
+
+  const outbound = toTripSummaryResponse(booking);
+
+  return {
+    ...outbound,
+    tripLeg: "return",
+    route: {
+      ...outbound.route,
+      pickupAddress: outbound.route.dropoffAddress,
+      dropoffAddress: outbound.route.pickupAddress,
+      pickupDate: returnDate,
+      pickupTime: returnTime,
+    },
+  };
+};
+
+const expandBookingToTripSummaries = (booking: BookingLike): TripSummaryResponse[] => {
+  const outbound = toTripSummaryResponse(booking);
+  const returnLeg = toReturnTripSummaryResponse(booking);
+
+  return returnLeg ? [outbound, returnLeg] : [outbound];
 };
 
 export const toDriverTripDetailResponse = (
@@ -290,7 +328,7 @@ const IN_PROGRESS_TRIP_STATUSES = [
 
 export const toDriverTripListResponse = (bookings: BookingLike[]) => {
   const today = new Date().toISOString().slice(0, 10);
-  const summaries = bookings.map((booking) => toTripSummaryResponse(booking));
+  const summaries = bookings.flatMap((booking) => expandBookingToTripSummaries(booking));
 
   const isInProgress = (status: string) =>
     IN_PROGRESS_TRIP_STATUSES.includes(status as (typeof IN_PROGRESS_TRIP_STATUSES)[number]);

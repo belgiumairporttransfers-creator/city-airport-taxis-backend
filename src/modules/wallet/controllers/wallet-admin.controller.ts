@@ -81,6 +81,21 @@ class WalletAdminController {
     });
   });
 
+  getEarningsReport = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.admin) throw new AppError("Unauthorized", 401);
+
+    const driverId =
+      typeof req.params.id === "string" && req.params.id.length === 24
+        ? req.params.id
+        : typeof req.query.driverId === "string"
+          ? req.query.driverId
+          : undefined;
+
+    const report = await walletService.getDriverEarningsReport(driverId);
+
+    return sendSuccess(res, report);
+  });
+
   approvePayout = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 

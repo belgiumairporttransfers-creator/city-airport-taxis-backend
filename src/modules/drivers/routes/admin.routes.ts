@@ -43,6 +43,8 @@ adminDriverRoutes.get(
   walletAdminController.getAllPayouts
 );
 
+adminDriverRoutes.get("/earnings-report", walletAdminController.getEarningsReport);
+
 adminDriverRoutes.get(
   "/:id/wallet",
   validateParams(idParamSchema),
@@ -61,6 +63,12 @@ adminDriverRoutes.get(
   validateParams(idParamSchema),
   validateQuery(getWalletTransactionsQuerySchema),
   walletAdminController.getPayouts
+);
+
+adminDriverRoutes.get(
+  "/:id/wallet/earnings-report",
+  validateParams(idParamSchema),
+  walletAdminController.getEarningsReport
 );
 
 adminDriverRoutes.post(

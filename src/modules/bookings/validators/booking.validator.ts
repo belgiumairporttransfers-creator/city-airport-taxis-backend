@@ -136,6 +136,8 @@ export const getBookingsQuerySchema = Joi.object({
     .optional(),
   bookingDate: dateSchema.optional(),
   pickupDate: dateSchema.optional(),
+  pickupDateFrom: dateSchema.optional(),
+  pickupDateTo: dateSchema.optional(),
   vehicleCategory: Joi.string().hex().length(24).optional(),
   sort: Joi.string().trim().optional(),
 });

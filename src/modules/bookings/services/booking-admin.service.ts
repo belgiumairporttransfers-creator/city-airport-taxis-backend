@@ -14,10 +14,14 @@ import { appendTimelineEntry } from "@/modules/bookings/utils/booking-timeline";
 import {
   assertCanCancel,
   assertCanConfirm,
+  assertCanMarkComplete,
   assertCanMarkNoShow,
   assertValidPatchStatusTransition,
 } from "@/modules/bookings/utils/booking-status.transitions";
 import { toBookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
+import walletService from "@/modules/wallet/services/wallet.service";
+import tripStatusNotificationService from "@/modules/trips/services/trip-status-notification.service";
+import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import type {
   GetBookingsQuery,
   IBooking,
@@ -375,6 +379,102 @@ class BookingAdminService {
 
     const payment = await this.getPaymentForBooking(updated);
     return { booking: updated, payment };
+  }
+
+  async completeBooking(bookingId: string, adminId: string) {
+    const booking = await this.getBookingOrThrow(bookingId);
+    assertCanMarkComplete(booking.status);
+
+    const now = new Date();
+    const plainPayment = this.toPlainSubdocument(booking.payment);
+    const plainTrip = this.toPlainSubdocument(booking.trip ?? {});
+    let nextPaymentStatus = plainPayment.paymentStatus;
+    let markedPayOnboardPaid = false;
+
+    if (
+      plainPayment.paymentMethod === "pay_onboard" &&
+      plainPayment.paymentStatus === "pending"
+    ) {
+      nextPaymentStatus = "paid";
+      markedPayOnboardPaid = true;
+    }
+
+    const timeline = appendTimelineEntry(booking.timeline, "TRIP_COMPLETED", { adminId });
+
+    const updated = await bookingRepository.updateById(bookingId, {
+      status: "complete",
+      assignmentStatus: "completed",
+      trip: {
+        ...plainTrip,
+        completedAt: now,
+        actualDropoffTime: now,
+      },
+      payment: {
+        ...plainPayment,
+        paymentStatus: nextPaymentStatus,
+      },
+      timeline,
+    });
+
+    if (!updated) {
+      throw new AppError("Failed to complete booking", 500);
+    }
+
+    if (booking.currentAssignmentId) {
+      await Assignment.findByIdAndUpdate(booking.currentAssignmentId, {
+        status: "completed",
+        completedAt: now,
+      });
+    }
+
+    if (markedPayOnboardPaid) {
+      const payment = await this.getPaymentForBooking(booking);
+      if (payment && payment.status === "pending") {
+        await paymentRepository.updateById(payment._id.toString(), {
+          status: "paid",
+          paidAt: now,
+        });
+      }
+    }
+
+    this.logBookingAudit(AuditEvents.TRIP_COMPLETED, updated._id.toString(), adminId, {
+      bookingNumber: updated.bookingNumber,
+    });
+
+    if (updated.currentDriverId) {
+      try {
+        const driver = await driverRepository.findById(updated.currentDriverId.toString());
+        if (driver?.userId) {
+          await walletService.creditTripEarning(updated, driver.userId.toString());
+          await bookingDriverNotificationService.notifyDriverOfTripEarning(updated);
+        }
+      } catch (error) {
+        logger.error("Failed to credit driver wallet on admin complete", { error });
+      }
+    }
+
+    try {
+      await tripStatusNotificationService.notifyTripStatus(updated, "completed");
+    } catch (error) {
+      logger.error("Failed to send trip completed notifications", { error });
+    }
+
+    if (updated.payment.paymentStatus === "paid") {
+      try {
+        await emailService.sendPaymentReceiptEmail(
+          {
+            firstName: updated.customer.firstName,
+            email: updated.customer.email,
+          },
+          updated
+        );
+      } catch (error) {
+        logger.error("Failed to send payment receipt email", { error });
+      }
+    }
+
+    const refreshedPayment = await this.getPaymentForBooking(updated);
+    return { booking: updated, payment: refreshedPayment };
   }
 
   async deleteBooking(bookingId: string, adminId: string) {

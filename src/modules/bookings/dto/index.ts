@@ -130,6 +130,9 @@ export interface DriverOpenBookingDetailResponse {
   vehicle: BookingResponse["vehicle"];
   flight: BookingResponse["flight"];
   pricing: {
+    total: number;
+    commissionPercent: number;
+    platformFee: number;
     driverEarning: number;
   };
   notes?: string;
@@ -140,6 +143,9 @@ export interface DriverOpenBookingDetailResponse {
 
 export interface DriverBookingResponse extends Omit<BookingResponse, "pricing" | "payment" | "adminNotes"> {
   pricing: {
+    total: number;
+    commissionPercent: number;
+    platformFee: number;
     driverEarning: number;
   };
 }

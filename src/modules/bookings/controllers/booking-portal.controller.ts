@@ -22,8 +22,7 @@ class BookingPortalController {
   }
 
   private async getCommissionPercent() {
-    const settings = await settingsService.getSettings();
-    return Number(settings.driverCommissionPercent ?? 10);
+    return settingsService.getDriverCommissionPercent();
   }
 
   getAll = asyncHandler(async (req: Request, res: Response) => {

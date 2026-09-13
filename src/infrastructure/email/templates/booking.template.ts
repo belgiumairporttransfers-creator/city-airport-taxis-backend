@@ -84,6 +84,21 @@ const detailRow = (label: string, value: string, options?: { total?: boolean }) 
   </div>
 `;
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  mollie: "Online (Card)",
+  pay_onboard: "Pay onboard",
+  ideal: "iDEAL",
+  creditcard: "Card",
+  paypal: "PayPal",
+  bancontact: "Bancontact",
+};
+
+const formatPaymentMethodLabel = (method: string) =>
+  PAYMENT_METHOD_LABELS[method] ?? method;
+
+export const isUnpaidOrPayOnboard = (booking: BookingEmailDetails) =>
+  booking.payment.paymentMethod === "pay_onboard" || booking.payment.paymentStatus !== "paid";
+
 const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
   const luggageParts = [
   booking.vehicle.luggage > 0 ? `${booking.vehicle.luggage} checked` : null,
@@ -93,6 +108,9 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
   ]
     .filter(Boolean)
     .join(", ");
+
+  const isPaid = booking.payment.paymentStatus === "paid";
+  const totalLabel = isPaid ? "Total paid" : "Total due";
 
   const rows = [
     detailRow("Booking number", `<span class="highlight">${escapeHtml(booking.bookingNumber)}</span>`),
@@ -158,9 +176,10 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
   }
 
   rows.push(
-    detailRow("Total paid", escapeHtml(formatAmount(booking.pricing.total, booking.currency)), {
+    detailRow(totalLabel, escapeHtml(formatAmount(booking.pricing.total, booking.currency)), {
       total: true,
     }),
+    detailRow("Payment method", escapeHtml(formatPaymentMethodLabel(booking.payment.paymentMethod))),
     detailRow("Payment status", escapeHtml(booking.payment.paymentStatus))
   );
 
@@ -179,15 +198,21 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
 export const getBookingConfirmedTemplate = (
   customer: { firstName: string },
   booking: BookingEmailDetails
-) =>
-  layout(
+) => {
+  const unpaidOrPayOnboard = isUnpaidOrPayOnboard(booking);
+
+  return layout(
     "Booking Confirmed",
-    "Your journey is confirmed and paid",
+    unpaidOrPayOnboard ? "Your journey is confirmed" : "Your journey is confirmed and paid",
     `
     <div class="content">
       <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
       <p class="text">
-        Thank you for booking with ${BRAND}. Your payment was received and your booking is confirmed.
+        ${
+          unpaidOrPayOnboard
+            ? `Thank you for booking with ${BRAND}. Your booking is confirmed. Payment is due onboard / pay later.`
+            : `Thank you for booking with ${BRAND}. Your payment was received and your booking is confirmed.`
+        }
       </p>
       ${buildBookingDetailsSection(booking)}
       <p class="text">
@@ -199,21 +224,29 @@ export const getBookingConfirmedTemplate = (
     </div>
     `
   );
+};
 
 export const getAdminBookingConfirmedTemplate = (
   admin: { firstName: string },
   booking: BookingEmailDetails
 ) => {
   const adminBookingUrl = `${ADMIN_URL}/bookings/${booking.id}`;
+  const unpaidOrPayOnboard = isUnpaidOrPayOnboard(booking);
 
   return layout(
-    "New Paid Booking",
-    `Payment received for ${booking.bookingNumber}`,
+    unpaidOrPayOnboard ? "New Booking (Pay onboard)" : "New Paid Booking",
+    unpaidOrPayOnboard
+      ? `Booking confirmed — payment due onboard`
+      : `Payment received for ${booking.bookingNumber}`,
     `
     <div class="content">
       <p class="greeting">Hi ${escapeHtml(admin.firstName)},</p>
       <p class="text">
-        A new booking has been paid and confirmed. Full details are below.
+        ${
+          unpaidOrPayOnboard
+            ? "A new booking has been confirmed with payment due onboard. Full details are below."
+            : "A new booking has been paid and confirmed. Full details are below."
+        }
       </p>
       ${buildBookingDetailsSection(booking)}
       <p class="text">
@@ -226,6 +259,29 @@ export const getAdminBookingConfirmedTemplate = (
     `
   );
 };
+
+export const getPaymentReceiptTemplate = (
+  customer: { firstName: string },
+  booking: BookingEmailDetails
+) =>
+  layout(
+    "Payment Receipt",
+    `Payment received for ${booking.bookingNumber}`,
+    `
+    <div class="content">
+      <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
+      <p class="text">
+        This is your payment receipt for booking
+        <span class="highlight">${escapeHtml(booking.bookingNumber)}</span>.
+        Thank you for travelling with ${BRAND}.
+      </p>
+      ${buildBookingDetailsSection(booking)}
+      <p class="text muted">
+        Book again anytime at <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a>.
+      </p>
+    </div>
+    `
+  );
 
 export const getBookingReceivedTemplate = (
   customer: { firstName: string },

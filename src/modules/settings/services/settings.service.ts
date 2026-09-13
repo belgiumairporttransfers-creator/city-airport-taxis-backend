@@ -57,6 +57,18 @@ class SettingsService {
     return settings;
   }
 
+  /** Commission % from Site Settings (Fees & commission → Rate %). */
+  async getDriverCommissionPercent(): Promise<number> {
+    const settings = await this.getOrCreateSettings();
+    const value = Number(settings.driverCommissionPercent);
+
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+
+    return Math.min(100, Math.max(0, value));
+  }
+
   async getPublicSettings() {
     const cached = await cacheGet<PublicSettingsPayload>(PUBLIC_SETTINGS_CACHE_KEY);
     if (cached) {

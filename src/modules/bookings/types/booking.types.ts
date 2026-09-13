@@ -196,6 +196,8 @@ export interface GetBookingsQuery {
   paymentMethod?: BookingPaymentMethod;
   bookingDate?: string;
   pickupDate?: string;
+  pickupDateFrom?: string;
+  pickupDateTo?: string;
   vehicleCategory?: string;
   sort?: string;
 }

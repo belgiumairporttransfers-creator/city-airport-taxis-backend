@@ -51,6 +51,12 @@ adminBookingRoutes.post(
   bookingController.markNoShow
 );
 
+adminBookingRoutes.post(
+  "/:id/complete",
+  validateParams(idParamSchema),
+  bookingController.complete
+);
+
 adminBookingRoutes.delete("/:id", validateParams(idParamSchema), bookingController.deleteOne);
 
 export default adminBookingRoutes;

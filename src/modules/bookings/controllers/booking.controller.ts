@@ -105,6 +105,21 @@ class BookingController {
     );
   });
 
+  complete = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.admin) throw new AppError("Unauthorized", 401);
+
+    const { booking, payment } = await bookingAdminService.completeBooking(
+      req.params.id,
+      req.admin._id.toString()
+    );
+
+    return sendSuccess(
+      res,
+      toAdminBookingDetailResponse(booking, toPaymentRecord(payment)),
+      { message: "Booking marked as complete" }
+    );
+  });
+
   deleteOne = asyncHandler(async (req: Request, res: Response) => {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 

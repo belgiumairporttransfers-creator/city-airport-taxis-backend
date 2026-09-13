@@ -223,6 +223,22 @@ class WalletRepository {
       .lean();
   }
 
+  findCompletedBookingsForEarningsReport(driverId?: string) {
+    const filter: Record<string, unknown> = {
+      status: "complete",
+      currentDriverId: { $ne: null },
+    };
+
+    if (driverId) {
+      filter.currentDriverId = new Types.ObjectId(driverId);
+    }
+
+    return Booking.find(filter)
+      .select("_id bookingNumber pricing payment status route currentDriverId")
+      .sort({ "route.pickupDate": -1, createdAt: -1 })
+      .lean();
+  }
+
   sumEarningsSince(driverId: string, since: Date) {
     return WalletTransaction.aggregate<{ total: number }>([
       {

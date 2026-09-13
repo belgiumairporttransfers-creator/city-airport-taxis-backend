@@ -1,5 +1,4 @@
 import { Types } from "mongoose";
-import { env } from "@/config/env";
 import { AppError } from "@/shared/errors/AppError";
 import auditService from "@/shared/audit/audit.service";
 import { AuditEvents } from "@/shared/audit/audit.events";
@@ -30,10 +29,6 @@ import type {
 } from "@/modules/assignments/types/assignment.types";
 
 class AssignmentService {
-  private getTimeoutMs() {
-    return env.ASSIGNMENT_TIMEOUT_SECONDS * 1000;
-  }
-
   private logAssignmentAudit(
     event: (typeof AuditEvents)[keyof typeof AuditEvents],
     assignmentId: string,
@@ -103,11 +98,13 @@ class AssignmentService {
     }
   }
 
-  private async notifyDriverNewAssignment(assignment: IAssignment) {
+  private async notifyDriverNewAssignment(assignment: IAssignment, autoAccepted = false) {
     try {
       await notificationService.notifyDriver(assignment.driverUserId.toString(), {
-        title: "New Trip Assigned",
-        message: `You have been assigned booking ${assignment.bookingNumber}. Please accept or reject.`,
+        title: autoAccepted ? "Trip Assigned" : "New Trip Assigned",
+        message: autoAccepted
+          ? `You have been assigned booking ${assignment.bookingNumber}. The trip is ready for execution.`
+          : `You have been assigned booking ${assignment.bookingNumber}. Please accept or reject.`,
         type: "assignment.created",
         severity: "info",
         entityType: "booking",
@@ -119,6 +116,54 @@ class AssignmentService {
     }
   }
 
+  private async finalizeAdminAssignmentAsAccepted(
+    assignment: IAssignment,
+    bookingId: string
+  ) {
+    const acceptedAt = new Date();
+    const updated = await assignmentRepository.updateById(assignment._id.toString(), {
+      status: "accepted",
+      acceptedAt,
+    });
+
+    if (!updated) {
+      throw new AppError("Failed to auto-accept assignment", 500);
+    }
+
+    const booking = await bookingRepository.findById(bookingId);
+
+    if (!booking) {
+      throw new AppError("Linked booking not found", 404);
+    }
+
+    await syncBookingOnAccept(booking, updated);
+
+    try {
+      await notificationService.notifyAdmins({
+        title: "Driver Assignment Accepted",
+        message: `Assignment ${updated.assignmentNumber} for booking ${updated.bookingNumber} was auto-accepted.`,
+        type: "assignment.accepted",
+        severity: "success",
+        entityType: "booking",
+        entityId: updated.bookingId.toString(),
+        actionUrl: `/bookings/${updated.bookingId.toString()}`,
+      });
+    } catch (error) {
+      logger.error("Failed to notify admins about auto-accepted assignment", { error });
+    }
+
+    const acceptedBooking = await bookingRepository.findById(bookingId);
+    if (acceptedBooking) {
+      try {
+        await tripStatusNotificationService.notifyTripStatus(acceptedBooking, "accepted");
+      } catch (error) {
+        logger.error("Failed to send trip accepted notifications", { error });
+      }
+    }
+
+    return updated;
+  }
+
   private async sendDriverAssignedEmail(assignment: IAssignment) {
     try {
       const driver = await driverRepository.findById(assignment.driverId.toString());
@@ -128,8 +173,7 @@ class AssignmentService {
       }
 
       const booking = await bookingRepository.findById(assignment.bookingId.toString());
-      const settings = await settingsService.getSettings();
-      const commissionPercent = Number(settings.driverCommissionPercent ?? 10);
+      const commissionPercent = await settingsService.getDriverCommissionPercent();
       const driverEarning = booking
         ? calculateDriverEarning(
             Number(booking.pricing?.total ?? 0),
@@ -226,7 +270,6 @@ class AssignmentService {
 
     const assignmentNumber = await generateAssignmentNumber();
     const assignedAt = new Date();
-    const expiresAt = new Date(assignedAt.getTime() + this.getTimeoutMs());
 
     const assignment = await assignmentRepository.create({
       assignmentNumber,
@@ -237,7 +280,6 @@ class AssignmentService {
       assignedBy: new Types.ObjectId(adminId),
       status: "pending",
       assignedAt,
-      expiresAt,
       adminNotes: data.adminNotes?.trim() || undefined,
       chatConversationId: null,
       callSessionId: null,
@@ -261,10 +303,26 @@ class AssignmentService {
       }
     );
 
-    await this.notifyDriverNewAssignment(assignment);
-    await this.sendDriverAssignedEmail(assignment);
+    const accepted = await this.finalizeAdminAssignmentAsAccepted(
+      assignment,
+      booking._id.toString()
+    );
 
-    return assignment;
+    this.logAssignmentAudit(
+      AuditEvents.ASSIGNMENT_ACCEPTED,
+      accepted._id.toString(),
+      adminId,
+      "admin",
+      {
+        bookingNumber: booking.bookingNumber,
+        autoAccepted: true,
+      }
+    );
+
+    await this.notifyDriverNewAssignment(accepted, true);
+    await this.sendDriverAssignedEmail(accepted);
+
+    return accepted;
   }
 
   async cancelAssignment(id: string, adminId: string) {
@@ -339,7 +397,6 @@ class AssignmentService {
 
     const assignmentNumber = await generateAssignmentNumber();
     const assignedAt = new Date();
-    const expiresAt = new Date(assignedAt.getTime() + this.getTimeoutMs());
 
     const assignment = await assignmentRepository.create({
       assignmentNumber,
@@ -350,7 +407,6 @@ class AssignmentService {
       assignedBy: new Types.ObjectId(adminId),
       status: "pending",
       assignedAt,
-      expiresAt,
       adminNotes: data.adminNotes?.trim() || undefined,
       chatConversationId: null,
       callSessionId: null,
@@ -364,10 +420,27 @@ class AssignmentService {
       driverId: driver._id.toString(),
     });
 
-    await this.notifyDriverNewAssignment(assignment);
-    await this.sendDriverAssignedEmail(assignment);
+    const accepted = await this.finalizeAdminAssignmentAsAccepted(
+      assignment,
+      booking._id.toString()
+    );
 
-    return assignment;
+    this.logAssignmentAudit(
+      AuditEvents.ASSIGNMENT_ACCEPTED,
+      accepted._id.toString(),
+      adminId,
+      "admin",
+      {
+        bookingNumber: booking.bookingNumber,
+        autoAccepted: true,
+        reassigned: true,
+      }
+    );
+
+    await this.notifyDriverNewAssignment(accepted, true);
+    await this.sendDriverAssignedEmail(accepted);
+
+    return accepted;
   }
 
   async getDriverAssignments(driverUserId: string, query: GetDriverAssignmentsQuery) {

@@ -10,6 +10,8 @@ export const canCancelBooking = (status: BookingStatus): boolean =>
 
 export const canMarkNoShow = (status: BookingStatus): boolean => status === "confirmed";
 
+export const canMarkComplete = (status: BookingStatus): boolean => status === "accepted";
+
 export const assertCanConfirm = (status: BookingStatus) => {
   if (!canConfirmBooking(status)) {
     throw new AppError(`Booking cannot be confirmed from status "${status}"`, 400);
@@ -25,6 +27,12 @@ export const assertCanCancel = (status: BookingStatus) => {
 export const assertCanMarkNoShow = (status: BookingStatus) => {
   if (!canMarkNoShow(status)) {
     throw new AppError(`Booking cannot be marked as no-show from status "${status}"`, 400);
+  }
+};
+
+export const assertCanMarkComplete = (status: BookingStatus) => {
+  if (!canMarkComplete(status)) {
+    throw new AppError(`Booking cannot be marked complete from status "${status}"`, 400);
   }
 };
 

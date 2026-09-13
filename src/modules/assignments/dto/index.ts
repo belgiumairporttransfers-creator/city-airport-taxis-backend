@@ -65,6 +65,9 @@ export interface DriverAssignmentDetailResponse extends AssignmentResponse {
   flight: BookingResponse["flight"];
   notes?: string;
   pricing: {
+    total: number;
+    commissionPercent: number;
+    platformFee: number;
     driverEarning: number;
   };
 }

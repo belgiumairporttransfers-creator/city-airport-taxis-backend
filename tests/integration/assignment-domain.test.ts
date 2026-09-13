@@ -249,11 +249,11 @@ describe("Assignment domain integration", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.assignmentNumber).toMatch(/^ASG-\d{8}-\d{6}$/);
-    expect(response.body.data.status).toBe("pending");
+    expect(response.body.data.status).toBe("accepted");
 
     const booking = await Booking.findById(bookingId);
-    expect(booking?.status).toBe("confirmed");
-    expect(booking?.assignmentStatus).toBe("pending");
+    expect(booking?.status).toBe("accepted");
+    expect(booking?.assignmentStatus).toBe("accepted");
     expect(booking?.currentDriverId?.toString()).toBe(driverId);
 
     const audit = await AuditLog.findOne({ event: "assignment.created" });
@@ -311,7 +311,7 @@ describe("Assignment domain integration", () => {
     expect(response.status).toBe(400);
   });
 
-  it("rejects busy driver on same pickup date", async () => {
+  it("rejects busy driver with overlapping pickup schedule", async () => {
     const bookingA = await createConfirmedBooking(publicAgent, categoryId, "busy.a@example.com");
     const bookingB = await createConfirmedBooking(publicAgent, categoryId, "busy.b@example.com");
     const { driverId } = await createApprovedDriver(
@@ -334,7 +334,7 @@ describe("Assignment domain integration", () => {
     expect(second.status).toBe(409);
   });
 
-  it("allows driver to accept assignment", async () => {
+  it("auto-accepts assignment when admin assigns a driver", async () => {
     const { bookingId } = await createConfirmedBooking(publicAgent, categoryId);
     const { driverId, driverAgent } = await createApprovedDriver(
       "accept.driver@example.com",
@@ -348,50 +348,21 @@ describe("Assignment domain integration", () => {
       driverId,
     });
 
-    const assignmentId = created.body.data.id;
-    const response = await driverAgent.post(`/api/drivers/assignments/${assignmentId}/accept`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.data.status).toBe("accepted");
+    expect(created.status).toBe(201);
+    expect(created.body.data.status).toBe("accepted");
 
     const booking = await Booking.findById(bookingId);
     expect(booking?.status).toBe("accepted");
     expect(booking?.assignmentStatus).toBe("accepted");
 
-    const audit = await AuditLog.findOne({ event: "assignment.accepted" });
-    expect(audit).toBeTruthy();
+    const listResponse = await driverAgent.get("/api/drivers/bookings?scope=accepted");
+    expect(listResponse.status).toBe(200);
+    expect(
+      listResponse.body.data.items.some((item: { id: string }) => item.id === bookingId)
+    ).toBe(true);
 
     const notifications = await Notification.find({ type: "assignment.accepted" });
     expect(notifications.length).toBeGreaterThan(0);
-  });
-
-  it("allows driver to reject assignment", async () => {
-    const { bookingId } = await createConfirmedBooking(publicAgent, categoryId);
-    const { driverId, driverAgent } = await createApprovedDriver(
-      "reject.driver@example.com",
-      "RJ-001-GN",
-      adminAgent,
-      csrf
-    );
-
-    const created = await adminAgent.post("/api/admin/assignments").set(csrf).send({
-      bookingId,
-      driverId,
-    });
-
-    const response = await driverAgent
-      .post(`/api/drivers/assignments/${created.body.data.id}/reject`)
-      .send({ reason: "Not available" });
-
-    expect(response.status).toBe(200);
-    expect(response.body.data.status).toBe("rejected");
-
-    const booking = await Booking.findById(bookingId);
-    expect(booking?.status).toBe("confirmed");
-    expect(booking?.currentAssignmentId).toBeFalsy();
-
-    const audit = await AuditLog.findOne({ event: "assignment.rejected" });
-    expect(audit).toBeTruthy();
   });
 
   it("blocks driver from accessing another drivers assignment", async () => {
