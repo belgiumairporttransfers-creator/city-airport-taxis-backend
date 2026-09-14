@@ -118,15 +118,33 @@ export const getDriverBookingsQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).optional(),
   search: Joi.string().trim().allow("").optional(),
   scope: Joi.string().valid("accepted", "completed", "all").optional(),
+  tripPhase: Joi.string()
+    .valid(
+      "driver_accepted",
+      "driver_arrived",
+      "passenger_onboard",
+      "trip_started",
+      "completed"
+    )
+    .optional(),
   sort: Joi.string().trim().optional(),
 });
 
 export const getBookingsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).optional(),
-  limit: Joi.number().integer().min(1).max(100).optional(),
+  limit: Joi.number().integer().min(1).max(500).optional(),
   search: Joi.string().trim().allow("").optional(),
   status: Joi.string()
     .valid(...BOOKING_STATUSES)
+    .optional(),
+  tripPhase: Joi.string()
+    .valid(
+      "driver_accepted",
+      "driver_arrived",
+      "passenger_onboard",
+      "trip_started",
+      "completed"
+    )
     .optional(),
   paymentStatus: Joi.string()
     .valid(...PAYMENT_STATUSES)

@@ -1,7 +1,6 @@
 import auditService from "@/shared/audit/audit.service";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
-import emailService from "@/infrastructure/email/email.service";
 import notificationService from "@/modules/notifications/services/notification.service";
 import bookingDriverNotificationService from "@/modules/bookings/services/booking-driver-notification.service";
 import paymentRepository from "@/modules/payments/repositories/payment.repository";
@@ -304,20 +303,6 @@ class TripService {
       await tripStatusNotificationService.notifyTripStatus(completedBooking, "completed");
       await walletService.creditTripEarning(completedBooking, driverUserId);
       await bookingDriverNotificationService.notifyDriverOfTripEarning(completedBooking);
-
-      if (completedBooking.payment.paymentStatus === "paid") {
-        try {
-          await emailService.sendPaymentReceiptEmail(
-            {
-              firstName: completedBooking.customer.firstName,
-              email: completedBooking.customer.email,
-            },
-            completedBooking
-          );
-        } catch (error) {
-          logger.error("Failed to send payment receipt email", { error });
-        }
-      }
 
       return completedBooking;
     }

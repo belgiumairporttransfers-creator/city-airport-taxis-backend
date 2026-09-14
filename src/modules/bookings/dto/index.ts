@@ -1,4 +1,5 @@
 import type { IBooking } from "@/modules/bookings/types/booking.types";
+import { getTripPhase, type TripPhase } from "@/modules/trips/utils/trip-phase";
 import { toDriverPricing } from "@/modules/wallet/utils/driver-earnings";
 
 type BookingLike = IBooking | (Record<string, unknown> & { _id: unknown });
@@ -84,6 +85,16 @@ export interface BookingResponse {
     assignedAt?: string;
     acceptedAt?: string;
   };
+  trip?: {
+    startedAt?: string;
+    completedAt?: string;
+    driverArrivedAt?: string;
+    passengerBoardedAt?: string;
+    actualPickupTime?: string;
+    actualDropoffTime?: string;
+  };
+  /** Derived execution phase while booking.status is accepted/complete. */
+  tripPhase?: TripPhase | null;
   timeline: Array<{
     event: string;
     at: string;
@@ -136,6 +147,7 @@ export interface DriverOpenBookingDetailResponse {
     driverEarning: number;
   };
   notes?: string;
+  tripPhase?: TripPhase | null;
   canAccept: boolean;
   assignmentId?: string;
   unavailableMessage?: string;
@@ -167,6 +179,8 @@ export const toDriverBookingResponse = (
     flight: dto.flight,
     pricing: toDriverPricing(dto.pricing.total, commissionPercent, dto.payment.paymentMethod),
     driver: dto.driver,
+    trip: dto.trip,
+    tripPhase: dto.tripPhase,
     timeline: dto.timeline,
     notes: dto.notes,
     createdAt: dto.createdAt,
@@ -194,6 +208,7 @@ export const toDriverOpenBookingDetailResponse = (
     flight: dto.flight,
     pricing: toDriverPricing(dto.pricing.total, commissionPercent, dto.payment.paymentMethod),
     notes: dto.notes,
+    tripPhase: dto.tripPhase,
     canAccept,
     assignmentId,
     unavailableMessage,
@@ -209,13 +224,19 @@ export const toBookingResponse = (booking: BookingLike): BookingResponse => {
   const pricing = record.pricing as Record<string, unknown>;
   const payment = record.payment as Record<string, unknown>;
   const driver = (record.driver as Record<string, unknown>) ?? {};
+  const trip = (record.trip as Record<string, unknown> | undefined) ?? {};
   const timeline = Array.isArray(record.timeline) ? record.timeline : [];
   const adminNotes = Array.isArray(record.adminNotes) ? record.adminNotes : [];
+  const status = record.status as IBooking["status"];
+  const tripPhase = getTripPhase({
+    status,
+    trip: trip as IBooking["trip"],
+  });
 
   return {
     id: toIdString(record._id) ?? "",
     bookingNumber: record.bookingNumber as string,
-    status: record.status as string,
+    status: status as string,
     category: record.category as string,
     customer: {
       firstName: customer.firstName as string,
@@ -265,6 +286,15 @@ export const toBookingResponse = (booking: BookingLike): BookingResponse => {
       assignedAt: toIsoString(driver.assignedAt),
       acceptedAt: toIsoString(driver.acceptedAt),
     },
+    trip: {
+      startedAt: toIsoString(trip.startedAt),
+      completedAt: toIsoString(trip.completedAt),
+      driverArrivedAt: toIsoString(trip.driverArrivedAt),
+      passengerBoardedAt: toIsoString(trip.passengerBoardedAt),
+      actualPickupTime: toIsoString(trip.actualPickupTime),
+      actualDropoffTime: toIsoString(trip.actualDropoffTime),
+    },
+    tripPhase,
     timeline: timeline.map((entry) => {
       const item = entry as Record<string, unknown>;
       return {

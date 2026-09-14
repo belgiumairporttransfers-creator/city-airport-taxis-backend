@@ -459,20 +459,6 @@ class BookingAdminService {
       logger.error("Failed to send trip completed notifications", { error });
     }
 
-    if (updated.payment.paymentStatus === "paid") {
-      try {
-        await emailService.sendPaymentReceiptEmail(
-          {
-            firstName: updated.customer.firstName,
-            email: updated.customer.email,
-          },
-          updated
-        );
-      } catch (error) {
-        logger.error("Failed to send payment receipt email", { error });
-      }
-    }
-
     const refreshedPayment = await this.getPaymentForBooking(updated);
     return { booking: updated, payment: refreshedPayment };
   }

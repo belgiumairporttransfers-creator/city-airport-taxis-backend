@@ -361,15 +361,26 @@ export const getBookingUpdatedTemplate = (
 export const getTripCompletedTemplate = (
   customer: { firstName: string },
   booking: BookingEmailDetails
-) =>
-  layout(
-    "Trip Completed",
-    "Thank you for travelling with us",
+) => {
+  const isPaid = booking.payment.paymentStatus === "paid";
+  const amountLine = isPaid
+    ? `Amount paid: <strong>${escapeHtml(formatAmount(booking.pricing.total, booking.currency))}</strong>`
+    : `Amount: <strong>${escapeHtml(formatAmount(booking.pricing.total, booking.currency))}</strong>`;
+
+  return layout(
+    "Booking Complete",
+    "Your receipt",
     `
     <div class="content">
       <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
       <p class="text">
-        Your trip for booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span> has been completed.
+        Your booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span> is complete.
+        This email is your receipt — please keep it for your records.
+      </p>
+      <p class="text">
+        ${amountLine}<br />
+        Payment method: <strong>${escapeHtml(formatPaymentMethodLabel(booking.payment.paymentMethod))}</strong><br />
+        Payment status: <strong>${escapeHtml(booking.payment.paymentStatus)}</strong>
       </p>
       <p class="text">
         Thank you for choosing ${BRAND}. We hope you had a pleasant journey.
@@ -388,6 +399,7 @@ export const getTripCompletedTemplate = (
     </div>
     `
   );
+};
 
 export type TripStatusEmailStep =
   | "accepted"

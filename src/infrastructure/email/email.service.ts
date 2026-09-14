@@ -427,7 +427,7 @@ class EmailService {
 
     await this.sendEmail({
       to: customer.email,
-      subject: `Trip Completed - ${details.bookingNumber}`,
+      subject: `Booking Complete - Receipt - ${details.bookingNumber}`,
       html: getTripCompletedTemplate(customer, details),
     });
   }

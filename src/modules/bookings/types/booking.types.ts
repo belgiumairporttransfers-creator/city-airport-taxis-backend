@@ -192,6 +192,7 @@ export interface GetBookingsQuery {
   limit?: number;
   search?: string;
   status?: BookingStatus;
+  tripPhase?: string;
   paymentStatus?: string;
   paymentMethod?: BookingPaymentMethod;
   bookingDate?: string;
@@ -210,6 +211,7 @@ export interface GetDriverBookingsQuery {
   limit?: number;
   search?: string;
   scope?: DriverBookingScope;
+  tripPhase?: string;
   sort?: string;
 }
 

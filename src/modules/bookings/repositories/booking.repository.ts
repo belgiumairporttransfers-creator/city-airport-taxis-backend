@@ -8,16 +8,27 @@ import type {
   GetDriverBookingsQuery,
   IBooking,
 } from "@/modules/bookings/types/booking.types";
+import { buildTripPhaseFilter, TRIP_PHASES } from "@/modules/trips/utils/trip-phase";
+import type { TripPhase } from "@/modules/trips/utils/trip-phase";
+
+const isTripPhase = (value: string): value is TripPhase =>
+  (TRIP_PHASES as readonly string[]).includes(value);
 
 const buildDriverBookingsFilter = (
   driverId: string,
   query: GetDriverBookingsQuery
 ): Record<string, unknown> => {
-  const scope = query.scope ?? "accepted";
   const filter: Record<string, unknown> = {
     currentDriverId: new Types.ObjectId(driverId),
     assignmentStatus: { $in: ["accepted", "completed"] },
   };
+
+  if (query.tripPhase && isTripPhase(query.tripPhase)) {
+    Object.assign(filter, buildTripPhaseFilter(query.tripPhase));
+    return filter;
+  }
+
+  const scope = query.scope ?? "accepted";
 
   if (scope === "accepted") {
     filter.status = "accepted";
@@ -32,6 +43,10 @@ const buildDriverBookingsFilter = (
 
 const buildAdminBookingsFilter = (query: GetBookingsQuery): Record<string, unknown> => {
   const filter: Record<string, unknown> = {};
+
+  if (query.tripPhase && isTripPhase(query.tripPhase)) {
+    Object.assign(filter, buildTripPhaseFilter(query.tripPhase));
+  }
 
   if (query.pickupDate) {
     filter["route.pickupDate"] = query.pickupDate;
@@ -154,6 +169,7 @@ class BookingRepository {
 
   findWithPagination(query: GetBookingsQuery) {
     const initialFilter = buildAdminBookingsFilter(query);
+    const hasTripPhase = Boolean(query.tripPhase && isTripPhase(query.tripPhase));
 
     return new APIFeature(Booking, query, {
       initialFilter: Object.keys(initialFilter).length > 0 ? initialFilter : undefined,
@@ -181,7 +197,8 @@ class BookingRepository {
           "flight.flightNumber",
         ],
       },
-      filterFields: ["status"],
+      // tripPhase already encodes status in initialFilter — avoid overriding it
+      filterFields: hasTripPhase ? [] : ["status"],
       excludeFields: ["__v"],
       lean: true,
     }).execute();

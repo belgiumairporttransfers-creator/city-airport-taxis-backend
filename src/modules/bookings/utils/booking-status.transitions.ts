@@ -10,7 +10,8 @@ export const canCancelBooking = (status: BookingStatus): boolean =>
 
 export const canMarkNoShow = (status: BookingStatus): boolean => status === "confirmed";
 
-export const canMarkComplete = (status: BookingStatus): boolean => status === "accepted";
+export const canMarkComplete = (status: BookingStatus): boolean =>
+  !TERMINAL_STATUSES.includes(status);
 
 export const assertCanConfirm = (status: BookingStatus) => {
   if (!canConfirmBooking(status)) {
