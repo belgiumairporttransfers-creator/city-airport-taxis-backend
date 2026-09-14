@@ -80,12 +80,13 @@ class DashboardRepository {
   findRecentDriverBookings(driverId: string, limit = 8) {
     return Booking.find({
       currentDriverId: new Types.ObjectId(driverId),
-      assignmentStatus: { $in: ["accepted", "completed"] },
-      status: { $in: ["accepted", "complete"] },
+      status: "complete",
     })
-      .sort({ createdAt: -1 })
+      .sort({ "trip.completedAt": -1, updatedAt: -1, createdAt: -1 })
       .limit(limit)
-      .select("bookingNumber customer pricing status createdAt route")
+      .select(
+        "bookingNumber customer pricing payment status createdAt updatedAt trip.completedAt route"
+      )
       .lean();
   }
 

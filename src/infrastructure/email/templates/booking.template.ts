@@ -1,11 +1,18 @@
 import { env } from "@/config/env";
 import { escapeHtml } from "@/shared/utils/escape-html";
 import type { BookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
+import { amountInWordsEur } from "@/infrastructure/email/utils/amount-in-words";
 
 const BRAND = "City Airport Taxis";
+const COMPANY_ADDRESS = "Brussels Airport, 1930 Zaventem, Belgium";
+const COMPANY_VAT = "TVA BE 0791.634.024";
+const COMPANY_EMAIL = "info@cityairporttaxis.be";
+const COMPANY_PHONE = "+32 2 520 75 26";
 const YEAR = new Date().getFullYear();
 const SITE_URL = env.FRONTEND_URL;
 const ADMIN_URL = env.ADMIN_FRONTEND_URL;
+const LOGO_URL =
+  "https://www.city-airport-taxis.be/_next/image?url=%2Fassets%2Flogo%2Flogo-white-1.png&w=256&q=75";
 const REVIEW_URL =
   process.env.TRUSTPILOT_REVIEW_URL ||
   "https://www.trustpilot.com/review/cityairporttaxis.be";
@@ -141,8 +148,16 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
     rows.push(detailRow("Estimated arrival", escapeHtml(booking.route.estimatedArrival)));
   }
 
-  if (booking.route.airportPickup) {
+  if (booking.route.airportPickup || booking.flight?.flightNumber) {
     rows.push(detailRow("Airport pickup", "Yes"));
+  }
+
+  if (booking.flight?.flightNumber) {
+    rows.push(detailRow("Flight number", escapeHtml(booking.flight.flightNumber)));
+  }
+
+  if (booking.flight?.terminal) {
+    rows.push(detailRow("Terminal", escapeHtml(booking.flight.terminal)));
   }
 
   rows.push(
@@ -152,14 +167,6 @@ const buildBookingDetailsSection = (booking: BookingEmailDetails) => {
 
   if (luggageParts) {
     rows.push(detailRow("Luggage", escapeHtml(luggageParts)));
-  }
-
-  if (booking.flight?.flightNumber) {
-    rows.push(detailRow("Flight number", escapeHtml(booking.flight.flightNumber)));
-  }
-
-  if (booking.flight?.terminal) {
-    rows.push(detailRow("Terminal", escapeHtml(booking.flight.terminal)));
   }
 
   rows.push(
@@ -260,28 +267,249 @@ export const getAdminBookingConfirmedTemplate = (
   );
 };
 
+const formatReceiptDate = (value?: string) => {
+  if (!value) {
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date());
+  }
+
+  const parsed = new Date(value.includes("T") ? value : `${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+};
+
+const formatTripDateLong = (dateValue: string, timeValue: string) => {
+  const timePart = (timeValue || "").slice(0, 5);
+  const isoCandidate = /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+    ? new Date(`${dateValue}T${timePart || "12:00"}:00`)
+    : new Date(dateValue);
+
+  if (Number.isNaN(isoCandidate.getTime())) {
+    return `${dateValue}${timePart ? ` at ${timePart}` : ""}`;
+  }
+
+  const datePart = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(isoCandidate);
+
+  return timePart ? `${datePart} at ${timePart}` : datePart;
+};
+
+const buildFormalPaymentReceiptHtml = (
+  recipient: { firstName: string },
+  booking: BookingEmailDetails,
+  options?: { includeReviewCta?: boolean }
+) => {
+  const total = Number(booking.pricing.total ?? 0);
+  const isPaid = booking.payment.paymentStatus === "paid";
+  const amountReceived = isPaid ? total : 0;
+  const balanceDue = isPaid ? 0 : total;
+  const amountFormatted = formatAmount(total, booking.currency);
+  const receivedFormatted = formatAmount(amountReceived, booking.currency);
+  const balanceFormatted = formatAmount(balanceDue, booking.currency);
+  const paymentMethod = formatPaymentMethodLabel(booking.payment.paymentMethod);
+  const issuedTo = `${booking.customer.firstName} ${booking.customer.lastName}`.trim();
+  const receiptDate = formatReceiptDate(booking.route.pickupDate);
+  const tripWhen = formatTripDateLong(booking.route.pickupDate, booking.route.pickupTime);
+  const flightBits = [
+    booking.flight?.flightNumber ? `with ${booking.flight.flightNumber}` : null,
+    booking.flight?.terminal ? `(terminal ${booking.flight.terminal})` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hasFlightDetails =
+    booking.route.airportPickup ||
+    Boolean(booking.flight?.flightNumber) ||
+    Boolean(booking.flight?.terminal);
+  const routeLine = booking.route.dropoffAddress
+    ? `${booking.route.pickupAddress} to ${booking.route.dropoffAddress}`
+    : booking.route.pickupAddress;
+  const words = amountInWordsEur(total);
+  const includeReviewCta = options?.includeReviewCta !== false;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Receipt - ${escapeHtml(booking.bookingNumber)}</title>
+</head>
+<body style="margin:0;padding:24px 12px;background:#eef0f3;font-family:Helvetica,Arial,sans-serif;color:#222;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #d9dce1;">
+    <tr>
+      <td style="padding:28px 28px 8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="top" style="padding-right:16px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:28px;font-weight:700;color:#111;line-height:1.2;padding-right:10px;">Payment Receipt</td>
+                  <td style="width:28px;height:10px;background:#e67e22;border-radius:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+              <p style="margin:14px 0 0;font-size:14px;color:#333;line-height:1.6;">
+                <strong>Payment Receipt No:</strong> ${escapeHtml(booking.bookingNumber)}<br />
+                <strong>Receipt Date:</strong> ${escapeHtml(receiptDate)}
+              </p>
+            </td>
+            <td valign="top" align="right" width="220">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border-radius:4px;">
+                <tr>
+                  <td style="padding:14px 16px;text-align:center;">
+                    <img src="${escapeHtml(LOGO_URL)}" alt="${escapeHtml(BRAND)}" width="180" style="display:block;max-width:180px;height:auto;border:0;" />
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px 28px 0;font-size:14px;color:#555;">
+        Hi ${escapeHtml(recipient.firstName)}, this is your payment receipt for booking
+        <strong>${escapeHtml(booking.bookingNumber)}</strong>.
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:20px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="48%" valign="top" style="border:1px solid #d9dce1;padding:14px 16px;background:#fafafa;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#6b3fa0;text-transform:uppercase;letter-spacing:0.03em;">Issued by</p>
+              <p style="margin:0;font-size:14px;line-height:1.55;color:#222;">
+                <strong>${escapeHtml(BRAND.toUpperCase())}</strong><br />
+                ${escapeHtml(COMPANY_ADDRESS)}<br />
+                VAT Number: ${escapeHtml(COMPANY_VAT)}<br />
+                ${escapeHtml(COMPANY_EMAIL)} · ${escapeHtml(COMPANY_PHONE)}
+              </p>
+            </td>
+            <td width="4%" style="font-size:0;line-height:0;">&nbsp;</td>
+            <td width="48%" valign="top" style="border:1px solid #d9dce1;padding:14px 16px;background:#fafafa;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#6b3fa0;text-transform:uppercase;letter-spacing:0.03em;">Issued to</p>
+              <p style="margin:0;font-size:14px;line-height:1.55;color:#222;">
+                <strong>${escapeHtml(issuedTo.toUpperCase())}</strong><br />
+                ${escapeHtml(booking.customer.email)}<br />
+                ${escapeHtml(booking.customer.phone)}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px 28px 20px;">
+        <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;">Payment Summary</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d9dce1;border-collapse:collapse;">
+          <tr>
+            <td style="padding:12px 14px;border-bottom:1px solid #d9dce1;font-size:13px;font-weight:700;color:#444;background:#f7f7f8;">Payment Method</td>
+            <td style="padding:12px 14px;border-bottom:1px solid #d9dce1;font-size:13px;font-weight:700;color:#444;background:#f7f7f8;text-align:right;">Amount Received</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 14px;border-bottom:1px solid #eceef1;font-size:14px;color:#222;">${escapeHtml(paymentMethod)}</td>
+            <td style="padding:12px 14px;border-bottom:1px solid #eceef1;font-size:14px;color:#222;text-align:right;">${escapeHtml(receivedFormatted)}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#111;">Total</td>
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#111;text-align:right;">${escapeHtml(amountFormatted)}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 28px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="top" style="padding-right:16px;">
+              <p style="margin:0 0 4px;font-size:12px;color:#888;">Total amount (in words)</p>
+              <p style="margin:0;font-size:14px;font-weight:700;color:#111;">${escapeHtml(words)}</p>
+            </td>
+            <td valign="top" align="right" style="white-space:nowrap;">
+              <p style="margin:0 0 6px;font-size:13px;color:#444;">Total Amount Received: <strong>${escapeHtml(receivedFormatted)}</strong></p>
+              <p style="margin:0 0 10px;font-size:13px;color:#444;">Balance Due: <strong>${escapeHtml(balanceFormatted)}</strong></p>
+              <p style="margin:0;font-size:18px;font-weight:700;color:#111;border-bottom:3px double #111;display:inline-block;padding-bottom:4px;">
+                Total Amount: ${escapeHtml(amountFormatted)}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 28px 12px;font-size:14px;line-height:1.7;color:#222;">
+        ${escapeHtml(tripWhen)}${flightBits ? ` ${escapeHtml(flightBits)}` : ""}.<br />
+        Route: ${escapeHtml(routeLine)}
+      </td>
+    </tr>
+    ${
+      hasFlightDetails
+        ? `<tr>
+      <td style="padding:0 28px 28px;">
+        <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#111;">Flight details</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d9dce1;border-collapse:collapse;">
+          <tr>
+            <td style="padding:10px 14px;border-bottom:1px solid #eceef1;font-size:13px;color:#666;width:40%;">Airport pickup</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #eceef1;font-size:14px;color:#222;">Yes</td>
+          </tr>
+          ${
+            booking.flight?.flightNumber
+              ? `<tr>
+            <td style="padding:10px 14px;border-bottom:1px solid #eceef1;font-size:13px;color:#666;">Flight number</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #eceef1;font-size:14px;color:#222;font-weight:700;">${escapeHtml(booking.flight.flightNumber)}</td>
+          </tr>`
+              : ""
+          }
+          ${
+            booking.flight?.terminal
+              ? `<tr>
+            <td style="padding:10px 14px;font-size:13px;color:#666;">Terminal</td>
+            <td style="padding:10px 14px;font-size:14px;color:#222;">${escapeHtml(booking.flight.terminal)}</td>
+          </tr>`
+              : ""
+          }
+        </table>
+      </td>
+    </tr>`
+        : ""
+    }
+    ${
+      includeReviewCta
+        ? `<tr>
+      <td style="padding:0 28px 28px;text-align:center;">
+        <p style="margin:0 0 14px;font-size:14px;color:#555;">Thank you for choosing ${escapeHtml(BRAND)}. We would love your feedback.</p>
+        <a href="${escapeHtml(REVIEW_URL)}" style="display:inline-block;background:#7D3C1F;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Leave a review</a>
+      </td>
+    </tr>`
+        : ""
+    }
+    <tr>
+      <td style="padding:18px 28px;background:#fafafa;border-top:1px solid #eceef1;text-align:center;font-size:12px;color:#888;">
+        ${escapeHtml(BRAND)} · <a href="${SITE_URL}" style="color:#7D3C1F;text-decoration:none;">${escapeHtml(SITE_URL)}</a><br />
+        &copy; ${YEAR} ${escapeHtml(BRAND)}
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
 export const getPaymentReceiptTemplate = (
   customer: { firstName: string },
   booking: BookingEmailDetails
-) =>
-  layout(
-    "Payment Receipt",
-    `Payment received for ${booking.bookingNumber}`,
-    `
-    <div class="content">
-      <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
-      <p class="text">
-        This is your payment receipt for booking
-        <span class="highlight">${escapeHtml(booking.bookingNumber)}</span>.
-        Thank you for travelling with ${BRAND}.
-      </p>
-      ${buildBookingDetailsSection(booking)}
-      <p class="text muted">
-        Book again anytime at <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a>.
-      </p>
-    </div>
-    `
-  );
+) => buildFormalPaymentReceiptHtml(customer, booking, { includeReviewCta: false });
 
 export const getBookingReceivedTemplate = (
   customer: { firstName: string },
@@ -359,47 +587,10 @@ export const getBookingUpdatedTemplate = (
   );
 
 export const getTripCompletedTemplate = (
-  customer: { firstName: string },
-  booking: BookingEmailDetails
-) => {
-  const isPaid = booking.payment.paymentStatus === "paid";
-  const amountLine = isPaid
-    ? `Amount paid: <strong>${escapeHtml(formatAmount(booking.pricing.total, booking.currency))}</strong>`
-    : `Amount: <strong>${escapeHtml(formatAmount(booking.pricing.total, booking.currency))}</strong>`;
-
-  return layout(
-    "Booking Complete",
-    "Your receipt",
-    `
-    <div class="content">
-      <p class="greeting">Hi ${escapeHtml(customer.firstName)},</p>
-      <p class="text">
-        Your booking <span class="highlight">${escapeHtml(booking.bookingNumber)}</span> is complete.
-        This email is your receipt — please keep it for your records.
-      </p>
-      <p class="text">
-        ${amountLine}<br />
-        Payment method: <strong>${escapeHtml(formatPaymentMethodLabel(booking.payment.paymentMethod))}</strong><br />
-        Payment status: <strong>${escapeHtml(booking.payment.paymentStatus)}</strong>
-      </p>
-      <p class="text">
-        Thank you for choosing ${BRAND}. We hope you had a pleasant journey.
-        We would love to hear about your experience — your review helps other travellers and our drivers.
-      </p>
-      <p class="text" style="text-align:center;margin:28px 0;">
-        <a href="${escapeHtml(REVIEW_URL)}" class="cta">Leave a review</a>
-      </p>
-      <p class="text muted" style="text-align:center;">
-        Or open: <a href="${escapeHtml(REVIEW_URL)}">${escapeHtml(REVIEW_URL)}</a>
-      </p>
-      ${buildBookingDetailsSection(booking)}
-      <p class="text muted">
-        Book again anytime at <a href="${SITE_URL}">${escapeHtml(SITE_URL)}</a>.
-      </p>
-    </div>
-    `
-  );
-};
+  recipient: { firstName: string },
+  booking: BookingEmailDetails,
+  options?: { includeReviewCta?: boolean }
+) => buildFormalPaymentReceiptHtml(recipient, booking, options);
 
 export type TripStatusEmailStep =
   | "accepted"

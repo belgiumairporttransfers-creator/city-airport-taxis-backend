@@ -88,7 +88,8 @@ export const toBookingEmailDetails = (
     largeCheckedCase: booking.vehicle.largeCheckedCase,
   },
   flight:
-    booking.flight.required || booking.flight.flightNumber
+    booking.flight &&
+    (booking.flight.required || booking.flight.flightNumber || booking.flight.terminal)
       ? {
           flightNumber: booking.flight.flightNumber,
           terminal: booking.flight.terminal,

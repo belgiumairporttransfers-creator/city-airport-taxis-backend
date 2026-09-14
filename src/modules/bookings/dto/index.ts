@@ -82,6 +82,9 @@ export interface BookingResponse {
   };
   driver: {
     driverId?: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
     assignedAt?: string;
     acceptedAt?: string;
   };
@@ -283,6 +286,14 @@ export const toBookingResponse = (booking: BookingLike): BookingResponse => {
     },
     driver: {
       driverId: toIdString(driver.driverId),
+      firstName: (driver.firstName as string | undefined)?.trim() || undefined,
+      lastName: (driver.lastName as string | undefined)?.trim() || undefined,
+      name: (() => {
+        const firstName = (driver.firstName as string | undefined)?.trim() || "";
+        const lastName = (driver.lastName as string | undefined)?.trim() || "";
+        const full = `${firstName} ${lastName}`.trim();
+        return full || undefined;
+      })(),
       assignedAt: toIsoString(driver.assignedAt),
       acceptedAt: toIsoString(driver.acceptedAt),
     },

@@ -238,7 +238,7 @@ class BookingPortalService {
       throw new AppError(BOOKING_ALREADY_ACCEPTED_MESSAGE, 409);
     }
 
-    await syncBookingOnAssign(freshBooking, assignment, driver._id);
+    await syncBookingOnAssign(freshBooking, assignment, driver);
     const afterAssign = await bookingRepository.findById(bookingId);
 
     if (!afterAssign) {

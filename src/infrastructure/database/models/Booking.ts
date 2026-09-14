@@ -77,6 +77,8 @@ const paymentInfoSchema = new Schema(
 const driverSchema = new Schema(
   {
     driverId: { type: Schema.Types.ObjectId, ref: "Driver" },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     assignedAt: { type: Date },
     acceptedAt: { type: Date },
   },

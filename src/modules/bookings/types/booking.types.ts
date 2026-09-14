@@ -85,6 +85,8 @@ export interface BookingPaymentInfo {
 
 export interface BookingDriver {
   driverId?: Types.ObjectId;
+  firstName?: string;
+  lastName?: string;
   assignedAt?: Date;
   acceptedAt?: Date;
 }

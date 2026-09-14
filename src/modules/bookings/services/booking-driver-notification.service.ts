@@ -131,7 +131,17 @@ class BookingDriverNotificationService {
           dropoffAddress: booking.route.dropoffAddress?.trim() || undefined,
           pickupDate: booking.route.pickupDate,
           pickupTime: booking.route.pickupTime,
+          airportPickup: booking.route.airportPickup,
         },
+        flight:
+          booking.route.airportPickup ||
+          booking.flight?.flightNumber ||
+          booking.flight?.terminal
+            ? {
+                flightNumber: booking.flight?.flightNumber?.trim() || undefined,
+                terminal: booking.flight?.terminal?.trim() || undefined,
+              }
+            : undefined,
         vehicle: {
           categoryName: booking.vehicle.categoryName,
           passengers: booking.vehicle.passengers,

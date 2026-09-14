@@ -4,6 +4,12 @@ import { appendTimelineEntry } from "@/modules/bookings/utils/booking-timeline";
 import type { IAssignment } from "@/modules/assignments/types/assignment.types";
 import type { IBooking } from "@/modules/bookings/types/booking.types";
 
+type AssignableDriver = {
+  _id: Types.ObjectId;
+  firstName: string;
+  lastName: string;
+};
+
 const toPlainBooking = (booking: IBooking) => {
   if (typeof booking.toObject === "function") {
     return booking.toObject() as IBooking;
@@ -12,25 +18,31 @@ const toPlainBooking = (booking: IBooking) => {
   return booking;
 };
 
+const driverSnapshot = (driver: AssignableDriver) => ({
+  driverId: driver._id,
+  firstName: driver.firstName,
+  lastName: driver.lastName,
+});
+
 export const syncBookingOnAssign = async (
   booking: IBooking,
   assignment: IAssignment,
-  driverId: Types.ObjectId
+  driver: AssignableDriver
 ) => {
   const plain = toPlainBooking(booking);
 
   return bookingRepository.updateById(booking._id.toString(), {
     currentAssignmentId: assignment._id,
-    currentDriverId: driverId,
+    currentDriverId: driver._id,
     assignmentStatus: "pending",
     driver: {
-      driverId,
+      ...driverSnapshot(driver),
       assignedAt: assignment.assignedAt,
     },
     timeline: appendTimelineEntry(plain.timeline ?? [], "DRIVER_ASSIGNED", {
       assignmentId: assignment._id.toString(),
       assignmentNumber: assignment.assignmentNumber,
-      driverId: driverId.toString(),
+      driverId: driver._id.toString(),
     }),
   });
 };
@@ -74,22 +86,22 @@ export const syncBookingOnRelease = async (
 export const syncBookingOnReassign = async (
   booking: IBooking,
   assignment: IAssignment,
-  driverId: Types.ObjectId
+  driver: AssignableDriver
 ) => {
   const plain = toPlainBooking(booking);
 
   return bookingRepository.updateById(booking._id.toString(), {
     currentAssignmentId: assignment._id,
-    currentDriverId: driverId,
+    currentDriverId: driver._id,
     assignmentStatus: "pending",
     driver: {
-      driverId,
+      ...driverSnapshot(driver),
       assignedAt: assignment.assignedAt,
     },
     timeline: appendTimelineEntry(plain.timeline ?? [], "DRIVER_REASSIGNED", {
       assignmentId: assignment._id.toString(),
       assignmentNumber: assignment.assignmentNumber,
-      driverId: driverId.toString(),
+      driverId: driver._id.toString(),
     }),
   });
 };

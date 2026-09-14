@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import bookingAdminService from "../services/booking-admin.service";
 import { toAdminBookingDetailResponse, toBookingResponse } from "../dto";
+import { withDriverName, withDriverNames } from "../utils/enrich-driver-names";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { sendSuccess } from "@/shared/utils/response";
 import { AppError } from "@/shared/errors/AppError";
@@ -20,9 +21,10 @@ class BookingController {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
     const result = await bookingAdminService.getBookings(req.query as GetBookingsQuery);
+    const items = await withDriverNames(result.items.map((item) => toBookingResponse(item)));
 
     return sendSuccess(res, {
-      items: result.items.map((item) => toBookingResponse(item)),
+      items,
       meta: {
         page: result.page,
         limit: result.limit,
@@ -36,11 +38,11 @@ class BookingController {
     if (!req.admin) throw new AppError("Unauthorized", 401);
 
     const { booking, payment } = await bookingAdminService.getBookingDetail(req.params.id);
-
-    return sendSuccess(
-      res,
+    const detail = await withDriverName(
       toAdminBookingDetailResponse(booking, toPaymentRecord(payment))
     );
+
+    return sendSuccess(res, detail);
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {

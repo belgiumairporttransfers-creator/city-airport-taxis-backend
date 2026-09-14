@@ -281,6 +281,9 @@ class EmailService {
       driverEarning: number;
     }
   ) {
+    const flightNumber = booking.flight?.flightNumber?.trim();
+    const terminal = booking.flight?.terminal?.trim();
+
     return this.sendEmail({
       to: driver.email,
       subject: `New Booking Available - ${booking.bookingNumber}`,
@@ -294,7 +297,15 @@ class EmailService {
           pickupDate: booking.route.pickupDate,
           pickupTime: booking.route.pickupTime,
           durationMinutes: booking.route.durationMinutes,
+          airportPickup: booking.route.airportPickup,
         },
+        flight:
+          booking.route.airportPickup || flightNumber || terminal
+            ? {
+                flightNumber: flightNumber || undefined,
+                terminal: terminal || undefined,
+              }
+            : undefined,
         vehicle: {
           categoryName: booking.vehicle.categoryName,
         },
@@ -333,6 +344,11 @@ class EmailService {
         pickupDate: string;
         pickupTime: string;
         durationMinutes?: number;
+        airportPickup?: boolean;
+      };
+      flight?: {
+        flightNumber?: string;
+        terminal?: string;
       };
       vehicle?: {
         categoryName: string;
@@ -358,6 +374,11 @@ class EmailService {
         dropoffAddress?: string;
         pickupDate: string;
         pickupTime: string;
+        airportPickup?: boolean;
+      };
+      flight?: {
+        flightNumber?: string;
+        terminal?: string;
       };
       vehicle: {
         categoryName: string;
@@ -419,16 +440,17 @@ class EmailService {
   }
 
   async sendTripCompletedEmail(
-    customer: { firstName: string; email: string },
-    booking: IBooking | BookingEmailDetails
+    recipient: { firstName: string; email: string },
+    booking: IBooking | BookingEmailDetails,
+    options?: { includeReviewCta?: boolean }
   ) {
     const details =
       "_id" in booking ? toBookingEmailDetails(booking) : (booking as BookingEmailDetails);
 
     await this.sendEmail({
-      to: customer.email,
-      subject: `Booking Complete - Receipt - ${details.bookingNumber}`,
-      html: getTripCompletedTemplate(customer, details),
+      to: recipient.email,
+      subject: `Payment Receipt - ${details.bookingNumber}`,
+      html: getTripCompletedTemplate(recipient, details, options),
     });
   }
 

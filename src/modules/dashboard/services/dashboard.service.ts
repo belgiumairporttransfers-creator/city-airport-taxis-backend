@@ -137,15 +137,16 @@ class DashboardService {
           walletSummary.wallet.commissionPercent,
           booking.payment?.paymentMethod
         );
+        const completedAt = booking.trip?.completedAt;
 
         return {
           id: toId(booking._id),
           bookingNumber: booking.bookingNumber,
           customerName: `${firstName} ${lastName}`.trim() || "Customer",
-          date: toIso(booking.createdAt),
+          date: toIso(completedAt ?? booking.updatedAt ?? booking.createdAt),
           amount: driverEarning,
           status: booking.status,
-          isComplete: booking.status === "complete",
+          isComplete: true,
         };
       }),
     };

@@ -67,6 +67,11 @@ export const getDriverAssignedTemplate = (
       pickupDate: string;
       pickupTime: string;
       durationMinutes?: number;
+      airportPickup?: boolean;
+    };
+    flight?: {
+      flightNumber?: string;
+      terminal?: string;
     };
     vehicle?: {
       categoryName: string;
@@ -79,6 +84,8 @@ export const getDriverAssignedTemplate = (
   const assignmentUrl = `${DRIVER_PORTAL_URL}/assignments/${details.assignmentId}`;
   const dropoffAddress = details.route?.dropoffAddress?.trim();
   const durationMinutes = details.route?.durationMinutes;
+  const showAirportPickup =
+    details.route?.airportPickup || Boolean(details.flight?.flightNumber);
 
   const detailLines = [
     `Booking: <span class="highlight">${escapeHtml(details.bookingNumber)}</span>`,
@@ -91,6 +98,13 @@ export const getDriverAssignedTemplate = (
     dropoffAddress ? `To: ${escapeHtml(dropoffAddress)}` : null,
     durationMinutes
       ? `Duration: ${escapeHtml(formatDurationLabel(durationMinutes))}`
+      : null,
+    showAirportPickup ? "Airport pickup: Yes" : null,
+    details.flight?.flightNumber
+      ? `Flight number: <strong>${escapeHtml(details.flight.flightNumber)}</strong>`
+      : null,
+    details.flight?.terminal
+      ? `Terminal: ${escapeHtml(details.flight.terminal)}`
       : null,
     details.vehicle ? `Vehicle: ${escapeHtml(details.vehicle.categoryName)}` : null,
     details.pricing
@@ -130,6 +144,11 @@ type DriverNewBookingDetails = {
     pickupDate: string;
     pickupTime: string;
     durationMinutes?: number;
+    airportPickup?: boolean;
+  };
+  flight?: {
+    flightNumber?: string;
+    terminal?: string;
   };
   vehicle: {
     categoryName: string;
@@ -146,6 +165,8 @@ export const getDriverNewBookingAvailableTemplate = (
   const bookingUrl = `${DRIVER_PORTAL_URL}/bookings/${booking.id}`;
   const dropoffAddress = booking.route.dropoffAddress?.trim();
   const durationMinutes = booking.route.durationMinutes;
+  const showAirportPickup =
+    booking.route.airportPickup || Boolean(booking.flight?.flightNumber);
 
   const detailLines = [
     `Booking: <span class="highlight">${escapeHtml(booking.bookingNumber)}</span>`,
@@ -155,6 +176,13 @@ export const getDriverNewBookingAvailableTemplate = (
     dropoffAddress ? `To: ${escapeHtml(dropoffAddress)}` : null,
     durationMinutes
       ? `Duration: ${escapeHtml(formatDurationLabel(durationMinutes))}`
+      : null,
+    showAirportPickup ? "Airport pickup: Yes" : null,
+    booking.flight?.flightNumber
+      ? `Flight number: <strong>${escapeHtml(booking.flight.flightNumber)}</strong>`
+      : null,
+    booking.flight?.terminal
+      ? `Terminal: ${escapeHtml(booking.flight.terminal)}`
       : null,
     `Vehicle: ${escapeHtml(booking.vehicle.categoryName)}`,
     `Your earning: <span class="highlight">${escapeHtml(formatAmount(booking.pricing.driverEarning))}</span>`,
@@ -237,6 +265,11 @@ export const getDriverBookingUpdatedTemplate = (
       dropoffAddress?: string;
       pickupDate: string;
       pickupTime: string;
+      airportPickup?: boolean;
+    };
+    flight?: {
+      flightNumber?: string;
+      terminal?: string;
     };
     vehicle: {
       categoryName: string;
@@ -244,8 +277,11 @@ export const getDriverBookingUpdatedTemplate = (
     };
     notes?: string;
   }
-) =>
-  layout(
+) => {
+  const showAirportPickup =
+    booking.route.airportPickup || Boolean(booking.flight?.flightNumber);
+
+  return layout(
     "Booking Updated",
     `
     <div class="content">
@@ -264,6 +300,17 @@ export const getDriverBookingUpdatedTemplate = (
             ? `<br />To: ${escapeHtml(booking.route.dropoffAddress)}`
             : ""
         }
+        ${showAirportPickup ? "<br />Airport pickup: Yes" : ""}
+        ${
+          booking.flight?.flightNumber
+            ? `<br />Flight number: <strong>${escapeHtml(booking.flight.flightNumber)}</strong>`
+            : ""
+        }
+        ${
+          booking.flight?.terminal
+            ? `<br />Terminal: ${escapeHtml(booking.flight.terminal)}`
+            : ""
+        }
         ${booking.notes ? `<br />Notes: ${escapeHtml(booking.notes)}` : ""}
       </p>
       <p class="text">Open your driver portal for the full trip details.</p>
@@ -271,3 +318,4 @@ export const getDriverBookingUpdatedTemplate = (
     </div>
     `
   );
+};

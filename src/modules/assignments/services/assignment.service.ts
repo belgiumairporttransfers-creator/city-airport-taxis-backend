@@ -197,7 +197,17 @@ class AssignmentService {
                   pickupDate: booking.route.pickupDate,
                   pickupTime: booking.route.pickupTime,
                   durationMinutes: booking.route.durationMinutes,
+                  airportPickup: booking.route.airportPickup,
                 },
+                flight:
+                  booking.route.airportPickup ||
+                  booking.flight?.flightNumber ||
+                  booking.flight?.terminal
+                    ? {
+                        flightNumber: booking.flight?.flightNumber?.trim() || undefined,
+                        terminal: booking.flight?.terminal?.trim() || undefined,
+                      }
+                    : undefined,
                 vehicle: {
                   categoryName: booking.vehicle.categoryName,
                 },
@@ -285,7 +295,7 @@ class AssignmentService {
       callSessionId: null,
     });
 
-    await syncBookingOnAssign(booking, assignment, driver._id);
+    await syncBookingOnAssign(booking, assignment, driver);
 
     await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(
       booking._id.toString()
@@ -412,7 +422,7 @@ class AssignmentService {
       callSessionId: null,
     });
 
-    await syncBookingOnReassign(booking, assignment, driver._id);
+    await syncBookingOnReassign(booking, assignment, driver);
 
     this.logAssignmentAudit(AuditEvents.ASSIGNMENT_REASSIGNED, assignment._id.toString(), adminId, "admin", {
       previousAssignmentId: id,
