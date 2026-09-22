@@ -3,6 +3,7 @@ import bookingController from "../controllers/booking.controller";
 import { validateParams, validateQuery, validateRequest } from "@/middleware/validate";
 import { idParamSchema } from "@/shared/validators/object-id.schema";
 import {
+  bulkCompleteBookingsSchema,
   bulkDeleteBookingsSchema,
   cancelBookingSchema,
   getBookingsQuerySchema,
@@ -17,6 +18,12 @@ adminBookingRoutes.delete(
   "/bulk",
   validateRequest(bulkDeleteBookingsSchema),
   bookingController.bulkDelete
+);
+
+adminBookingRoutes.post(
+  "/bulk-complete",
+  validateRequest(bulkCompleteBookingsSchema),
+  bookingController.bulkComplete
 );
 
 adminBookingRoutes.get(

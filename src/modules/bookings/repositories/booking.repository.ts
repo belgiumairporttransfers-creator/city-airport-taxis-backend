@@ -142,13 +142,14 @@ class BookingRepository {
       initialFilter: buildDriverBookingsFilter(driverId, query),
       pagination: { defaultLimit: 20 },
       sort: {
-        defaultSort: "-createdAt",
+        defaultSort: "route.pickupDate,route.pickupTime",
         allowedFields: [
           "createdAt",
           "updatedAt",
           "bookingNumber",
           "status",
           "route.pickupDate",
+          "route.pickupTime",
         ],
       },
       search: {
@@ -175,13 +176,14 @@ class BookingRepository {
       initialFilter: Object.keys(initialFilter).length > 0 ? initialFilter : undefined,
       pagination: { defaultLimit: 20 },
       sort: {
-        defaultSort: "-createdAt",
+        defaultSort: "route.pickupDate,route.pickupTime",
         allowedFields: [
           "createdAt",
           "updatedAt",
           "bookingNumber",
           "status",
           "route.pickupDate",
+          "route.pickupTime",
           "payment.paymentStatus",
         ],
       },

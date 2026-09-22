@@ -237,7 +237,7 @@ export interface UpdateBookingData {
   customerPhone?: string;
   customerEmail?: string;
   paymentStatus?: string;
-  status?: BookingLifecycleStatus;
+  status?: BookingLifecycleStatus | string;
   adminNote?: string;
 }
 

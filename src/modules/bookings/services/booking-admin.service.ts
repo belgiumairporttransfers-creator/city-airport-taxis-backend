@@ -16,11 +16,11 @@ import {
   assertCanConfirm,
   assertCanMarkComplete,
   assertCanMarkNoShow,
-  assertValidPatchStatusTransition,
 } from "@/modules/bookings/utils/booking-status.transitions";
 import { toBookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
 import walletService from "@/modules/wallet/services/wallet.service";
 import tripStatusNotificationService from "@/modules/trips/services/trip-status-notification.service";
+import { getTripPhase } from "@/modules/trips/utils/trip-phase";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import type {
   GetBookingsQuery,
@@ -194,10 +194,97 @@ class BookingAdminService {
       }
     }
 
-    if (data.status !== undefined && data.status !== booking.status) {
-      assertValidPatchStatusTransition(booking.status, data.status);
-      updates.status = data.status;
-      statusChanged = true;
+    let markedCompleted = false;
+    let markedPayOnboardPaid = false;
+    let newStatusAction: string | null = null;
+
+    if (data.status !== undefined) {
+      const targetStatus = data.status;
+      const currentTripPhase = getTripPhase({
+        status: booking.status,
+        trip: booking.trip,
+      });
+
+      if (targetStatus === "confirmed") {
+        if (booking.status !== "confirmed" || currentTripPhase) {
+          updates.status = "confirmed";
+          updates.trip = {};
+          statusChanged = true;
+          newStatusAction = "confirmed";
+          timeline = appendTimelineEntry(timeline, "BOOKING_CONFIRMED", { adminId });
+        }
+      } else if (targetStatus === "driver_arrived" || targetStatus === "arrived") {
+        if (currentTripPhase !== "driver_arrived") {
+          const now = new Date();
+          const currentTrip = this.toPlainSubdocument(booking.trip ?? {});
+          updates.status = "accepted";
+          updates.trip = {
+            ...currentTrip,
+            driverArrivedAt: currentTrip.driverArrivedAt ?? now,
+            passengerBoardedAt: undefined,
+            startedAt: undefined,
+            completedAt: undefined,
+          };
+          statusChanged = true;
+          newStatusAction = "arrived";
+          timeline = appendTimelineEntry(timeline, "DRIVER_ARRIVED", { adminId });
+        }
+      } else if (targetStatus === "passenger_onboard" || targetStatus === "pax_onboard") {
+        if (currentTripPhase !== "passenger_onboard") {
+          const now = new Date();
+          const currentTrip = this.toPlainSubdocument(booking.trip ?? {});
+          updates.status = "accepted";
+          updates.trip = {
+            ...currentTrip,
+            driverArrivedAt: currentTrip.driverArrivedAt ?? now,
+            passengerBoardedAt: currentTrip.passengerBoardedAt ?? now,
+            startedAt: undefined,
+            completedAt: undefined,
+          };
+          statusChanged = true;
+          newStatusAction = "passenger_onboard";
+          timeline = appendTimelineEntry(timeline, "PASSENGER_ONBOARD", { adminId });
+        }
+      } else if (targetStatus === "complete" || targetStatus === "completed") {
+        if (booking.status !== "complete") {
+          const now = new Date();
+          const currentTrip = this.toPlainSubdocument(booking.trip ?? {});
+          const plainPayment = this.toPlainSubdocument(booking.payment);
+          updates.status = "complete";
+          updates.assignmentStatus = "completed";
+          updates.trip = {
+            ...currentTrip,
+            completedAt: currentTrip.completedAt ?? now,
+            actualDropoffTime: currentTrip.actualDropoffTime ?? now,
+          };
+          if (
+            plainPayment.paymentMethod === "pay_onboard" &&
+            plainPayment.paymentStatus === "pending"
+          ) {
+            updates["payment.paymentStatus"] = "paid";
+            markedPayOnboardPaid = true;
+          }
+          statusChanged = true;
+          markedCompleted = true;
+          newStatusAction = "complete";
+          timeline = appendTimelineEntry(timeline, "TRIP_COMPLETED", { adminId });
+        }
+      } else if (targetStatus === "cancelled") {
+        if (booking.status !== "cancelled") {
+          updates.status = "cancelled";
+          updates.assignmentStatus = "cancelled";
+          statusChanged = true;
+          newStatusAction = "cancelled";
+          timeline = appendTimelineEntry(timeline, "BOOKING_CANCELLED", { adminId });
+        }
+      } else if (targetStatus === "pending") {
+        if (booking.status !== "pending") {
+          updates.status = "pending";
+          updates.trip = {};
+          statusChanged = true;
+          newStatusAction = "pending";
+        }
+      }
     }
 
     if (data.adminNote?.trim()) {
@@ -243,11 +330,7 @@ class BookingAdminService {
       (key) => data[key] !== undefined
     );
 
-    if (statusChanged && data.status === "confirmed") {
-      timeline = appendTimelineEntry(timeline, "BOOKING_CONFIRMED", { adminId });
-    } else if (statusChanged && data.status === "cancelled") {
-      timeline = appendTimelineEntry(timeline, "BOOKING_CANCELLED", { adminId });
-    } else {
+    if (!newStatusAction) {
       timeline = appendTimelineEntry(timeline, "BOOKING_UPDATED", {
         adminId,
         fields: Object.keys(data).filter((key) => key !== "adminNote"),
@@ -269,10 +352,45 @@ class BookingAdminService {
       changes: Object.keys(data).filter((key) => key !== "adminNote"),
     });
 
-    if (statusChanged && data.status === "confirmed") {
+    if (markedCompleted) {
+      const now = new Date();
+      if (booking.currentAssignmentId) {
+        await Assignment.findByIdAndUpdate(booking.currentAssignmentId, {
+          status: "completed",
+          completedAt: now,
+        });
+      }
+
+      if (markedPayOnboardPaid) {
+        const payment = await this.getPaymentForBooking(booking);
+        if (payment && payment.status === "pending") {
+          await paymentRepository.updateById(payment._id.toString(), {
+            status: "paid",
+            paidAt: now,
+          });
+        }
+      }
+
+      if (updated.currentDriverId) {
+        try {
+          const driver = await driverRepository.findById(updated.currentDriverId.toString());
+          if (driver?.userId) {
+            await walletService.creditTripEarning(updated, driver.userId.toString());
+            await bookingDriverNotificationService.notifyDriverOfTripEarning(updated);
+          }
+        } catch (err) {
+          logger.error("Failed to credit driver wallet on updated complete booking", {
+            error: err,
+            bookingId,
+          });
+        }
+      }
+    }
+
+    if (statusChanged && newStatusAction === "confirmed") {
       await this.sendBookingConfirmedEmail(updated);
       await this.notifyDriversOfConfirmedBooking(updated);
-    } else if (statusChanged && data.status === "cancelled") {
+    } else if (statusChanged && newStatusAction === "cancelled") {
       await bookingDriverNotificationService.cancelScheduledDriverPoolNotify(bookingId);
     } else if (customerVisibleChanges.length > 0) {
       await this.sendBookingUpdatedEmail(updated);
@@ -513,6 +631,26 @@ class BookingAdminService {
     }
 
     return { deletedCount: result.deletedCount ?? 0 };
+  }
+
+  async bulkCompleteBookings(bookingIds: string[], adminId: string) {
+    const uniqueIds = [...new Set(bookingIds)];
+    let completedCount = 0;
+
+    for (const id of uniqueIds) {
+      try {
+        await this.completeBooking(id, adminId);
+        completedCount++;
+      } catch {
+        // Skip bookings that cannot be completed (wrong status, not found, etc.)
+      }
+    }
+
+    if (completedCount === 0) {
+      throw new AppError("No bookings could be marked as complete", 400);
+    }
+
+    return { completedCount };
   }
 
   private toPlainSubdocument<T extends object>(value: T): T {

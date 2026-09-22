@@ -161,6 +161,7 @@ const bookingSchema = new Schema<IBooking>(
 bookingSchema.index({ bookingNumber: 1 }, { unique: true });
 bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ "route.pickupDate": 1 });
+bookingSchema.index({ "route.pickupDate": 1, "route.pickupTime": 1 });
 bookingSchema.index({ "customer.email": 1 });
 bookingSchema.index({ "payment.paymentStatus": 1 });
 bookingSchema.index({ "payment.paymentMethod": 1 });

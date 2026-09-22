@@ -183,7 +183,14 @@ export const updateBookingSchema = Joi.object({
     .valid(...PAYMENT_STATUSES)
     .optional(),
   status: Joi.string()
-    .valid(...BOOKING_STATUSES)
+    .valid(
+      ...BOOKING_STATUSES,
+      "driver_arrived",
+      "arrived",
+      "passenger_onboard",
+      "pax_onboard",
+      "completed"
+    )
     .optional(),
   adminNote: Joi.string().trim().min(1).max(5000).optional(),
 })
@@ -197,6 +204,26 @@ export const cancelBookingSchema = Joi.object({
 });
 
 export const bulkDeleteBookingsSchema = Joi.object({
+  ids: Joi.array()
+    .items(
+      Joi.string()
+        .custom((value, helpers) => {
+          if (!mongoose.Types.ObjectId.isValid(value)) {
+            return helpers.error("any.invalid");
+          }
+          return value;
+        })
+        .messages({ "any.invalid": "Invalid booking id" })
+    )
+    .min(1)
+    .required()
+    .messages({
+      "array.min": "At least one booking id is required",
+      "any.required": "Booking ids are required",
+    }),
+});
+
+export const bulkCompleteBookingsSchema = Joi.object({
   ids: Joi.array()
     .items(
       Joi.string()

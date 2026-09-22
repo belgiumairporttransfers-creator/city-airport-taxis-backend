@@ -150,6 +150,22 @@ class BookingController {
           : `${result.deletedCount} bookings deleted successfully`,
     });
   });
+
+  bulkComplete = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.admin) throw new AppError("Unauthorized", 401);
+
+    const result = await bookingAdminService.bulkCompleteBookings(
+      req.body.ids as string[],
+      req.admin._id.toString()
+    );
+
+    return sendSuccess(res, result, {
+      message:
+        result.completedCount === 1
+          ? "Booking marked as complete"
+          : `${result.completedCount} bookings marked as complete`,
+    });
+  });
 }
 
 export default new BookingController();
