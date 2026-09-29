@@ -19,6 +19,7 @@ import {
   emailVerificationLimiter,
 } from "@/middleware/rateLimiters";
 import { sessionIdParamSchema } from "@/shared/validators/object-id.schema";
+import { env } from "@/config/env";
 
 const router: IRouter = Router();
 
@@ -48,6 +49,12 @@ router.post(
   validateRequest(resetPasswordSchema),
   userAuthController.setPassword
 );
+router.get("/verify-email", (req, res) => {
+  const token = (req.query.token as string) || "";
+  const email = (req.query.email as string) || "";
+  const redirectUrl = `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
+  return res.redirect(302, redirectUrl);
+});
 router.post(
   "/verify-email",
   emailVerificationLimiter,

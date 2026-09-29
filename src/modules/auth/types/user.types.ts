@@ -5,8 +5,10 @@ export type UserRole = typeof USER_ROLE | typeof DRIVER_ROLE;
 export type UserStatus = "active" | "suspended";
 
 export interface IUser extends Document {
-  firstName: string;
-  lastName: string;
+  fullName?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phoneNumber?: string;
   avatar?: string;

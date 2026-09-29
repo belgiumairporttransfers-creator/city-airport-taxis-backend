@@ -29,7 +29,8 @@ class UserAuthController {
   verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     const { user, accessToken, refreshToken } = await userAuthService.verifyEmail(
       req.body.token,
-      getAuthAuditContext(req)
+      getAuthAuditContext(req),
+      req.body.email
     );
 
     setUserAuthCookies(res, accessToken, refreshToken, false);

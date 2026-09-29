@@ -27,6 +27,21 @@ class UserAuthService {
   async getProfileResponse(user: IUser) {
     const profile = user.toObject();
 
+    const fullName =
+      user.fullName?.trim() ||
+      user.name?.trim() ||
+      (user.firstName && user.lastName && user.firstName !== user.lastName
+        ? `${user.firstName} ${user.lastName}`.trim()
+        : user.firstName || user.lastName || "") ||
+      "User";
+
+    profile.fullName = fullName;
+    profile.name = fullName;
+
+    if (profile.firstName && profile.lastName && profile.firstName === profile.lastName) {
+      profile.lastName = "";
+    }
+
     if (user.role === DRIVER_ROLE && !profile.avatar?.trim()) {
       const application = await driverRepository.findByUserId(user._id.toString());
       const profilePhoto = application?.profilePhoto?.trim();
@@ -63,8 +78,10 @@ class UserAuthService {
 
   async register(data: Record<string, unknown>, audit: AuthAuditContext) {
     const {
-      firstName,
-      lastName,
+      fullName: rawFullName,
+      name: rawName,
+      firstName: rawFirstName,
+      lastName: rawLastName,
       email: rawEmail,
       password,
       phoneNumber,
@@ -72,8 +89,10 @@ class UserAuthService {
       companyName,
       businessProfile,
     } = data as {
-      firstName: string;
-      lastName: string;
+      fullName?: string;
+      name?: string;
+      firstName?: string;
+      lastName?: string;
       email: string;
       password: string;
       phoneNumber?: string;
@@ -89,11 +108,27 @@ class UserAuthService {
       throw new AppError("An account with this email already exists", 409);
     }
 
+    const resolvedFullName = (rawFullName || rawName || "").trim();
+    let firstName = (rawFirstName || "").trim();
+    let lastName = (rawLastName || "").trim();
+
+    if (resolvedFullName && (!firstName || firstName === lastName)) {
+      const parts = resolvedFullName.split(/\s+/);
+      firstName = parts[0] || resolvedFullName;
+      lastName = parts.slice(1).join(" ") || "";
+    }
+
+    const finalFullName =
+      resolvedFullName ||
+      (firstName === lastName ? firstName : `${firstName} ${lastName}`.trim());
+
     let user: IUser;
     try {
       user = await userRepository.create({
-        firstName,
-        lastName,
+        fullName: finalFullName,
+        name: finalFullName,
+        firstName: firstName || finalFullName,
+        lastName: lastName,
         email,
         phoneNumber: phoneNumber || phone,
         companyName,
@@ -123,12 +158,19 @@ class UserAuthService {
     return { user, ...tokens };
   }
 
-  async verifyEmail(token: string, audit: AuthAuditContext) {
+  async verifyEmail(token: string, audit: AuthAuditContext, email?: string) {
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const user = await userRepository.findByEmailVerificationToken(hashedToken);
 
     if (!user) {
+      if (email) {
+        const existingUser = await userRepository.findByEmail(normalizeEmail(email));
+        if (existingUser && existingUser.isVerified) {
+          const tokens = await this.issueTokens(existingUser, audit);
+          return { user: existingUser, ...tokens };
+        }
+      }
       throw new AppError("Verification link is invalid or has expired", 400);
     }
 
@@ -275,6 +317,8 @@ class UserAuthService {
     if (!user) throw new AppError("User not found", 404);
 
     const allowed = [
+      "fullName",
+      "name",
       "firstName",
       "lastName",
       "phoneNumber",
@@ -283,8 +327,19 @@ class UserAuthService {
       "businessProfile",
     ];
 
+    if (data.fullName !== undefined || data.name !== undefined) {
+      const newFullName = String(data.fullName || data.name || "").trim();
+      user.fullName = newFullName;
+      user.name = newFullName;
+      if (!data.firstName) {
+        const parts = newFullName.split(/\s+/);
+        user.firstName = parts[0] || newFullName;
+        user.lastName = parts.slice(1).join(" ") || "";
+      }
+    }
+
     for (const key of allowed) {
-      if (data[key] !== undefined) {
+      if (data[key] !== undefined && key !== "fullName" && key !== "name") {
         (user as unknown as Record<string, unknown>)[key] = data[key];
       }
     }

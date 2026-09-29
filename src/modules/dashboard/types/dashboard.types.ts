@@ -91,3 +91,45 @@ export interface DriverDashboardOverview {
   transactions: DriverDashboardTransactionItem[];
   recentOrders: DriverDashboardOrderItem[];
 }
+
+// ─── User (customer) dashboard ────────────────────────────────────────────────
+
+export interface UserDashboardStats {
+  totalRides: number;
+  completedRides: number;
+  upcomingRides: number;
+  cancelledRides: number;
+  totalSpent: number;
+  averageRideValue: number;
+  nextRideDate?: string;
+  lastRideDate?: string;
+}
+
+export interface UserDashboardNextRide {
+  _id: string;
+  bookingNumber: string;
+  pickupDate: string;
+  pickupTime: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  amount: number;
+  status: string;
+}
+
+export interface UserDashboardTopDestination {
+  name: string;
+  count: number;
+}
+
+export interface UserDashboardChartPoint {
+  month: string;
+  spending: number;
+  bookings: number;
+}
+
+export interface UserDashboardOverview {
+  stats: UserDashboardStats;
+  nextRides: UserDashboardNextRide[];
+  topDestinations: UserDashboardTopDestination[];
+  chart: UserDashboardChartPoint[];
+}

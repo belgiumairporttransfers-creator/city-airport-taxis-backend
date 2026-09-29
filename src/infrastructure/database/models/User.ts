@@ -10,15 +10,23 @@ const sanitizeTransform = (_doc: unknown, ret: Record<string, unknown>) =>
 
 const userSchema = new Schema<IUser>(
   {
+    fullName: {
+      type: String,
+      trim: true,
+    },
+
+    name: {
+      type: String,
+      trim: true,
+    },
+
     firstName: {
       type: String,
-      required: [true, "First name is required"],
       trim: true,
     },
 
     lastName: {
       type: String,
-      required: [true, "Last name is required"],
       trim: true,
     },
 

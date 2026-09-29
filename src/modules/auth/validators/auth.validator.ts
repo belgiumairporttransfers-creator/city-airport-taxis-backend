@@ -54,6 +54,7 @@ export const verifyEmailSchema = Joi.object({
   token: Joi.string().required().messages({
     "any.required": "Verification token is required",
   }),
+  email: Joi.string().email().optional(),
 });
 
 export const authListQuerySchema = Joi.object({
