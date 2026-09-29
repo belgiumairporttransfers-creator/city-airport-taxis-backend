@@ -209,7 +209,13 @@ class DashboardService {
         const bAny = b as Record<string, unknown> & {
           _id: unknown;
           bookingNumber?: string;
-          route?: { pickupDate?: string; pickupTime?: string; pickupAddress?: string; deliveryAddress?: string };
+          route?: {
+            pickupDate?: string;
+            pickupTime?: string;
+            pickupAddress?: string;
+            dropoffAddress?: string;
+            deliveryAddress?: string;
+          };
           pricing?: { total?: number };
           status?: string;
         };
@@ -219,7 +225,7 @@ class DashboardService {
           pickupDate: bAny.route?.pickupDate ?? "",
           pickupTime: bAny.route?.pickupTime ?? "",
           pickupAddress: bAny.route?.pickupAddress ?? "",
-          dropoffAddress: bAny.route?.deliveryAddress ?? "",
+          dropoffAddress: bAny.route?.dropoffAddress || bAny.route?.deliveryAddress || "",
           amount: roundMoney(Number(bAny.pricing?.total ?? 0)),
           status: bAny.status ?? "",
         };

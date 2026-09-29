@@ -265,7 +265,7 @@ class DashboardRepository {
       { $match: this.getUserBookingFilter(email, userId) },
       {
         $group: {
-          _id: "$route.deliveryAddress",
+          _id: "$route.dropoffAddress",
           count: { $sum: 1 },
         },
       },
