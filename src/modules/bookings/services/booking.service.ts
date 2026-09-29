@@ -32,7 +32,8 @@ class BookingService {
       status: "pending" | "confirmed";
       paymentMethod: BookingPaymentMethod;
       paymentStatus: string;
-    }
+    },
+    leg: "outbound" | "return" | "single" = "single"
   ) {
     const isHourly = payload.category === "hourly";
     const distance = payload.routeData?.distance ?? 0;
@@ -48,12 +49,52 @@ class BookingService {
       (isHourly && Number.isFinite(selectedDurationHours) && selectedDurationHours! > 0
         ? selectedDurationHours! * 60
         : undefined);
-    const isAirportPickup = payload.step3.isAirportPickup;
     const now = new Date();
+
+    const isReturnLeg = leg === "return";
+    const isOutboundLeg = leg === "outbound";
+    const isAirportPickup = isReturnLeg ? false : payload.step3.isAirportPickup;
+
+    const pickupAddress = isReturnLeg
+      ? (payload.step1.deliveryAddress ?? "").trim()
+      : payload.step1.pickupAddress.trim();
+    const dropoffAddress = isReturnLeg
+      ? payload.step1.pickupAddress.trim()
+      : (payload.step1.deliveryAddress ?? "").trim();
+    const pickupDate = isReturnLeg
+      ? payload.step1.returnDate!
+      : payload.step1.pickupDate;
+    const pickupTime = isReturnLeg
+      ? payload.step1.returnTime!
+      : payload.step1.pickupTime;
+
+    const totalVehicleFare = payload.pricing.breakdown?.totalVehicleFare ?? payload.pricing.total;
+    const airportPickupPrice = payload.pricing.breakdown?.airportPickupPrice ?? 0;
+
+    let vehicleFare: number;
+    let airportPickupFee: number;
+    let total: number;
+
+    if (isOutboundLeg) {
+      vehicleFare = Math.round((totalVehicleFare / 2) * 100) / 100;
+      airportPickupFee = airportPickupPrice;
+      total = Math.round((vehicleFare + airportPickupFee) * 100) / 100;
+    } else if (isReturnLeg) {
+      const outboundVehicleFare = Math.round((totalVehicleFare / 2) * 100) / 100;
+      vehicleFare = Math.round((totalVehicleFare - outboundVehicleFare) * 100) / 100;
+      airportPickupFee = 0;
+      const outboundTotal = Math.round((outboundVehicleFare + airportPickupPrice) * 100) / 100;
+      total = Math.round((payload.pricing.total - outboundTotal) * 100) / 100;
+    } else {
+      vehicleFare = totalVehicleFare;
+      airportPickupFee = airportPickupPrice;
+      total = payload.pricing.total;
+    }
 
     return {
       status: options.status,
       category: payload.category,
+      tripLeg: isOutboundLeg ? ("outbound" as const) : isReturnLeg ? ("return" as const) : undefined,
       customer: {
         firstName: payload.step3.firstName.trim(),
         lastName: payload.step3.lastName.trim(),
@@ -61,17 +102,23 @@ class BookingService {
         email: payload.step3.email.trim().toLowerCase(),
       },
       route: {
-        pickupAddress: payload.step1.pickupAddress.trim(),
-        dropoffAddress: (payload.step1.deliveryAddress ?? "").trim(),
-        pickupDate: payload.step1.pickupDate,
-        pickupTime: payload.step1.pickupTime,
-        returnDate:
-          payload.category === "return-trip" ? payload.step1.returnDate : undefined,
-        returnTime:
-          payload.category === "return-trip" ? payload.step1.returnTime : undefined,
+        pickupAddress,
+        dropoffAddress,
+        pickupDate,
+        pickupTime,
+        returnDate: isOutboundLeg
+          ? payload.step1.returnDate
+          : !isReturnLeg && payload.category === "return-trip"
+            ? payload.step1.returnDate
+            : undefined,
+        returnTime: isOutboundLeg
+          ? payload.step1.returnTime
+          : !isReturnLeg && payload.category === "return-trip"
+            ? payload.step1.returnTime
+            : undefined,
         distance,
         durationMinutes,
-        estimatedArrival: payload.routeData?.estTime ?? undefined,
+        estimatedArrival: isReturnLeg ? undefined : (payload.routeData?.estTime ?? undefined),
         airportPickup: isAirportPickup,
       },
       vehicle: {
@@ -89,9 +136,9 @@ class BookingService {
         flightNumber: isAirportPickup ? payload.step3.flightNumber?.trim() : undefined,
       },
       pricing: {
-        vehicleFare: payload.pricing.breakdown?.totalVehicleFare ?? payload.pricing.total,
-        airportPickupFee: payload.pricing.breakdown?.airportPickupPrice ?? 0,
-        total: payload.pricing.total,
+        vehicleFare,
+        airportPickupFee,
+        total,
       },
       payment: {
         paymentMethod: options.paymentMethod,
@@ -150,6 +197,147 @@ class BookingService {
     paymentMode: "test" | "live"
   ): Promise<CreateBookingResult> {
     const mollieApiKey = resolveMollieApiKey(paymentMode);
+    const isReturnTrip =
+      payload.category === "return-trip" &&
+      Boolean(payload.step1.returnDate && payload.step1.returnTime);
+
+    if (isReturnTrip) {
+      const outboundBooking = await bookingRepository.create(
+        this.buildBookingCreateData(
+          payload,
+          category,
+          {
+            status: "pending",
+            paymentMethod: "mollie",
+            paymentStatus: "pending",
+          },
+          "outbound"
+        )
+      );
+
+      const returnBooking = await bookingRepository.create({
+        ...this.buildBookingCreateData(
+          payload,
+          category,
+          {
+            status: "pending",
+            paymentMethod: "mollie",
+            paymentStatus: "pending",
+          },
+          "return"
+        ),
+        relatedBookingId: outboundBooking._id,
+        relatedBookingNumber: outboundBooking.bookingNumber,
+      });
+
+      const savedOutbound =
+        (await bookingRepository.updateById(outboundBooking._id.toString(), {
+          relatedBookingId: returnBooking._id,
+          relatedBookingNumber: returnBooking.bookingNumber,
+        })) ?? outboundBooking;
+
+      const payment = await paymentService.createPayment({
+        bookingId: savedOutbound._id.toString(),
+        status: "pending",
+        amount: payload.pricing.total,
+        currency: "EUR",
+        paymentMethod: "mollie",
+      });
+
+      await bookingRepository.updateById(savedOutbound._id.toString(), {
+        "payment.paymentId": payment._id,
+      });
+      await bookingRepository.updateById(returnBooking._id.toString(), {
+        "payment.paymentId": payment._id,
+      });
+
+      const bookingId = savedOutbound._id.toString();
+      const paymentId = payment._id.toString();
+      const redirectUrl = `${env.FRONTEND_URL}/book-ride/payment-success?bookingId=${encodeURIComponent(bookingId)}`;
+      const webhookUrl = buildMollieWebhookUrl();
+
+      let molliePayment;
+
+      try {
+        molliePayment = await mollieClient.createPayment(
+          {
+            amount: {
+              value: payload.pricing.total.toFixed(2),
+              currency: "EUR",
+            },
+            description: `Booking-${savedOutbound.bookingNumber}`,
+            redirectUrl,
+            ...(webhookUrl ? { webhookUrl } : {}),
+            metadata: {
+              bookingId,
+              returnBookingId: returnBooking._id.toString(),
+              paymentId,
+              bookingNumber: savedOutbound.bookingNumber,
+            },
+          },
+          { apiKey: mollieApiKey }
+        );
+      } catch (error) {
+        await paymentService.rollbackFailedCheckout(
+          bookingId,
+          paymentId,
+          error instanceof AppError ? error.message : "mollie_create_failed"
+        );
+        await bookingRepository.updateById(returnBooking._id.toString(), {
+          status: "cancelled",
+        });
+
+        if (error instanceof AppError) {
+          throw error;
+        }
+
+        throw new AppError("Failed to create payment checkout session", 502);
+      }
+
+      const checkoutUrl = molliePayment._links?.checkout?.href;
+
+      if (!checkoutUrl) {
+        await paymentService.rollbackFailedCheckout(bookingId, paymentId, "checkout_url_missing");
+        await bookingRepository.updateById(returnBooking._id.toString(), {
+          status: "cancelled",
+        });
+        throw new AppError("Failed to create payment checkout session", 502);
+      }
+
+      await paymentRepository.updateById(paymentId, {
+        providerPaymentId: molliePayment.id,
+        providerResponse: toProviderResponseRecord(molliePayment),
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CREATED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: bookingId,
+        metadata: {
+          bookingNumber: savedOutbound.bookingNumber,
+          paymentMethod: "mollie",
+          status: "pending",
+          paymentMode,
+        },
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CREATED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: returnBooking._id.toString(),
+        metadata: {
+          bookingNumber: returnBooking.bookingNumber,
+          paymentMethod: "mollie",
+          status: "pending",
+          paymentMode,
+        },
+      });
+
+      return { booking: savedOutbound, checkoutUrl };
+    }
+
     const booking = await bookingRepository.create(
       this.buildBookingCreateData(payload, category, {
         status: "pending",
@@ -245,6 +433,124 @@ class BookingService {
     payload: CreateBookingPayload,
     category: { image?: string }
   ): Promise<CreateBookingResult> {
+    const isReturnTrip =
+      payload.category === "return-trip" &&
+      Boolean(payload.step1.returnDate && payload.step1.returnTime);
+
+    if (isReturnTrip) {
+      const outboundBooking = await bookingRepository.create(
+        this.buildBookingCreateData(
+          payload,
+          category,
+          {
+            status: "confirmed",
+            paymentMethod: "pay_onboard",
+            paymentStatus: "pending",
+          },
+          "outbound"
+        )
+      );
+
+      const returnBooking = await bookingRepository.create({
+        ...this.buildBookingCreateData(
+          payload,
+          category,
+          {
+            status: "confirmed",
+            paymentMethod: "pay_onboard",
+            paymentStatus: "pending",
+          },
+          "return"
+        ),
+        relatedBookingId: outboundBooking._id,
+        relatedBookingNumber: outboundBooking.bookingNumber,
+      });
+
+      const savedOutbound =
+        (await bookingRepository.updateById(outboundBooking._id.toString(), {
+          relatedBookingId: returnBooking._id,
+          relatedBookingNumber: returnBooking.bookingNumber,
+        })) ?? outboundBooking;
+
+      const paymentOutbound = await paymentService.createPayment({
+        bookingId: savedOutbound._id.toString(),
+        status: "pending",
+        amount: savedOutbound.pricing.total,
+        currency: "EUR",
+        paymentMethod: "pay_onboard",
+        providerResponse: { method: "pay_onboard" },
+      });
+
+      const paymentReturn = await paymentService.createPayment({
+        bookingId: returnBooking._id.toString(),
+        status: "pending",
+        amount: returnBooking.pricing.total,
+        currency: "EUR",
+        paymentMethod: "pay_onboard",
+        providerResponse: { method: "pay_onboard" },
+      });
+
+      await bookingRepository.updateById(savedOutbound._id.toString(), {
+        "payment.paymentId": paymentOutbound._id,
+      });
+      await bookingRepository.updateById(returnBooking._id.toString(), {
+        "payment.paymentId": paymentReturn._id,
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CREATED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: savedOutbound._id.toString(),
+        metadata: {
+          bookingNumber: savedOutbound.bookingNumber,
+          paymentMethod: "pay_onboard",
+          status: "confirmed",
+          paymentId: paymentOutbound._id.toString(),
+        },
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CREATED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: returnBooking._id.toString(),
+        metadata: {
+          bookingNumber: returnBooking.bookingNumber,
+          paymentMethod: "pay_onboard",
+          status: "confirmed",
+          paymentId: paymentReturn._id.toString(),
+        },
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CONFIRMED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: savedOutbound._id.toString(),
+        metadata: {
+          bookingNumber: savedOutbound.bookingNumber,
+          paymentMethod: "pay_onboard",
+        },
+      });
+
+      auditService.log({
+        event: AuditEvents.BOOKING_CONFIRMED,
+        actorType: "system",
+        entityType: "booking",
+        entityId: returnBooking._id.toString(),
+        metadata: {
+          bookingNumber: returnBooking.bookingNumber,
+          paymentMethod: "pay_onboard",
+        },
+      });
+
+      await this.notifyOnboardBookingConfirmed(savedOutbound);
+      await this.notifyOnboardBookingConfirmed(returnBooking);
+
+      return { booking: savedOutbound };
+    }
+
     const booking = await bookingRepository.create(
       this.buildBookingCreateData(payload, category, {
         status: "confirmed",

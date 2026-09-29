@@ -150,6 +150,9 @@ const bookingSchema = new Schema<IBooking>(
     assignmentStatus: { type: String, trim: true, index: true },
     driverPoolNotifiedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    relatedBookingId: { type: Schema.Types.ObjectId, ref: "Booking", index: true },
+    relatedBookingNumber: { type: String, trim: true },
+    tripLeg: { type: String, enum: ["outbound", "return"], trim: true },
   },
   {
     timestamps: true,

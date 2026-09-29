@@ -213,7 +213,13 @@ const toReturnTripSummaryResponse = (booking: BookingLike): TripSummaryResponse 
   const returnDate = (route.returnDate as string | undefined)?.trim();
   const returnTime = (route.returnTime as string | undefined)?.trim();
 
-  if (record.category !== "return-trip" || !returnDate || !returnTime) {
+  if (
+    record.category !== "return-trip" ||
+    Boolean(record.relatedBookingId) ||
+    Boolean(record.tripLeg) ||
+    !returnDate ||
+    !returnTime
+  ) {
     return null;
   }
 

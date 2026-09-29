@@ -69,6 +69,7 @@ const getBookingIntervals = (booking: IBooking): TimeInterval[] => {
 
   if (
     booking.category === "return-trip" &&
+    !booking.relatedBookingId &&
     booking.route.returnDate &&
     booking.route.returnTime
   ) {

@@ -87,6 +87,22 @@ class PaymentService {
       reason,
     });
 
+    if (booking.relatedBookingId) {
+      const relTimeline = appendTimelineEntry([], "BOOKING_CANCELLED", {
+        reason,
+        source: "checkout_creation_failed",
+      });
+      await bookingRepository.updateById(booking.relatedBookingId.toString(), {
+        status: "cancelled",
+        payment: {
+          ...booking.payment,
+          paymentStatus: "failed",
+          paymentId: new Types.ObjectId(paymentId),
+        },
+        timeline: relTimeline,
+      });
+    }
+
     auditService.log({
       event: AuditEvents.BOOKING_UPDATED,
       actorType: "system",
@@ -344,6 +360,54 @@ class PaymentService {
       await this.sendBookingConfirmedNotifications(updatedBooking ?? booking);
     }
 
+    if (booking.relatedBookingId) {
+      const relatedBooking = await bookingRepository.findById(
+        booking.relatedBookingId.toString()
+      );
+      if (relatedBooking) {
+        const relatedPaymentInfo = this.toPlainSubdocument(relatedBooking.payment);
+        const relNeedsSync =
+          relatedBooking.status === "pending" || relatedPaymentInfo.paymentStatus !== "paid";
+
+        if (relNeedsSync) {
+          const relTimeline = appendTimelineEntry(
+            relatedBooking.timeline ?? [],
+            "PAYMENT_RECEIVED",
+            { paymentId }
+          );
+
+          const updatedRelated = await bookingRepository.updateById(
+            relatedBooking._id.toString(),
+            {
+              status: "confirmed",
+              payment: {
+                ...relatedPaymentInfo,
+                paymentStatus: "paid",
+                paymentId: new Types.ObjectId(paymentId),
+              },
+              timeline: relTimeline,
+            }
+          );
+
+          auditService.log({
+            event: AuditEvents.BOOKING_UPDATED,
+            actorType: "system",
+            entityType: "booking",
+            entityId: relatedBooking._id.toString(),
+            metadata: {
+              bookingNumber: relatedBooking.bookingNumber,
+              status: "confirmed",
+              reason: "payment_paid",
+            },
+          });
+
+          if (!options?.skipNotifications) {
+            await this.sendBookingConfirmedNotifications(updatedRelated ?? relatedBooking);
+          }
+        }
+      }
+    }
+
     return updatedBooking ?? booking;
   }
 
@@ -425,6 +489,23 @@ class PaymentService {
         reason: paymentStatus,
       },
     });
+
+    if (booking.relatedBookingId) {
+      const relatedBooking = await bookingRepository.findById(
+        booking.relatedBookingId.toString()
+      );
+      if (relatedBooking && relatedBooking.status !== "cancelled") {
+        const relPaymentInfo = this.toPlainSubdocument(relatedBooking.payment);
+        await bookingRepository.updateById(relatedBooking._id.toString(), {
+          status: "cancelled",
+          payment: {
+            ...relPaymentInfo,
+            paymentStatus: bookingPaymentStatus,
+            paymentId: new Types.ObjectId(paymentId),
+          },
+        });
+      }
+    }
 
     return { handled: true };
   }

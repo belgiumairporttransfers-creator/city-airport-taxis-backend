@@ -132,6 +132,9 @@ export interface IBooking extends Document {
   assignmentStatus?: string;
   driverPoolNotifiedAt?: Date;
   createdBy?: Types.ObjectId;
+  relatedBookingId?: Types.ObjectId;
+  relatedBookingNumber?: string;
+  tripLeg?: "outbound" | "return";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -258,4 +261,7 @@ export type CreateBookingData = {
   driver: BookingDriver;
   timeline: BookingTimelineEntry[];
   notes?: string;
+  relatedBookingId?: Types.ObjectId;
+  relatedBookingNumber?: string;
+  tripLeg?: "outbound" | "return";
 };

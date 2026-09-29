@@ -110,6 +110,9 @@ export interface BookingResponse {
     message: string;
     createdAt: string;
   }>;
+  relatedBookingId?: string;
+  relatedBookingNumber?: string;
+  tripLeg?: "outbound" | "return";
   createdAt: string;
   updatedAt: string;
 }
@@ -324,6 +327,9 @@ export const toBookingResponse = (booking: BookingLike): BookingResponse => {
         createdAt: toIsoString(item.createdAt) ?? "",
       };
     }),
+    relatedBookingId: toIdString(record.relatedBookingId),
+    relatedBookingNumber: (record.relatedBookingNumber as string | undefined)?.trim() || undefined,
+    tripLeg: (record.tripLeg as "outbound" | "return" | undefined) || undefined,
     createdAt: toIsoString(record.createdAt) ?? "",
     updatedAt: toIsoString(record.updatedAt) ?? "",
   };
@@ -384,6 +390,9 @@ export const toPublicBookingStatusResponse = (
     amount: dto.pricing.total,
     paymentStatus: dto.payment.paymentStatus,
     paymentMethod: dto.payment.paymentMethod,
+    relatedBookingId: dto.relatedBookingId,
+    relatedBookingNumber: dto.relatedBookingNumber,
+    tripLeg: dto.tripLeg,
     passengerDetails: dto.customer,
     tripDetails: {
       pickupAddress: dto.route.pickupAddress,
