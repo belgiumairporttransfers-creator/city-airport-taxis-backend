@@ -3,11 +3,22 @@ import walletService from "@/modules/wallet/services/wallet.service";
 import driverRepository from "@/modules/drivers/repositories/driver.repository";
 import { calculateDriverEarning } from "@/modules/wallet/utils/driver-earnings";
 import { AppError } from "@/shared/errors/AppError";
+import { toBookingEmailDetails } from "@/infrastructure/email/utils/booking-email-details";
+import receiptPdfService from "@/infrastructure/pdf/receipt-pdf.service";
 import type {
   AdminDashboardOverview,
   DriverDashboardOverview,
   UserDashboardOverview,
 } from "../types/dashboard.types";
+
+const RECEIPT_ELIGIBLE_STATUSES = new Set([
+  "confirmed",
+  "accepted",
+  "arrived",
+  "started",
+  "passenger-onboard",
+  "complete",
+]);
 
 const roundMoney = (value: number) => Math.round(value * 100) / 100;
 
@@ -299,6 +310,28 @@ class DashboardService {
 
   async cancelUserBooking(bookingId: string, email: string, userId: string, reason?: string) {
     return dashboardRepository.cancelUserBooking(bookingId, email, userId, reason);
+  }
+
+  async getUserBookingReceiptPdf(bookingId: string, email: string, userId: string) {
+    const booking = await dashboardRepository.findUserBookingById(bookingId, email, userId);
+    const paid = booking.payment?.paymentStatus === "paid";
+    const eligibleStatus = RECEIPT_ELIGIBLE_STATUSES.has(booking.status);
+
+    if (!paid && !eligibleStatus) {
+      throw new AppError("Receipt is only available for paid or confirmed bookings", 400);
+    }
+
+    const details = toBookingEmailDetails(booking);
+    const pdf = await receiptPdfService.generatePaymentReceiptPdf(
+      { firstName: details.customer.firstName },
+      details
+    );
+
+    return {
+      pdf,
+      filename: `payment-receipt-${details.bookingNumber}.pdf`,
+      bookingNumber: details.bookingNumber,
+    };
   }
 
   async getUserPayments(email: string, userId: string, page = 1, limit = 10) {

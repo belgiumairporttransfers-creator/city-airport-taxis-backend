@@ -76,6 +76,22 @@ class DashboardUserController {
     const result = await dashboardService.cancelUserBooking(id, email, userId, reason);
     return sendSuccess(res, result, { message: "Booking cancelled successfully" });
   });
+
+  downloadReceipt = asyncHandler(async (req: Request, res: Response) => {
+    const { userId, email } = this.assertUser(req);
+    const { id } = req.params;
+    const { pdf, filename } = await dashboardService.getUserBookingReceiptPdf(
+      id,
+      email,
+      userId
+    );
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", String(pdf.length));
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).send(pdf);
+  });
 }
 
 export default new DashboardUserController();

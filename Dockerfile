@@ -13,8 +13,18 @@ RUN pnpm build
 
 FROM base AS runner
 ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 WORKDIR /app
-RUN apk add --no-cache wget && \
+RUN apk add --no-cache \
+      wget \
+      chromium \
+      nss \
+      freetype \
+      harfbuzz \
+      ca-certificates \
+      ttf-freefont \
+      font-noto-emoji && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 COPY --from=deps --chown=appuser:nodejs /app/node_modules ./node_modules

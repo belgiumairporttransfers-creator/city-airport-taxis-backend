@@ -347,6 +347,23 @@ class DashboardRepository {
       .then((docs) => docs.map((d) => d._id as Types.ObjectId));
   }
 
+  async findUserBookingById(bookingId: string, email: string, userId: string) {
+    if (!Types.ObjectId.isValid(bookingId)) {
+      throw new AppError("Invalid booking ID", 400);
+    }
+
+    const booking = await Booking.findOne({
+      _id: new Types.ObjectId(bookingId),
+      ...this.getUserBookingFilter(email, userId),
+    });
+
+    if (!booking) {
+      throw new AppError("Booking not found", 404);
+    }
+
+    return booking;
+  }
+
   async deleteUserBooking(bookingId: string, email: string, userId: string) {
     if (!Types.ObjectId.isValid(bookingId)) {
       throw new AppError("Invalid booking ID", 400);

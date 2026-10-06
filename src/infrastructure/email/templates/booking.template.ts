@@ -511,6 +511,21 @@ export const getPaymentReceiptTemplate = (
   booking: BookingEmailDetails
 ) => buildFormalPaymentReceiptHtml(customer, booking, { includeReviewCta: false });
 
+/** Printable HTML used by the PDF receipt download endpoint. */
+export const getPaymentReceiptPdfHtml = (
+  customer: { firstName: string },
+  booking: BookingEmailDetails
+) => {
+  const html = getPaymentReceiptTemplate(customer, booking);
+  return html.replace(
+    "</head>",
+    `<style>
+      body { background: #ffffff !important; padding: 0 !important; }
+      table[role="presentation"] { max-width: 100% !important; }
+    </style></head>`
+  );
+};
+
 export const getBookingReceivedTemplate = (
   customer: { firstName: string },
   bookingNumber: string,
