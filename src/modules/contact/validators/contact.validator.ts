@@ -26,6 +26,7 @@ export const submitContactSchema = Joi.object({
     "any.required": "Message is required",
     "string.min": "Message must be at least 10 characters",
   }),
+  captchaToken: Joi.string().trim().allow("").optional(),
 });
 
 export const getAllQuerySchema = Joi.object({

@@ -240,6 +240,7 @@ export interface UpdateBookingData {
   customerPhone?: string;
   customerEmail?: string;
   paymentStatus?: string;
+  pricingTotal?: number;
   status?: BookingLifecycleStatus | string;
   adminNote?: string;
 }

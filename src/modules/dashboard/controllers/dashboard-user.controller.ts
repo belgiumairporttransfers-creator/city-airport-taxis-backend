@@ -36,6 +36,13 @@ class DashboardUserController {
     });
   });
 
+  getBooking = asyncHandler(async (req: Request, res: Response) => {
+    const { userId, email } = this.assertUser(req);
+    const { id } = req.params;
+    const booking = await dashboardService.getUserBooking(id, email, userId);
+    return sendSuccess(res, booking);
+  });
+
   getPayments = asyncHandler(async (req: Request, res: Response) => {
     const { userId, email } = this.assertUser(req);
     const page = Number(req.query.page) || 1;

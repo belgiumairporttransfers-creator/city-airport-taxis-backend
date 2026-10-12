@@ -91,6 +91,8 @@ export interface IDriver extends Document {
   skills: string[];
   reviews: DriverReview[];
   documents: DriverDocuments;
+  /** Bundled mandatory documents & photos from the public partner form. */
+  documentUploads: string[];
   reviewNotes?: string;
   reviewedBy?: Types.ObjectId;
   reviewedAt?: Date;
@@ -117,7 +119,8 @@ export interface SubmitDriverData {
   availableFrom: string;
   availableTo: string;
   profilePhoto?: string;
-  documents: DriverDocuments;
+  documents?: DriverDocuments;
+  documentUploads?: string[];
 }
 
 export interface CreateDriverData {
@@ -217,6 +220,7 @@ export interface DriverResponse {
   skills: string[];
   reviews: DriverReviewResponse[];
   documents: DriverDocuments;
+  documentUploads: string[];
   reviewNotes?: string;
   reviewedBy?: string;
   reviewedAt?: string;

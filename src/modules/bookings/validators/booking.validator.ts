@@ -182,6 +182,7 @@ export const updateBookingSchema = Joi.object({
   paymentStatus: Joi.string()
     .valid(...PAYMENT_STATUSES)
     .optional(),
+  pricingTotal: Joi.number().min(0).max(100000).precision(2).optional(),
   status: Joi.string()
     .valid(
       ...BOOKING_STATUSES,

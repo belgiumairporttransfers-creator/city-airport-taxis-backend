@@ -7,6 +7,7 @@ Run these commands from your local machine (inside the `city-airport/backend` fo
 rsync -az --delete \
   --exclude node_modules --exclude dist --exclude .git --exclude '.env*' \
   ./ root@82.29.177.100:/opt/city-airport-taxis-backend/
+scp .env.production root@82.29.177.100:/opt/city-airport-taxis-backend/.env.production
 
 # 2. Build Docker image on VPS
 ssh root@82.29.177.100 "cd /opt/city-airport-taxis-backend && docker build -t city-airport-taxis-backend:local ."

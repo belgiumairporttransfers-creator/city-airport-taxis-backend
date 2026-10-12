@@ -7,6 +7,7 @@ import contactRepository from "@/modules/contact/repositories/contact.repository
 import { normalizeEmail } from "@/modules/auth/utils/email";
 import emailService from "@/infrastructure/email/email.service";
 import logger from "@/shared/utils/logger";
+import { verifyRecaptchaToken } from "@/shared/utils/verify-recaptcha";
 
 class ContactService {
   private normalizePayload(data: SubmitContactData): SubmitContactData {
@@ -21,6 +22,8 @@ class ContactService {
   }
 
   async submit(data: SubmitContactData) {
+    await verifyRecaptchaToken(data.captchaToken);
+
     const payload = this.normalizePayload(data);
     const contact = await contactRepository.create(payload);
 

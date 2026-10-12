@@ -1,4 +1,6 @@
 import fs from "fs";
+import os from "os";
+import path from "path";
 import type { Browser, Page } from "puppeteer-core";
 import { AppError } from "@/shared/errors/AppError";
 import logger from "@/shared/utils/logger";
@@ -7,11 +9,31 @@ import type { BookingEmailDetails } from "@/infrastructure/email/utils/booking-e
 
 const CHROME_CANDIDATES = [
   process.env.PUPPETEER_EXECUTABLE_PATH,
+  "/usr/lib/chromium/chromium",
   "/usr/bin/chromium-browser",
   "/usr/bin/chromium",
   "/usr/bin/google-chrome-stable",
   "/usr/bin/google-chrome",
 ].filter((value): value is string => Boolean(value));
+
+const CHROME_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--disable-software-rasterizer",
+  "--no-zygote",
+  "--font-render-hinting=none",
+  "--hide-scrollbars",
+  "--mute-audio",
+  "--disable-extensions",
+  "--disable-background-networking",
+  "--disable-default-apps",
+  "--disable-sync",
+  "--disable-translate",
+  "--metrics-recording-only",
+  "--no-first-run",
+];
 
 const resolveChromePath = () => {
   for (const candidate of CHROME_CANDIDATES) {
@@ -28,8 +50,6 @@ class ReceiptPdfService {
   private browserPromise: Promise<Browser> | null = null;
 
   private async loadPuppeteer() {
-    // TypeScript rewrites `import()` to `require()` under commonjs, which breaks
-    // ESM-only puppeteer-core. Use a runtime Function so Node gets a real import().
     const dynamicImport = new Function(
       "modulePath",
       "return import(modulePath)"
@@ -48,17 +68,20 @@ class ReceiptPdfService {
         );
       }
 
+      const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "receipt-chrome-"));
+
       this.browserPromise = this.loadPuppeteer()
         .then(({ default: puppeteer }) =>
           puppeteer.launch({
             executablePath,
             headless: true,
-            args: [
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-dev-shm-usage",
-              "--font-render-hinting=none",
-            ],
+            acceptInsecureCerts: true,
+            pipe: true,
+            dumpio: false,
+            timeout: 45_000,
+            protocolTimeout: 45_000,
+            userDataDir,
+            args: CHROME_ARGS,
           })
         )
         .catch((error) => {
@@ -81,10 +104,10 @@ class ReceiptPdfService {
       const browser = await this.getBrowser();
       page = await browser.newPage();
       await page.setContent(html, {
-        waitUntil: "load",
+        waitUntil: "domcontentloaded",
         timeout: 30_000,
       });
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 750));
 
       const pdf = await page.pdf({
         format: "A4",
@@ -96,11 +119,16 @@ class ReceiptPdfService {
           bottom: "10mm",
           left: "10mm",
         },
+        timeout: 30_000,
       });
 
       return Buffer.from(pdf);
     } catch (error) {
-      logger.error("Failed to generate payment receipt PDF", { error });
+      logger.error("Failed to generate payment receipt PDF", {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to generate payment receipt PDF", 500);
     } finally {

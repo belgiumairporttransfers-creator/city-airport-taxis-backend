@@ -87,6 +87,9 @@ export const toDriverResponse = (
     skills: Array.isArray(record.skills) ? (record.skills as string[]) : [],
     reviews: options?.includeReviews === false ? [] : toDriverReviewsResponse(record.reviews),
     documents: record.documents as DriverDocuments,
+    documentUploads: Array.isArray(record.documentUploads)
+      ? (record.documentUploads as string[]).filter(Boolean)
+      : [],
     reviewNotes: record.reviewNotes as string | undefined,
     reviewedBy: toIdString(record.reviewedBy),
     reviewedAt: toIsoString(record.reviewedAt),

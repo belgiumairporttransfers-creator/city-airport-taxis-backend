@@ -242,7 +242,7 @@ class DashboardRepository {
       .skip(skip)
       .limit(limit)
       .select(
-        "bookingNumber status category route vehicle pricing payment createdAt customer"
+        "bookingNumber status category route vehicle flight pricing payment createdAt customer notes"
       )
       .lean();
   }

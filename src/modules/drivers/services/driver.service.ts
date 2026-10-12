@@ -134,6 +134,44 @@ class DriverService {
       throw new AppError(`Missing required documents: ${missing.join(", ")}`, 400);
     }
   }
+
+  private emptyDocuments(): DriverDocuments {
+    return Object.fromEntries(DRIVER_DOCUMENT_FIELDS.map((field) => [field, ""])) as DriverDocuments;
+  }
+
+  private assertDocumentUploads(uploads?: string[]) {
+    const cleaned = (uploads ?? []).map((url) => url.trim()).filter(Boolean);
+
+    if (cleaned.length < 6) {
+      throw new AppError(
+        "Please upload at least 6 mandatory documents and vehicle photos",
+        400
+      );
+    }
+
+    return cleaned;
+  }
+
+  private resolveSubmitDocuments(data: SubmitDriverData): {
+    documents: DriverDocuments;
+    documentUploads: string[];
+  } {
+    const uploads = (data.documentUploads ?? []).map((url) => url.trim()).filter(Boolean);
+
+    if (uploads.length > 0) {
+      return {
+        documents: this.emptyDocuments(),
+        documentUploads: this.assertDocumentUploads(uploads),
+      };
+    }
+
+    this.assertRequiredDocuments(data.documents ?? {});
+    return {
+      documents: data.documents as DriverDocuments,
+      documentUploads: [],
+    };
+  }
+
   private async createPasswordSetupToken(userId: string) {
     const user = await userRepository.findById(userId);
 
@@ -195,7 +233,7 @@ class DriverService {
 
   async submitApplication(data: SubmitDriverData) {
     const email = normalizeEmail(data.email);
-    this.assertRequiredDocuments(data.documents);
+    const { documents, documentUploads } = this.resolveSubmitDocuments(data);
 
     const existingActive = await driverRepository.findActiveByEmail(email);
 
@@ -208,6 +246,8 @@ class DriverService {
       ...data,
       email,
       licensePlate: this.normalizeLicensePlate(data.licensePlate),
+      documents,
+      documentUploads,
       applicationNumber,
       status: "pending",
     });

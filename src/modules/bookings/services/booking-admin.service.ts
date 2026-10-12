@@ -47,6 +47,7 @@ const CUSTOMER_VISIBLE_UPDATE_KEYS: Array<keyof UpdateBookingData> = [
   "customerLastName",
   "customerPhone",
   "customerEmail",
+  "pricingTotal",
 ];
 
 class BookingAdminService {
@@ -194,6 +195,23 @@ class BookingAdminService {
       }
     }
 
+    if (data.pricingTotal !== undefined) {
+      const total = Math.round(Number(data.pricingTotal) * 100) / 100;
+      const airportPickupFee = Number(booking.pricing?.airportPickupFee ?? 0);
+      const vehicleFare = Math.max(0, Math.round((total - airportPickupFee) * 100) / 100);
+
+      updates["pricing.total"] = total;
+      updates["pricing.vehicleFare"] = vehicleFare;
+      updates["pricing.airportPickupFee"] = airportPickupFee;
+
+      const payment = await this.getPaymentForBooking(booking);
+      if (payment) {
+        await paymentRepository.updateById(payment._id.toString(), {
+          amount: total,
+        });
+      }
+    }
+
     let markedCompleted = false;
     let markedPayOnboardPaid = false;
     let newStatusAction: string | null = null;
@@ -319,6 +337,7 @@ class BookingAdminService {
       data.customerPhone !== undefined ||
       data.customerEmail !== undefined ||
       data.paymentStatus !== undefined ||
+      data.pricingTotal !== undefined ||
       statusChanged ||
       Boolean(data.adminNote?.trim());
 

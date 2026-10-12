@@ -72,6 +72,7 @@ interface EnvConfig {
   ASSIGNMENT_CRON_ENABLED: boolean;
   ASSIGNMENT_CRON_EXPRESSION: string;
   ASSIGNMENT_CRON_TIMEZONE: string;
+  RECAPTCHA_SECRET_KEY: string;
 }
 
 const withOriginVariants = (url: string): string[] => {
@@ -283,6 +284,7 @@ const getEnvConfig = (): EnvConfig => {
     ASSIGNMENT_CRON_ENABLED: process.env.ASSIGNMENT_CRON_ENABLED !== "false",
     ASSIGNMENT_CRON_EXPRESSION: process.env.ASSIGNMENT_CRON_EXPRESSION || "*/1 * * * *",
     ASSIGNMENT_CRON_TIMEZONE: process.env.ASSIGNMENT_CRON_TIMEZONE || "Europe/London",
+    RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY || "",
   };
 };
 

@@ -21,6 +21,23 @@ const documentsSchema = Joi.object(
   Object.fromEntries(DRIVER_DOCUMENT_FIELDS.map((field) => [field, documentFieldSchema]))
 ).required();
 
+const optionalDocumentsSchema = Joi.object(
+  Object.fromEntries(
+    DRIVER_DOCUMENT_FIELDS.map((field) => [
+      field,
+      Joi.string().trim().uri().allow("").optional(),
+    ])
+  )
+).optional();
+
+const documentUploadsSchema = Joi.array()
+  .items(Joi.string().trim().uri())
+  .min(6)
+  .max(30)
+  .messages({
+    "array.min": "Please upload at least 6 mandatory documents and vehicle photos",
+  });
+
 const applicationBodySchema = {
   operatingCountry: Joi.string().trim().min(1).max(120).required(),
   operatingCity: Joi.string().trim().min(1).max(120).required(),
@@ -40,10 +57,30 @@ const applicationBodySchema = {
   availableFrom: timeSchema.required(),
   availableTo: timeSchema.required(),
   profilePhoto: Joi.string().trim().uri().allow("").optional(),
-  documents: documentsSchema,
+  documents: optionalDocumentsSchema,
+  documentUploads: documentUploadsSchema.optional(),
 };
 
-export const submitDriverSchema = Joi.object(applicationBodySchema);
+export const submitDriverSchema = Joi.object(applicationBodySchema).custom((value, helpers) => {
+  const uploads = Array.isArray(value.documentUploads)
+    ? value.documentUploads.filter((url: string) => typeof url === "string" && url.trim())
+    : [];
+  const hasUploads = uploads.length >= 6;
+  const hasAllDocuments =
+    value.documents &&
+    DRIVER_DOCUMENT_FIELDS.every(
+      (field) => typeof value.documents[field] === "string" && value.documents[field].trim()
+    );
+
+  if (!hasUploads && !hasAllDocuments) {
+    return helpers.message({
+      custom:
+        "Mandatory documents are required. Upload all required documents and vehicle photos.",
+    });
+  }
+
+  return value;
+});
 
 const adminCreateApplicationBodySchema = {
   operatingCountry: Joi.string().trim().min(1).max(120).required(),

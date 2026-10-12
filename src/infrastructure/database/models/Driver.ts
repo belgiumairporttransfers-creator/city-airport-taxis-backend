@@ -158,6 +158,10 @@ const driverSchema = new Schema<IDriver>(
       type: documentSchema,
       required: true,
     },
+    documentUploads: {
+      type: [String],
+      default: [],
+    },
     reviewNotes: {
       type: String,
       trim: true,

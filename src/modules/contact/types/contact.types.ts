@@ -18,6 +18,7 @@ export interface SubmitContactData {
   phone: string;
   subject: string;
   message: string;
+  captchaToken?: string;
 }
 
 export interface GetContactsQuery {

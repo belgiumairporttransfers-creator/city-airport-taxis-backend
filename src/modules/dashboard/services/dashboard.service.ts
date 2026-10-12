@@ -29,6 +29,62 @@ const toIso = (value: unknown): string => {
   return "";
 };
 
+const mapUserBooking = (b: Record<string, any>) => {
+  const customer = b.customer || {};
+  const route = b.route || {};
+  const pricing = b.pricing || {};
+  const payment = b.payment || b.paymentInfo || {};
+  const vehicle = b.vehicle || {};
+  const flight = b.flight || {};
+
+  const firstName = customer.firstName || "";
+  const lastName = customer.lastName || "";
+  const fullName =
+    customer.fullName ||
+    (firstName && lastName && firstName !== lastName
+      ? `${firstName} ${lastName}`.trim()
+      : firstName || lastName || "");
+
+  return {
+    ...b,
+    _id: b._id?.toString() ?? "",
+    bookingNumber: b.bookingNumber ?? "",
+    status: b.status ?? "",
+    category: b.category ?? "",
+    amount: roundMoney(Number(pricing.total ?? b.amount ?? 0)),
+    paymentMethod: payment.paymentMethod || b.paymentMethod || "mollie",
+    paymentStatus: payment.paymentStatus || b.paymentStatus || "",
+    createdAt: toIso(b.createdAt) || b.createdAt,
+    passengerDetails: {
+      firstName,
+      lastName,
+      fullName: fullName || "N/A",
+      email: customer.email || "",
+      phone: customer.phone || "",
+    },
+    tripDetails: {
+      pickupAddress: route.pickupAddress || "",
+      deliveryAddress: route.dropoffAddress || route.deliveryAddress || "",
+      pickupDate: route.pickupDate || "",
+      pickupTime: route.pickupTime || "",
+      returnDate: route.returnDate || "",
+      returnTime: route.returnTime || "",
+      distance: route.distance,
+      durationMinutes: route.durationMinutes,
+      airportPickup: route.airportPickup,
+      flightNumber: flight.flightNumber || "",
+      notes: b.notes || "",
+    },
+    vehicle: {
+      name: vehicle.categoryName || vehicle.name || "",
+      passengers: vehicle.passengers,
+      suitcases: vehicle.luggage,
+      image: vehicle.image,
+      carType: vehicle.categoryName || "",
+    },
+  };
+};
+
 const toId = (value: unknown): string => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -252,52 +308,19 @@ class DashboardService {
       dashboardRepository.countUserBookings(email, userId),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
-
-    const items = rawItems.map((b: Record<string, any>) => {
-      const customer = b.customer || {};
-      const route = b.route || {};
-      const pricing = b.pricing || {};
-      const payment = b.payment || b.paymentInfo || {};
-
-      const firstName = customer.firstName || "";
-      const lastName = customer.lastName || "";
-      const fullName =
-        customer.fullName ||
-        (firstName && lastName && firstName !== lastName
-          ? `${firstName} ${lastName}`.trim()
-          : firstName || lastName || "");
-
-      return {
-        ...b,
-        _id: b._id?.toString() ?? "",
-        bookingNumber: b.bookingNumber ?? "",
-        status: b.status ?? "",
-        category: b.category ?? "",
-        amount: roundMoney(Number(pricing.total ?? b.amount ?? 0)),
-        paymentMethod: payment.paymentMethod || b.paymentMethod || "mollie",
-        paymentStatus: payment.paymentStatus || b.paymentStatus || "",
-        passengerDetails: {
-          firstName,
-          lastName,
-          fullName: fullName || "N/A",
-          email: customer.email || "",
-          phone: customer.phone || "",
-        },
-        tripDetails: {
-          pickupAddress: route.pickupAddress || "",
-          deliveryAddress: route.dropoffAddress || route.deliveryAddress || "",
-          pickupDate: route.pickupDate || "",
-          pickupTime: route.pickupTime || "",
-          returnDate: route.returnDate || "",
-          returnTime: route.returnTime || "",
-          distance: route.distance,
-          durationMinutes: route.durationMinutes,
-          airportPickup: route.airportPickup,
-        },
-      };
-    });
+    const items = rawItems.map((b: Record<string, any>) => mapUserBooking(b));
 
     return { items, page, limit, total, totalPages };
+  }
+
+  async getUserBooking(bookingId: string, email: string, userId: string) {
+    const booking = await dashboardRepository.findUserBookingById(bookingId, email, userId);
+    const plain =
+      typeof (booking as { toObject?: () => Record<string, unknown> }).toObject === "function"
+        ? (booking as { toObject: () => Record<string, unknown> }).toObject()
+        : (booking as unknown as Record<string, unknown>);
+
+    return mapUserBooking(plain);
   }
 
   async deleteUserBooking(bookingId: string, email: string, userId: string) {
